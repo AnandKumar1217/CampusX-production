@@ -16,7 +16,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 const logo = require("../../../assets/branding/campusx-logo-new-transparent.png");
 
 export function SplashScreen({ navigation }: Props) {
-  const { hydrated, onboardingComplete, accessToken, hydrate } = useAppStore();
+  const { hydrated, onboardingComplete, accessToken, hydrate, fetchCurrentUser } = useAppStore();
   const { width, height } = useWindowDimensions();
 
   // Animation values
@@ -78,13 +78,34 @@ export function SplashScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!hydrated) return;
+    
+    let isMounted = true;
+    
+    const initializeApp = async () => {
+      if (accessToken) {
+        try {
+          await fetchCurrentUser();
+          if (isMounted) navigation.replace("Main");
+        } catch (error) {
+          console.log("Failed to fetch user on startup:", error);
+          if (isMounted) navigation.replace("Login");
+        }
+      } else if (onboardingComplete) {
+        if (isMounted) navigation.replace("Login");
+      } else {
+        if (isMounted) navigation.replace("OnboardingOne");
+      }
+    };
+
     const timer = setTimeout(() => {
-      if (accessToken) navigation.replace("Main");
-      else if (onboardingComplete) navigation.replace("Login");
-      else navigation.replace("OnboardingOne");
+      void initializeApp();
     }, 2500); // Increased timeout to let animations play out
-    return () => clearTimeout(timer);
-  }, [accessToken, hydrated, navigation, onboardingComplete]);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [accessToken, hydrated, navigation, onboardingComplete, fetchCurrentUser]);
 
   // Perspective floor calculations
   const centerX = width / 2;

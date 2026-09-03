@@ -73,6 +73,7 @@ type AppState = {
   activeTab: MainTabName;
   setActiveTab: (tab: MainTabName) => void;
   hydrate: () => Promise<void>;
+  fetchCurrentUser: () => Promise<void>;
   finishOnboarding: () => Promise<void>;
   setSession: (accessToken: string, refreshToken: string, user: User) => Promise<void>;
   clearSession: () => Promise<void>;
@@ -248,6 +249,19 @@ export const useAppStore = create<AppState>()(
       }
     } catch (e) {
       console.log("Failed to load state", e);
+    }
+  },
+  fetchCurrentUser: async () => {
+    try {
+      const { api } = require("../services/api");
+      const res = await api.get("/users/me");
+      if (res.data?.data) {
+        set({ user: res.data.data });
+        AsyncStorage.setItem(USER_KEY, JSON.stringify(res.data.data)).catch(console.error);
+      }
+    } catch (e) {
+      console.log("Failed to fetch current user", e);
+      throw e;
     }
   },
   savedDestinations: [

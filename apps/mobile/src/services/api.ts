@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 const ACCESS_TOKEN_KEY = "campusx.auth.access-token";
+const REFRESH_TOKEN_KEY = "campusx.auth.refresh-token";
 
 const defaultApiUrl =
   Platform.OS === "android"
@@ -21,14 +22,75 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token as string);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
-      // Clear session using a delayed require to avoid circular dependency
-      const { useAppStore } = require("../store/appStore");
-      await useAppStore.getState().clearSession();
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
+        if (!refreshToken) {
+          throw new Error("No refresh token available");
+        }
+
+        const res = await axios.post<{ data: { accessToken: string; refreshToken: string; user: any } }>(
+          `${api.defaults.baseURL}/auth/refresh`,
+          { refreshToken }
+        );
+
+        const newAccessToken = res.data.data.accessToken;
+        const newRefreshToken = res.data.data.refreshToken;
+        
+        await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, newAccessToken);
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
+        
+        api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError as Error, null);
+        const { useAppStore } = require("../store/appStore");
+        await useAppStore.getState().clearSession();
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
     }
+    
     return Promise.reject(error);
   }
 );
