@@ -1,0 +1,41 @@
+import { create } from "zustand";
+
+type SignupDraft = {
+  fullName: string;
+  email: string;
+  password: string;
+  college: string;
+  department: string;
+  academicYear: string;
+  graduationYear: string;
+  interests: string[];
+};
+
+const initialDraft: SignupDraft = {
+  fullName: "",
+  email: "",
+  password: "",
+  college: "",
+  department: "",
+  academicYear: "",
+  graduationYear: "",
+  interests: [],
+};
+
+type SignupState = SignupDraft & {
+  patch: (values: Partial<SignupDraft>) => void;
+  toggleInterest: (interest: string) => void;
+  reset: () => void;
+};
+
+export const useSignupStore = create<SignupState>((set) => ({
+  ...initialDraft,
+  patch: (values) => set(values),
+  toggleInterest: (interest) =>
+    set((state) => ({
+      interests: state.interests.includes(interest)
+        ? state.interests.filter((item) => item !== interest)
+        : [...state.interests, interest],
+    })),
+  reset: () => set(initialDraft),
+}));

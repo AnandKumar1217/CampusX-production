@@ -1,0 +1,30 @@
+{
+  "name": "campusx",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/mobile",
+    "apps/backend"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace @campusx/mobile",
+    "mobile:android": "npm run android --workspace @campusx/mobile",
+    "mobile:web": "npm run web --workspace @campusx/mobile",
+    "backend": "npm run dev --workspace @campusx/backend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,json}\" \"docs/**/*.md\" \"*.{md,json}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "dependencies": {
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^25.9.0"
+  }
+}

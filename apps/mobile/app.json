@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "CampusX",
+    "slug": "campusx",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "campusx",
+    "newArchEnabled": true,
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FBFAFE"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.campusx.mobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CampusX uses your location for campus maps, nearby friends, and local weather only when you allow it.",
+        "NSCameraUsageDescription": "CampusX uses the camera to scan CampusX QR codes and create posts and stories."
+      }
+    },
+    "android": {
+      "package": "com.campusx.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow CampusX to scan QR codes and create media."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow CampusX to show your campus position, shared friends, and local weather."
+        }
+      ],
+      "expo-notifications",
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "autolinkingModuleResolution": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+      }
+    }
+  }
+}
