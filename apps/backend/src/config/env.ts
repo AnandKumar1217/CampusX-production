@@ -26,6 +26,9 @@ const schema = z.object({
   AI_API_KEY: z.string().optional(),
   WEATHER_API_KEY: z.string().optional(),
   UPLOAD_DIRECTORY: z.string().default("uploads"),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -42,3 +45,4 @@ export const env = {
     .map((origin) => origin.trim())
     .filter(Boolean),
 };
+

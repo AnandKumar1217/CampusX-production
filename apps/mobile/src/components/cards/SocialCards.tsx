@@ -114,8 +114,7 @@ export function CXPostCard({
   onLike?: () => void;
   onSave?: () => void;
 }) {
-  const isSaved = useAppStore((state) => state.savedPosts.includes(post.id));
-  const toggleSaved = useAppStore((state) => state.toggleSavedPost);
+  const isSaved = post.saved;
 
   return (
     <CXCard style={styles.postCard}>
@@ -174,7 +173,7 @@ export function CXPostCard({
           icon={isSaved ? "bookmark" : "bookmark-outline"}
           label="Save"
           active={isSaved}
-          onPress={() => toggleSaved(post.id)}
+          onPress={onSave}
         />
       </CXRow>
     </CXCard>

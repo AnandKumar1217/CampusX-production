@@ -76,25 +76,7 @@ export function ChatsScreen() {
   };
 
   const formattedConversations = useMemo(() => {
-    // Merge real API conversations with mock groups (until API groups exist)
     const list: any[] = [];
-    
-    if (filter === "All" || filter === "Communities") {
-      joinedGroups.forEach(g => {
-        if (!deferredSearch || g.name.toLowerCase().includes(deferredSearch.toLowerCase())) {
-          list.push({
-            id: g.id,
-            type: "group",
-            name: g.name,
-            icon: g.icon,
-            color: g.color,
-            subtitle: g.subtitle,
-            unread: 0,
-            updatedAt: "Just now"
-          });
-        }
-      });
-    }
 
     if (filter === "All" || filter === "Unread") {
       conversations.forEach(c => {
@@ -114,13 +96,13 @@ export function ChatsScreen() {
           avatarUrl: c.type === "group" ? c.avatarUrl : otherParticipant?.avatarUrl,
           online: otherParticipant?.online,
           unread: unreadCount,
-          lastMessage: c.lastMessage?.text || "Started a conversation",
+          lastMessage: c.lastMessage?.text || (c.lastMessage?.attachments?.length ? "Sent an attachment" : "Started a conversation"),
           updatedAt: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
         });
       });
     }
     return list;
-  }, [conversations, filter, deferredSearch, joinedGroups, currentUser]);
+  }, [conversations, filter, deferredSearch, currentUser]);
 
   const startChat = async (user: any) => {
     try {

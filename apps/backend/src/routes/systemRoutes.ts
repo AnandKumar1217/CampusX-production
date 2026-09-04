@@ -45,6 +45,7 @@ notificationRouter.patch(
       { $set: { readAt: new Date() } },
       { new: true },
     );
+    if (!item) throw new AppError(404, "Notification not found", "NOT_FOUND");
     return sendSuccess(response, item, "Notification marked as read");
   }),
 );

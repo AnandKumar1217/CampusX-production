@@ -18,6 +18,26 @@ export type User = {
   isFriend?: boolean;
 };
 
+export type FriendRequestItem = {
+  _id: Id;
+  requester: User;
+  recipient: User;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+};
+
+export type Notification = {
+  _id: string;
+  user: string;
+  actor?: User;
+  type: string;
+  title: string;
+  body?: string;
+  readAt?: string;
+  target?: { route: string; params?: any };
+  createdAt: string;
+};
+
 export type Post = {
   id: Id;
   author: User;

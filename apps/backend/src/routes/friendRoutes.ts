@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { FriendRequest, Friendship, Notification } from "../models/Social.js";
 import { User } from "../models/User.js";
+import { pushService } from "../services/pushService.js";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 
 export const friendRouter = Router();
@@ -118,28 +119,60 @@ friendRouter.post(
       })
     )
       throw new AppError(409, "You are already friends", "ALREADY_FRIENDS");
+
+    const existingReq = await FriendRequest.findOne({ requester: request.user!._id, recipient: recipientId, status: "pending" });
+    if (existingReq) {
+      return sendSuccess(response, existingReq, "Friend request already sent", 200);
+    }
+
+    const oppositeReq = await FriendRequest.findOne({ requester: recipientId, recipient: request.user!._id, status: "pending" });
+    if (oppositeReq) {
+      throw new AppError(409, "You have a pending request from this user. Please accept it instead.", "OPPOSITE_REQUEST_EXISTS");
+    }
+
     const item = await FriendRequest.findOneAndUpdate(
       { requester: request.user!._id, recipient: recipientId },
       {
         $setOnInsert: {
           requester: request.user!._id,
           recipient: recipientId,
+        },
+        $set: {
           status: "pending",
         },
       },
       { new: true, upsert: true },
     );
-    await Notification.create({
-      user: recipientId,
-      actor: request.user!._id,
-      type: "friend_request",
-      title: `${request.user!.name} sent you a friend request`,
-      target: { route: "FriendRequests" },
-    });
+    const notification = await Notification.findOneAndUpdate(
+      { user: recipientId, actor: request.user!._id, type: "friend_request" },
+      {
+        $set: {
+          title: `${request.user!.name} sent you a friend request`,
+          target: { route: "FriendRequests" }
+        },
+        $unset: { readAt: "" }
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    ).populate("actor", "name username avatarUrl");
+
     request.app
       .get("io")
       ?.to(`user:${recipientId}`)
       .emit("friend:request", item);
+    request.app
+      .get("io")
+      ?.to(`user:${recipientId}`)
+      .emit("notification:new", notification);
+      
+    void pushService.sendPushNotification(recipientId as any, {
+      title: notification.title,
+      body: "Tap to view",
+      data: {
+        route: notification.target?.route,
+        params: notification.target?.params,
+        notificationId: notification._id.toString()
+      }
+    });
     return sendSuccess(response, item, "Friend request sent", 201);
   }),
 );
@@ -160,26 +193,64 @@ friendRouter.post(
       throw new AppError(404, "Friend request not found", "REQUEST_NOT_FOUND");
     requestItem.status = action === "accept" ? "accepted" : "rejected";
     await requestItem.save();
-    if (action === "accept") {
-      const users = [requestItem.requester, requestItem.recipient].sort(
-        (a, b) => a.toString().localeCompare(b.toString()),
-      );
-      await Friendship.updateOne(
-        { users: { $all: users } },
-        { $setOnInsert: { users, createdBy: request.user!._id } },
-        { upsert: true },
-      );
-      await Notification.create({
-        user: requestItem.requester,
-        actor: request.user!._id,
-        type: "friend_accepted",
-        title: `${request.user!.name} accepted your friend request`,
-        target: { route: "Friends" },
+
+    if (action === "reject") {
+      await Notification.deleteMany({
+        user: request.user!._id,
+        actor: requestItem.requester,
+        type: "friend_request"
       });
       request.app
         .get("io")
         ?.to(`user:${requestItem.requester.toString()}`)
+        .emit("friend:request_rejected", { userId: request.user!._id.toString() });
+    }
+    if (action === "accept") {
+      const sortedUsers = [
+        request.user!._id.toString(),
+        requestItem.requester.toString(),
+      ].sort();
+
+      await Friendship.updateOne(
+        { users: sortedUsers },
+        {
+          $setOnInsert: {
+            users: sortedUsers,
+            createdBy: requestItem.requester,
+          },
+        },
+        { upsert: true },
+      );
+      const notification = await Notification.findOneAndUpdate(
+        { user: requestItem.requester, actor: request.user!._id, type: "friend_accepted" },
+        {
+          $set: {
+            title: `${request.user!.name} accepted your friend request`,
+            target: { route: "Friends" }
+          },
+          $unset: { readAt: "" }
+        },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ).populate("actor", "name username avatarUrl");
+
+      request.app
+        .get("io")
+        ?.to(`user:${requestItem.requester.toString()}`)
         .emit("friend:accepted", { userId: request.user!._id.toString() });
+      request.app
+        .get("io")
+        ?.to(`user:${requestItem.requester.toString()}`)
+        .emit("notification:new", notification);
+        
+      void pushService.sendPushNotification(requestItem.requester, {
+        title: notification.title,
+        body: "Tap to view",
+        data: {
+          route: notification.target?.route,
+          params: notification.target?.params,
+          notificationId: notification._id.toString()
+        }
+      });
     }
     return sendSuccess(
       response,
@@ -188,5 +259,54 @@ friendRouter.post(
         ? "Friend request accepted"
         : "Friend request rejected",
     );
+  }),
+);
+
+friendRouter.delete(
+  "/:id",
+  asyncHandler(async (request, response) => {
+    if (!isValidObjectId(request.params.id))
+      throw new AppError(400, "Invalid user id", "INVALID_ID");
+
+    const friendship = await Friendship.findOneAndDelete({
+      users: { $all: [request.user!._id, request.params.id] },
+    });
+
+    if (friendship) {
+      request.app
+        .get("io")
+        ?.to(`user:${request.params.id}`)
+        .emit("friend:removed", { userId: request.user!._id.toString() });
+    }
+
+    return sendSuccess(response, null, "Friend removed");
+  }),
+);
+
+friendRouter.delete(
+  "/requests/:id",
+  asyncHandler(async (request, response) => {
+    if (!isValidObjectId(request.params.id))
+      throw new AppError(400, "Invalid user id", "INVALID_ID");
+
+    const deleted = await FriendRequest.findOneAndDelete({
+      requester: request.user!._id,
+      recipient: request.params.id,
+      status: "pending",
+    });
+
+    if (deleted) {
+      await Notification.deleteMany({
+        user: request.params.id,
+        actor: request.user!._id,
+        type: "friend_request"
+      });
+      request.app
+        .get("io")
+        ?.to(`user:${request.params.id}`)
+        .emit("friend:request_cancelled", { userId: request.user!._id.toString() });
+    }
+
+    return sendSuccess(response, null, "Friend request cancelled");
   }),
 );

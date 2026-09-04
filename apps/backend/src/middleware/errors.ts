@@ -23,7 +23,7 @@ export const errorHandler: ErrorRequestHandler = (
   if (error instanceof ZodError) {
     const firstIssue = error.issues[0];
     const message = firstIssue 
-      ? (firstIssue.path[firstIssue.path.length - 1] + ": " + firstIssue.message)
+      ? (String(firstIssue.path[firstIssue.path.length - 1]) + ": " + firstIssue.message)
       : "Validation failed";
 
     response

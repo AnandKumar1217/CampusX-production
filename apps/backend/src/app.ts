@@ -24,6 +24,8 @@ import {
   weatherRouter,
 } from "./routes/systemRoutes.js";
 import { tripRouter } from "./routes/tripRoutes.js";
+import { uploadRouter } from "./routes/uploadRoutes.js";
+import { pushRouter } from "./routes/pushRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
 import { sendSuccess } from "./utils/http.js";
 
@@ -66,6 +68,8 @@ export function createApp() {
   app.use("/api/location", authenticate, locationRouter);
   app.use("/api/ai", authenticate, aiRouter);
   app.use("/api/weather", authenticate, weatherRouter);
+  app.use("/api/upload", authenticate, uploadRouter);
+  app.use("/api/push", authenticate, pushRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

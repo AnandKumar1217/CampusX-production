@@ -13,7 +13,9 @@ import {
   TextInput,
   View,
   ActivityIndicator,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import Markdown from 'react-native-markdown-display';
 
 import { CXUserRow } from "@/components/cards";
@@ -91,7 +93,11 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
       const onNewMessage = (msg: any) => {
         if (msg.conversation.toString() === route.params.conversationId.toString()) {
           setMessages(prev => {
-            if (prev.some(m => m._id === msg._id)) return prev;
+            // Deduplicate by database _id or by nonce
+            if (prev.some(m => m._id === msg._id || (msg.nonce && m.nonce === msg.nonce))) {
+              // If we found it by nonce, we should replace the temp one with the real one
+              return prev.map(m => m.nonce === msg.nonce ? msg : m);
+            }
             return [msg, ...prev];
           });
           api.post(`/chats/${route.params.conversationId}/delivered`).catch(() => {});
@@ -157,6 +163,10 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         socket.off("typing:start", onTypingStart);
         socket.off("typing:stop", onTypingStop);
         socket.off("message:reaction", onMessageReaction);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          socket.emit("typing:stop", { conversationId: route.params.conversationId });
+        }
         socket.emit("conversation:leave", route.params.conversationId);
       };
     }
@@ -174,32 +184,68 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
     }
   };
 
+  const [media, setMedia] = useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setMedia(result.assets[0]);
+    }
+  };
+
   const send = async () => {
     const value = text.trim();
-    if (!value) return;
+    if (!value && !media) return;
     
     const tempId = `temp-${Date.now()}`;
+    const nonce = tempId;
     const temp = {
       _id: tempId,
+      nonce,
       text: value,
       sender: { _id: currentUser?.id, name: currentUser?.name || "You" },
+      attachments: media ? [{ url: media.uri, name: media.fileName || "image.jpg" }] : [],
       createdAt: new Date().toISOString(),
       status: "sending"
     };
     
     setMessages(prev => [temp, ...prev]);
     setText("");
-    
+    const currentMedia = media;
+    setMedia(null);
     setReplyTo(null);
     
     try {
+      let attachments: any[] = [];
+      if (currentMedia) {
+        const formData = new FormData();
+        formData.append("file", {
+          uri: currentMedia.uri,
+          name: currentMedia.fileName || "image.jpg",
+          type: currentMedia.mimeType || "image/jpeg",
+        } as any);
+        const uploadRes = await api.post<{ data: any }>("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        attachments.push({
+          url: uploadRes.data.data.url,
+          publicId: uploadRes.data.data.publicId,
+          name: uploadRes.data.data.originalName,
+          mimeType: uploadRes.data.data.mimeType,
+          size: uploadRes.data.data.size,
+        });
+      }
+
       const response = await api.post<{ data: any }>(
         `/chats/${route.params.conversationId}/messages`,
-        { text: value, replyTo: replyTo?._id }
+        { text: value, replyTo: replyTo?._id, nonce, attachments }
       );
-      setMessages(prev => prev.map(m => m._id === tempId ? { ...response.data.data, status: "sent" } : m));
+      setMessages(prev => prev.map(m => m.nonce === nonce ? { ...response.data.data, status: "sent" } : m));
     } catch {
-      setMessages(prev => prev.map(m => m._id === tempId ? { ...m, status: "failed" } : m));
+      setMessages(prev => prev.map(m => m.nonce === nonce ? { ...m, status: "failed" } : m));
     }
   };
 
@@ -260,8 +306,17 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
             <CXIconButton icon="close" size={24} onPress={() => setReplyTo(null)} backgroundColor={colors.transparent} />
           </View>
         )}
+        {media && (
+          <View style={styles.replyPreviewWrapper}>
+            <Image source={{ uri: media.uri }} style={{ width: 50, height: 50, borderRadius: 8, marginRight: 10 }} />
+            <View style={styles.flex}>
+              <CXText variant="captionStrong" color={colors.primary}>Attached Image</CXText>
+            </View>
+            <CXIconButton icon="close" size={24} onPress={() => setMedia(null)} backgroundColor={colors.transparent} />
+          </View>
+        )}
         <CXRow style={styles.composer}>
-          <CXIconButton icon="attach-outline" label="Attach file" size={38} backgroundColor={colors.backgroundLavender} />
+          <CXIconButton icon="attach-outline" label="Attach file" size={38} backgroundColor={colors.backgroundLavender} onPress={pickImage} />
           <TextInput
             value={text}
             onChangeText={handleTextChange}
@@ -272,8 +327,8 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
           />
           <CXIconButton icon="happy-outline" label="Emoji" size={38} backgroundColor={colors.transparent} />
           <CXIconButton
-            icon={text.trim() ? "send" : "mic"}
-            label={text.trim() ? "Send message" : "Voice message"}
+            icon={(text.trim() || media) ? "send" : "mic"}
+            label={(text.trim() || media) ? "Send message" : "Voice message"}
             size={42}
             onPress={() => void send()}
           />
@@ -360,7 +415,14 @@ function MessageBubble({ message, mine, onLongPress }: { message: any; mine: boo
             </View>
           </View>
         )}
-        <CXText color={mine ? colors.white : colors.ink}>{message.text}</CXText>
+        {message.attachments && message.attachments.length > 0 && (
+          <View style={{ marginBottom: 4 }}>
+            {message.attachments.map((att: any, i: number) => (
+              <Image key={i} source={{ uri: att.url }} style={{ width: 200, height: 200, borderRadius: 8, marginBottom: 4 }} />
+            ))}
+          </View>
+        )}
+        {!!message.text && <CXText color={mine ? colors.white : colors.ink}>{message.text}</CXText>}
         <CXRow style={styles.messageMeta}>
           <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>{timeString}</CXText>
           {mine ? (

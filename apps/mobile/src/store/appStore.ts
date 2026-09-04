@@ -3,7 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { parseTimetableImage, type ChatMessage } from "@/services/ai";
-import { connectSocket, disconnectSocket } from "@/services/socket";
+import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 
 import type { MainTabName } from "@/types/navigation";
 
@@ -72,8 +72,13 @@ type AppState = {
   updateSgpa: (semester: number, sgpa: number) => void;
   activeTab: MainTabName;
   setActiveTab: (tab: MainTabName) => void;
+  unreadNotifications: number;
+  setUnreadNotifications: (count: number) => void;
+  incrementUnreadNotifications: () => void;
+  decrementUnreadNotifications: () => void;
   hydrate: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
+  fetchUnreadNotifications: () => Promise<void>;
   finishOnboarding: () => Promise<void>;
   setSession: (accessToken: string, refreshToken: string, user: User) => Promise<void>;
   clearSession: () => Promise<void>;
@@ -113,12 +118,14 @@ type AppState = {
   deleteStudyGroup: (id: string) => void;
   toggleGroupMembership: (id: string) => void;
   friends: User[];
+  fetchFriends: () => Promise<void>;
   addFriend: (user: User) => void;
   removeFriend: (id: string) => void;
   aiConversations: { id: string; title: string; messages: ChatMessage[]; updatedAt: number }[];
   saveAIConversation: (id: string, title: string, messages: ChatMessage[]) => void;
   deleteAIConversation: (id: string) => void;
   clearAIConversations: () => void;
+  setupSocketListeners: () => void;
 };
 
 import { Platform } from "react-native";
@@ -227,6 +234,10 @@ export const useAppStore = create<AppState>()(
   },
   activeTab: "Home",
   setActiveTab: (activeTab) => set({ activeTab }),
+  unreadNotifications: 0,
+  setUnreadNotifications: (count) => set({ unreadNotifications: count }),
+  incrementUnreadNotifications: () => set((state) => ({ unreadNotifications: state.unreadNotifications + 1 })),
+  decrementUnreadNotifications: () => set((state) => ({ unreadNotifications: Math.max(0, state.unreadNotifications - 1) })),
   hydrate: async () => {
     try {
       const [onboarding, accessToken, userStr, sgpasStr] = await Promise.all([
@@ -246,6 +257,8 @@ export const useAppStore = create<AppState>()(
       });
       if (accessToken) {
         connectSocket(accessToken);
+        get().setupSocketListeners();
+        get().fetchUnreadNotifications().catch(console.error);
       }
     } catch (e) {
       console.log("Failed to load state", e);
@@ -258,10 +271,22 @@ export const useAppStore = create<AppState>()(
       if (res.data?.data) {
         set({ user: res.data.data });
         AsyncStorage.setItem(USER_KEY, JSON.stringify(res.data.data)).catch(console.error);
+        get().fetchFriends().catch(console.error);
       }
     } catch (e) {
       console.log("Failed to fetch current user", e);
       throw e;
+    }
+  },
+  fetchUnreadNotifications: async () => {
+    try {
+      const { api } = require("../services/api");
+      const res = await api.get("/notifications");
+      if (res.data?.data) {
+        get().setUnreadNotifications(res.data.data.unread || 0);
+      }
+    } catch (e) {
+      console.log("Failed to fetch notifications", e);
     }
   },
   savedDestinations: [
@@ -360,11 +385,32 @@ export const useAppStore = create<AppState>()(
       ),
     })),
   friends: [],
-  addFriend: (user) => set((state) => ({ friends: [...state.friends, { ...user, isFriend: true }] })),
-    removeFriend: (id) =>
-      set((state) => ({
-        friends: state.friends.filter((u) => u.id !== id),
-      })),
+  fetchFriends: async () => {
+    try {
+      const { api } = require("../services/api");
+      const res = await api.get("/friends");
+      if (res.data?.data) {
+        set({ friends: res.data.data.map((u: any) => ({ ...u, id: u._id || u.id })) });
+      }
+    } catch (e) {
+      console.log("Failed to fetch friends", e);
+    }
+  },
+  addFriend: (user) => set((state) => {
+    if (state.friends.some(f => f.id === user.id)) return state;
+    return { friends: [...state.friends, { ...user, isFriend: true }] };
+  }),
+  removeFriend: async (id) => {
+    set((state) => ({
+      friends: state.friends.filter((u) => u.id !== id),
+    }));
+    try {
+      const { api } = require("../services/api");
+      await api.delete(`/friends/${id}`);
+    } catch (e) {
+      console.error("Failed to remove friend", e);
+    }
+  },
     saveAIConversation: (id, title, messages) =>
       set((state) => {
         const existingIndex = state.aiConversations.findIndex((c) => c.id === id);
@@ -423,6 +469,8 @@ export const useAppStore = create<AppState>()(
     set({ accessToken, user });
     if (accessToken) {
       connectSocket(accessToken);
+      get().setupSocketListeners();
+      get().fetchUnreadNotifications().catch(console.error);
     }
   },
   clearSession: async () => {
@@ -439,7 +487,50 @@ export const useAppStore = create<AppState>()(
       ]);
     }
     disconnectSocket();
-    set({ accessToken: null, user: null, activeTab: "Home" });
+    set({ accessToken: null, user: null, activeTab: "Home", friends: [] });
+  },
+  setupSocketListeners: () => {
+    const socket = getSocket();
+    if (!socket) return;
+    
+    // Remove existing listeners to avoid duplicates
+    socket.off("friend:request");
+    socket.off("friend:accepted");
+    socket.off("friend:removed");
+    socket.off("friend:request_cancelled");
+    socket.off("friend:request_rejected");
+    socket.off("notification:new");
+    socket.off("notification:read");
+
+    socket.on("notification:new", () => {
+      get().incrementUnreadNotifications();
+    });
+
+    socket.on("notification:read", () => {
+      // Since a single notification is read, we might want to just decrement. 
+      // But multiple could be read. Easiest is to refetch count.
+      get().fetchUnreadNotifications();
+    });
+
+    socket.on("friend:request", () => {
+      // Could fetch requests or trigger a local event to re-render. Since we want real-time,
+      // a simple fetchFriends() or fetchRequests() would be good. However we don't have fetchRequests in appStore.
+      // But UserProfileScreen fetches it on mount. 
+      // For now, if a request comes in, we can just trigger a global event or fetch current user.
+    });
+
+    socket.on("friend:accepted", () => {
+      get().fetchFriends(); // Fetch friends to update the friends list
+    });
+
+    socket.on("friend:removed", (data: any) => {
+      if (data && data.userId) {
+        set((state) => ({ friends: state.friends.filter(f => f.id !== data.userId) }));
+      }
+    });
+
+    socket.on("friend:request_cancelled", () => {});
+    socket.on("friend:request_rejected", () => {});
   },
   weather: null, locationCoords: null,
   fetchWeather: async () => {

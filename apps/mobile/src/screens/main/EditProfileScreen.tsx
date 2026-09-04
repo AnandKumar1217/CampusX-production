@@ -51,21 +51,57 @@ export function EditProfileScreen() {
     }
   };
   
-  const handleSave = () => {
-    updateUser({
-      name,
-      username,
-      avatarUrl: avatarUri || currentUser?.avatarUrl,
-      college,
-      department,
-      academicYear,
-      bio,
-    });
-    // In a real app we'd dispatch to backend / store here.
-    (navigation as any).navigate("Main", {
-      screen: "Profile",
-      params: { profileUpdated: true },
-    });
+    const handleSave = async () => {
+    try {
+      const { api } = require("@/services/api");
+      let finalAvatarUrl = currentUser?.avatarUrl;
+      
+      if (avatarUri && avatarUri !== currentUser?.avatarUrl) {
+        const formData = new FormData();
+        const filename = avatarUri.split('/').pop() || 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? "image/$(match[1])" : "image";
+
+        formData.append('file', {
+          uri: avatarUri,
+          name: filename,
+          type,
+        } as any);
+
+        const uploadRes = await api.post('/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          }
+        });
+        
+        finalAvatarUrl = uploadRes.data.data.url;
+      }
+
+      await api.patch("/users/me", {
+        name,
+        avatarUrl: finalAvatarUrl,
+        college,
+        department,
+        academicYear,
+        bio,
+      });
+
+      updateUser({
+        name,
+        username,
+        avatarUrl: finalAvatarUrl,
+        college,
+        department,
+        academicYear,
+        bio,
+      } as any);
+      (navigation as any).navigate("Main", {
+        screen: "Profile",
+        params: { profileUpdated: true },
+      });
+    } catch (e) {
+      Alert.alert("Error", "Failed to update profile");
+    }
   };
 
   return (
@@ -89,12 +125,11 @@ export function EditProfileScreen() {
           <CXText variant="captionStrong" color={colors.textMuted}>Name</CXText>
           <View style={styles.inputContainer}>
             <TextInput
-              style={[styles.input, { color: colors.textMuted }]}
+              style={styles.input}
               value={name}
               onChangeText={setName}
               placeholder="Your Name"
               placeholderTextColor={colors.textMuted}
-              editable={false}
             />
           </View>
         </View>
@@ -103,12 +138,13 @@ export function EditProfileScreen() {
           <CXText variant="captionStrong" color={colors.textMuted}>Username</CXText>
           <View style={styles.inputContainer}>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.textMuted }]}
               value={username}
               onChangeText={setUsername}
               placeholder="username"
               autoCapitalize="none"
               placeholderTextColor={colors.textMuted}
+              editable={false}
             />
           </View>
         </View>
@@ -227,3 +263,4 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   }
 });
+

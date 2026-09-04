@@ -39,84 +39,37 @@ type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   Name
 >;
 
-type NotificationItem = {
-  id: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  title: string;
-  time: string;
-  unread: boolean;
-  route: keyof RootStackParamList | "Chats";
-};
-
-const notifications: NotificationItem[] = [
-  {
-    id: "n1",
-    icon: "person-add-outline",
-    color: "#6338F2",
-    title: "Ananya Iyer accepted your friend request.",
-    time: "2m ago",
-    unread: true,
-    route: "Friends",
-  },
-  {
-    id: "n2",
-    icon: "people-outline",
-    color: "#3B82F6",
-    title: "CSE AIML 2026 group posted a new announcement.",
-    time: "15m ago",
-    unread: true,
-    route: "StudyGroups",
-  },
-  {
-    id: "n3",
-    icon: "chatbubble-outline",
-    color: "#22C55E",
-    title: "Rohit Verma sent you a message.",
-    time: "25m ago",
-    unread: true,
-    route: "Chats",
-  },
-  {
-    id: "n4",
-    icon: "airplane-outline",
-    color: "#F59E0B",
-    title: "Manali Trip dates have been updated.",
-    time: "1h ago",
-    unread: false,
-    route: "Trips",
-  },
-  {
-    id: "n5",
-    icon: "at-outline",
-    color: "#EC4899",
-    title: "Neha Kapoor mentioned you in a post.",
-    time: "2h ago",
-    unread: false,
-    route: "Feed",
-  },
-  {
-    id: "n6",
-    icon: "ticket-outline",
-    color: "#A855F7",
-    title: "CodeX Club: event reminder — Hackathon 2025.",
-    time: "Yesterday",
-    unread: false,
-    route: "Events",
-  },
-];
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Notification } from "@/types/domain";
 
 export function NotificationsScreen({
   navigation,
 }: StackProps<"Notifications">) {
-  const [items, setItems] = useState(
-    notifications.map((item) => ({ ...item })),
-  );
+  const queryClient = useQueryClient();
+  const fetchUnreadNotifications = useAppStore((state) => state.fetchUnreadNotifications);
   const [activeFilter, setActiveFilter] = useState<"All" | "Unread" | "Mentions" | "Other">("All");
-  const markAll = () => {
-    setItems((value) => value.map((item) => ({ ...item, unread: false })));
-    void api.patch("/notifications/read-all").catch(() => undefined);
+
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const res = await api.get("/notifications");
+      return (res.data?.data?.items || []) as Notification[];
+    },
+  });
+
+  const markAll = async () => {
+    await api.patch("/notifications/read-all");
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    fetchUnreadNotifications();
   };
+
+  const getIcon = (type: string) => {
+    if (type.startsWith("friend")) return { name: "person-add-outline" as any, color: "#6338F2" };
+    if (type.startsWith("post")) return { name: "heart-outline" as any, color: "#EC4899" };
+    if (type === "message") return { name: "chatbubble-outline" as any, color: "#22C55E" };
+    return { name: "notifications-outline" as any, color: "#F59E0B" };
+  };
+
   return (
     <CXScreen>
       <CXHeader
@@ -149,50 +102,56 @@ export function NotificationsScreen({
         </CXRow>
         <CXSectionHeader title={activeFilter === "All" ? "New" : activeFilter} />
         {items.filter((item) => {
-          if (activeFilter === "Unread") return item.unread;
-          if (activeFilter === "Mentions") return item.icon === "at-outline";
-          if (activeFilter === "Other") return item.icon !== "at-outline";
-          return true; // "All"
-        }).map((item) => (
-          <Pressable
-            key={item.id}
-            onPress={() => {
-              setItems((value) =>
-                value.map((entry) =>
-                  entry.id === item.id ? { ...entry, unread: false } : entry,
-                ),
-              );
-              if (item.route === "Chats")
-                navigation.navigate("Main", { screen: "Chats" });
-              else navigation.navigate(item.route as never);
-            }}
-          >
-            <CXRow
-              style={[
-                styles.notification,
-                item.unread && styles.notificationUnread,
-              ]}
+          if (activeFilter === "Unread") return !item.readAt;
+          if (activeFilter === "Mentions") return item.type.startsWith("post");
+          if (activeFilter === "Other") return !item.type.startsWith("post");
+          return true;
+        }).map((item) => {
+          const isUnread = !item.readAt;
+          const { name, color } = getIcon(item.type);
+          return (
+            <Pressable
+              key={item._id}
+              onPress={async () => {
+                if (isUnread) {
+                  await api.patch(`/notifications/${item._id}/read`);
+                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                  fetchUnreadNotifications();
+                }
+                if (item.target?.route === "Chats") {
+                  navigation.navigate("Main", { screen: "Chats" });
+                } else if (item.target?.route) {
+                  navigation.navigate(item.target.route as never, item.target.params as never);
+                }
+              }}
             >
-              <View
+              <CXRow
                 style={[
-                  styles.notificationIcon,
-                  { backgroundColor: `${item.color}18` },
+                  styles.notification,
+                  isUnread && styles.notificationUnread,
                 ]}
               >
-                <Ionicons name={item.icon} size={20} color={item.color} />
-              </View>
-              <View style={styles.flex}>
-                <CXText variant={item.unread ? "bodyStrong" : "body"}>
-                  {item.title}
-                </CXText>
-                <CXText variant="caption" color={colors.textMuted}>
-                  {item.time}
-                </CXText>
-              </View>
-              {item.unread ? <View style={styles.unreadDot} /> : null}
-            </CXRow>
-          </Pressable>
-        ))}
+                <View
+                  style={[
+                    styles.notificationIcon,
+                    { backgroundColor: `${color}18` },
+                  ]}
+                >
+                  <Ionicons name={name} size={20} color={color} />
+                </View>
+                <View style={styles.flex}>
+                  <CXText variant={isUnread ? "bodyStrong" : "body"}>
+                    {item.title}
+                  </CXText>
+                  <CXText variant="caption" color={colors.textMuted}>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </CXText>
+                </View>
+                {isUnread ? <View style={styles.unreadDot} /> : null}
+              </CXRow>
+            </Pressable>
+          );
+        })}
       </ScrollView>
     </CXScreen>
   );

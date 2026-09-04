@@ -55,6 +55,16 @@ export function createSocketServer(httpServer: HttpServer) {
       "join:trip",
       ({ tripId }) => void socket.join(`trip:${String(tripId)}`),
     );
+    socket.on("conversation:join", async (conversationId) => {
+      if (!conversationId) return;
+      const isParticipant = await Conversation.exists({
+        _id: conversationId,
+        participants: userId,
+      });
+      if (isParticipant) {
+        await socket.join(`conversation:${String(conversationId)}`);
+      }
+    });
     socket.on("disconnect", async () => {
       await User.updateOne(
         { _id: userId },

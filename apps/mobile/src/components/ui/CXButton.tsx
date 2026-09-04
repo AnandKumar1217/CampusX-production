@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ComponentProps } from "react";
+import React, { type ComponentProps } from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   View,
+  Text,
   type PressableProps,
   type ViewStyle,
 } from "react-native";
@@ -114,6 +115,7 @@ type IconButtonProps = PressableProps & {
   size?: number;
   color?: string;
   backgroundColor?: string;
+  badge?: number;
 };
 
 export function CXIconButton({
@@ -122,6 +124,7 @@ export function CXIconButton({
   size = 40,
   color = colors.primary,
   backgroundColor = colors.surfaceLavender,
+  badge,
   style,
   ...props
 }: IconButtonProps) {
@@ -139,6 +142,11 @@ export function CXIconButton({
       {...props}
     >
       <Ionicons name={icon} size={Math.round(size * 0.48)} color={color} />
+      {badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -169,4 +177,21 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.82, transform: [{ scale: 0.992 }] },
   disabled: { opacity: 0.5 },
   iconButton: { alignItems: "center", justifyContent: "center" },
+  badge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: colors.danger,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: "bold",
+  },
 });

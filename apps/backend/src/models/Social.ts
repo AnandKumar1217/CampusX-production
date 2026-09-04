@@ -30,7 +30,17 @@ const postSchema = new Schema(
   {
     author: { type: objectId, ref: "User", required: true, index: true },
     body: { type: String, maxlength: 2000, default: "" },
-    media: [{ url: String, type: { type: String, enum: ["image", "video"] } }],
+    media: [
+      {
+        url: { type: String, required: true },
+        type: { type: String, enum: ["image", "video"], required: true },
+        publicId: { type: String },
+        width: { type: Number },
+        height: { type: Number },
+        format: { type: String },
+        bytes: { type: Number },
+      }
+    ],
     visibility: {
       type: String,
       enum: ["public", "friends", "group"],

@@ -68,6 +68,7 @@ export function HomeScreen() {
   const { user, weather, fetchWeather, sgpas, updateSgpa } = useAppStore();
   const timetable = useAppStore((state) => state.timetable);
   const events = useAppStore((state) => state.events);
+  const unreadNotifications = useAppStore((state) => state.unreadNotifications);
   
   const [currentTimeObj, setCurrentTimeObj] = useState(new Date());
   const [isSgpaModalVisible, setSgpaModalVisible] = useState(false);
@@ -261,6 +262,7 @@ export function HomeScreen() {
             icon="notifications-outline"
             label="Notifications"
             backgroundColor={colors.white}
+            badge={unreadNotifications}
             onPress={() => navigation.navigate("Notifications")}
           />
           <Pressable onPress={() => navigation.navigate("Settings")}>

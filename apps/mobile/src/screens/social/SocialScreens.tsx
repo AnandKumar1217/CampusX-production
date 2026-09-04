@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useState, useEffect } from "react";
 import {
@@ -87,7 +88,8 @@ export function FeedScreen({ navigation }: StackProps<"Feed">) {
           <CXIconButton
             icon="notifications-outline"
             label="Notifications"
-            backgroundColor={colors.white}
+            backgroundColor={colors.transparent}
+            badge={unreadNotifications}
             onPress={() => navigation.navigate("Notifications")}
           />
         </CXRow>
@@ -168,13 +170,12 @@ export function PostDetailsScreen({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<{ data: Post }>(`/posts/${route.params.postId}`)
-       .then(res => setPost(res.data.data))
-       .catch(err => console.log("Failed to fetch post", err));
-       
-    api.get<{ data: any[] }>(`/posts/${route.params.postId}/comments`)
-       .then(res => setComments(res.data.data))
-       .catch(err => console.log("Failed to fetch comments", err))
+    api.get<{ data: { post: Post, comments: any[] } }>(`/posts/${route.params.postId}`)
+       .then(res => {
+         setPost(res.data.data.post);
+         setComments(res.data.data.comments);
+       })
+       .catch(err => console.log("Failed to fetch post", err))
        .finally(() => setLoading(false));
   }, [route.params.postId]);
 
@@ -183,7 +184,7 @@ export function PostDetailsScreen({
     if (!value) return;
     setComments((items) => [
       ...items,
-      { id: `local-${Date.now()}`, user: currentUser, text: value },
+      { _id: `local-${Date.now()}`, author: currentUser, body: value },
     ]);
     setComment("");
     void api
@@ -207,21 +208,33 @@ export function PostDetailsScreen({
         contentContainerStyle={styles.page}
         showsVerticalScrollIndicator={false}
       >
-        {post ? <CXPostCard post={post} /> : null}
+        {post ? (
+          <CXPostCard
+            post={post}
+            onLike={() => {
+              setPost(p => p ? { ...p, liked: !p.liked, reactions: p.reactions + (p.liked ? -1 : 1) } : null);
+              api.post(`/posts/${post.id}/reactions`, { type: post.liked ? null : "like" }).catch(console.log);
+            }}
+            onSave={() => {
+              setPost(p => p ? { ...p, saved: !p.saved } : null);
+              api.post(`/posts/${post.id}/save`, { saved: !post.saved }).catch(console.log);
+            }}
+          />
+        ) : null}
         <CXSectionHeader
           title={`Comments (${comments.length})`}
           action="Most Recent"
         />
         {comments.map((item) => (
-          <CXRow key={item.id} style={styles.comment}>
+          <CXRow key={item._id} style={styles.comment}>
             <CXAvatar
-              source={item.user.avatar}
-              name={item.user.name}
+              source={item.author?.avatarUrl || item.author?.avatar}
+              name={item.author?.name}
               size={38}
             />
             <View style={styles.commentBubble}>
-              <CXText variant="smallStrong">{item.user.name}</CXText>
-              <CXText variant="small">{item.text}</CXText>
+              <CXText variant="smallStrong">{item.author?.name}</CXText>
+              <CXText variant="small">{item.body}</CXText>
               <CXText variant="caption" color={colors.textMuted}>
                 Reply · just now
               </CXText>
@@ -257,44 +270,66 @@ export function UserProfileScreen({
   navigation,
   route,
 }: StackProps<"UserProfile">) {
-  const [user, setUser] = useState<any>(
-    friends.find((item) => item.id === route.params.userId) || null
-  );
-  const [loading, setLoading] = useState(!user);
-
-  useEffect(() => {
-    if (!user) {
-      const friend = useAppStore.getState().friends.find(f => f.id === route.params.userId);
-      if (friend) {
-        setUser(friend);
-        setLoading(false);
-      } else {
-        api.get<{data: any}>(`/users/${route.params.userId}`)
-           .then(res => {
-             const u = res.data.data;
-             if (u.avatarUrl) u.avatar = u.avatarUrl;
-             u.id = u._id || route.params.userId;
-             setUser(u);
-           })
-           .catch(err => {
-             console.log("Failed to fetch user:", err);
-             setUser(friends[0]); // fallback
-           })
-           .finally(() => setLoading(false));
-      }
-    }
-  }, [route.params.userId, user]);
-
   const currentUser = useAppStore(state => state.user);
   const friends = useAppStore(state => state.friends);
   
-  const isFriend = user ? friends.some(f => f.id === user.id) : false;
-  const [friendState, setFriendState] = useState<"none" | "pending" | "friends">(isFriend ? "friends" : "none");
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [friendState, setFriendState] = useState<"none" | "pending" | "friends">("none");
 
-  // Keep it synced with global state if it updates
+  const fetchProfileData = () => {
+    Promise.all([
+      api.get<{data: any}>(`/users/${route.params.userId}`),
+      api.get<{data: { received: any[], sent: any[]}}>("/friends/requests")
+    ])
+    .then(([userRes, reqRes]) => {
+      const u = userRes.data.data;
+      if (u.avatarUrl) u.avatar = u.avatarUrl;
+      u.id = u._id || route.params.userId;
+      setUser(u);
+
+      const isFriend = useAppStore.getState().friends.some(f => f.id === u.id);
+      if (isFriend) {
+        setFriendState("friends");
+      } else {
+        const isSent = reqRes.data.data.sent.some(r => r.recipient._id === u.id || r.recipient.id === u.id);
+        const isReceived = reqRes.data.data.received.some(r => r.requester._id === u.id || r.requester.id === u.id);
+        if (isSent || isReceived) {
+          setFriendState("pending");
+        } else {
+          setFriendState("none");
+        }
+      }
+    })
+    .catch(err => {
+      console.log("Failed to fetch user profile data:", err);
+      if (!user) navigation.goBack();
+    })
+    .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
-    if (user && isFriend) setFriendState("friends");
-  }, [isFriend, user]);
+    fetchProfileData();
+    
+    // Add real-time reactive socket listeners for this specific profile
+    const socket = require("@/services/socket").getSocket();
+    if (socket) {
+      const handleUpdate = () => fetchProfileData();
+      socket.on("friend:request", handleUpdate);
+      socket.on("friend:accepted", handleUpdate);
+      socket.on("friend:removed", handleUpdate);
+      socket.on("friend:request_cancelled", handleUpdate);
+      socket.on("friend:request_rejected", handleUpdate);
+
+      return () => {
+        socket.off("friend:request", handleUpdate);
+        socket.off("friend:accepted", handleUpdate);
+        socket.off("friend:removed", handleUpdate);
+        socket.off("friend:request_cancelled", handleUpdate);
+        socket.off("friend:request_rejected", handleUpdate);
+      };
+    }
+  }, [route.params.userId, friends]);
 
   const events = useAppStore(state => state.events);
   const listings = useAppStore(state => state.listings);
@@ -514,9 +549,13 @@ export function FriendsScreen({ navigation }: StackProps<"Friends">) {
 export function PeopleSuggestionsScreen({
   navigation,
 }: StackProps<"PeopleSuggestions">) {
-  const friends = useAppStore(state => state.friends);
-  const friendIds = friends.map(f => f.id);
-  const suggestions = friends.filter(p => p.id !== "user-anand" && !friendIds.includes(p.id));
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    api.get<{data: any[]}>("/friends/suggestions")
+      .then(res => setSuggestions(res.data.data.map((u: any) => ({ ...u, id: u._id || u.id }))))
+      .catch(console.error);
+  }, []);
   
   return (
     <PeopleListPage
@@ -529,17 +568,25 @@ export function PeopleSuggestionsScreen({
 }
 export function MutualFriendsScreen({
   navigation,
+  route
 }: StackProps<"MutualFriends">) {
-  const friends = useAppStore(state => state.friends);
-  const removeFriend = useAppStore(state => state.removeFriend);
+  const [mutualFriends, setMutualFriends] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (route.params?.userId) {
+      api.get<{data: any[]}>(`/friends/mutual/${route.params.userId}`)
+        .then(res => setMutualFriends(res.data.data.map((u: any) => ({ ...u, id: u._id || u.id }))))
+        .catch(console.error);
+    }
+  }, [route.params?.userId]);
+
   return (
     <PeopleListPage
       navigation={navigation as StackProps<"Friends">["navigation"]}
       title="Mutual Friends"
-      subtitle={`${friends.length} mutual friends`}
-      users={friends}
+      subtitle={`${mutualFriends.length} mutual friends`}
+      users={mutualFriends}
       action="View"
-      onRemove={removeFriend}
     />
   );
 }
@@ -793,6 +840,8 @@ export function CreateStoryScreen({ navigation }: StackProps<"CreateStory">) {
 }
 
 export function SavedScreen({ navigation }: StackProps<"Saved">) {
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
+
   const savedEventsState = useAppStore(state => state.savedEvents);
   const savedListingsState = useAppStore(state => state.savedListings);
 
@@ -805,10 +854,33 @@ export function SavedScreen({ navigation }: StackProps<"Saved">) {
   const savedEventsList = allEvents.filter(event => savedEventsState.includes(event.id));
   const savedItems = allListings.filter(item => savedListingsState.includes(item.id));
 
+  useEffect(() => {
+    api.get<{ data: Post[] }>("/posts/saved")
+       .then(res => setSavedPosts(res.data.data))
+       .catch(err => console.log("Failed to fetch saved posts", err));
+  }, []);
+
   return (
     <CXScreen>
       <CXHeader title="Saved" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.page}>
+        <CXSectionHeader title="Saved Posts" action={savedPosts.length > 0 ? "See all" : ""} />
+        {savedPosts.length === 0 ? (
+          <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved posts yet.</CXText>
+        ) : (
+          savedPosts.map((post) => (
+            <CXPostCard
+              key={post.id}
+              post={post}
+              onOpen={() => navigation.navigate("PostDetails", { postId: post.id })}
+              onSave={() => {
+                setSavedPosts(posts => posts.filter(p => p.id !== post.id));
+                api.post(`/posts/${post.id}/save`, { saved: false }).catch(console.log);
+              }}
+            />
+          ))
+        )}
+
         <CXSectionHeader title="Saved Events" action={savedEventsList.length > 0 ? "See all" : ""} />
         {savedEventsList.length === 0 ? (
           <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved events yet.</CXText>
@@ -922,19 +994,62 @@ export function MyPostsScreen({ navigation }: StackProps<"MyPosts">) { const cur
 }
 
 export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
+  const currentUser = useAppStore(state => state.user);
   const [body, setBody] = useState("");
+  const [mediaUris, setMediaUris] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (mediaUris.length < 5) {
+        setMediaUris(prev => [...prev, result.assets[0].uri]);
+      }
+    }
+  };
+
   const submit = async () => {
-    if (!body.trim()) {
-      setError("Write something before posting");
+    if (!body.trim() && mediaUris.length === 0) {
+      setError("Write something or add media before posting");
       return;
     }
     setLoading(true);
+    setError(null);
+    
+    let uploadedMedia: any[] = [];
+    
     try {
-      await api.post("/posts", { body: body.trim() });
+      if (mediaUris.length > 0) {
+        for (const uri of mediaUris) {
+          const formData = new FormData();
+          // @ts-ignore
+          formData.append("file", { uri, name: "upload.jpg", type: "image/jpeg" } as any);
+          const response = await api.post("/upload", formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+          });
+          if (response.data && response.data.data) {
+            uploadedMedia.push(response.data.data);
+          }
+        }
+      }
+
+      await api.post("/posts", { 
+        body: body.trim(),
+        media: uploadedMedia,
+      });
       navigation.goBack();
-    } catch (caught) {
+    } catch (caught: any) {
+      // Rollback orphaned uploads
+      for (const media of uploadedMedia) {
+        if (media.publicId) {
+          await api.delete(`/upload/${media.publicId}`).catch(console.warn);
+        }
+      }
       setError(getApiErrorMessage(caught));
     } finally {
       setLoading(false);
@@ -978,17 +1093,22 @@ export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
         <CXText variant="caption" color={colors.textMuted} align="right">
           {body.length}/2000
         </CXText>
-        <CXSectionHeader title="Add Photos / Videos" action="0/5" />
+        <CXSectionHeader title="Add Photos / Videos" action={`${mediaUris.length}/5`} />
         <CXRow style={styles.mediaRow}>
-          {["image-outline", "add", "add", "add", "add"].map((icon, index) => (
-            <Pressable key={index} style={styles.mediaTile}>
+          {mediaUris.map((uri, index) => (
+            <View key={index} style={[styles.mediaTile, { overflow: "hidden" }]}>
+              <Image source={{ uri }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+            </View>
+          ))}
+          {mediaUris.length < 5 && (
+            <Pressable style={styles.mediaTile} onPress={pickImage}>
               <Ionicons
-                name={icon as keyof typeof Ionicons.glyphMap}
+                name="add"
                 size={22}
                 color={colors.primary}
               />
             </Pressable>
-          ))}
+          )}
         </CXRow>
         {[
           ["Add Location", "location-outline"],
@@ -1015,12 +1135,22 @@ export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
   );
 }
 
-export function ReactionsScreen({ navigation }: StackProps<"Reactions">) {
+export function ReactionsScreen({ route, navigation }: StackProps<"Reactions">) {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    if (route.params?.postId) {
+      api.get<{ data: User[] }>(`/posts/${route.params?.postId}/reactions`)
+         .then(res => setUsers(res.data.data))
+         .catch(err => console.log("Failed to fetch reactions", err));
+    }
+  }, [route.params?.postId]);
+
   return (
     <CXScreen>
       <CXHeader
         title="Reactions"
-        subtitle="56 reactions"
+        subtitle={`${users.length} reactions`}
         onBack={navigation.goBack}
       />
       <ScrollView contentContainerStyle={styles.page}>
@@ -1030,7 +1160,7 @@ export function ReactionsScreen({ navigation }: StackProps<"Reactions">) {
           <CXChip label="Love" />
           <CXChip label="Fire" />
         </CXRow>
-        {friends.slice(1).map((user, index) => (
+        {users.map((user, index) => (
           <CXUserRow
             key={user.id}
             user={user}

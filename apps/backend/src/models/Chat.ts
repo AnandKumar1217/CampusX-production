@@ -55,6 +55,7 @@ const messageSchema = new Schema(
     ],
     deliveredTo: [{ user: { type: objectId, ref: "User" }, deliveredAt: Date }],
     readBy: [{ user: { type: objectId, ref: "User" }, readAt: Date }],
+    nonce: { type: String, select: true },
     editedAt: Date,
     deletedAt: Date,
   },
