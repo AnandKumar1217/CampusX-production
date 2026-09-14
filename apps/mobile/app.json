@@ -18,14 +18,14 @@
       "bundleIdentifier": "com.campusx.mobile",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "CampusX uses your location for campus maps, nearby friends, and local weather only when you allow it.",
-        "NSCameraUsageDescription": "CampusX uses the camera to scan CampusX QR codes and create posts and stories."
+        "NSCameraUsageDescription": "CampusX uses the camera to scan CampusX QR codes and create posts."
       }
     },
     "android": {
       "package": "com.campusx.mobile",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/branding/campusx-logo-new-transparent.png",
         "backgroundColor": "#FFFFFF"
       },
       "permissions": [
@@ -38,7 +38,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
@@ -65,7 +65,22 @@
           "color": "#8066FF"
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "microphonePermission": "Allow CampusX to use your microphone for audio calls."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "autolinkingModuleResolution": true

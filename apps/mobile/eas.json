@@ -8,15 +8,30 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://10.122.5.27:5000/api",
+        "EXPO_PUBLIC_SOCKET_URL": "http://10.122.5.27:5000",
+        "GOOGLE_MAPS_API_KEY": "AIzaSyC9utwGqNQN5eS8RwJOURfM3u_CL_3cABE"
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://10.13.211.27:5000/api",
+        "EXPO_PUBLIC_SOCKET_URL": "http://10.13.211.27:5000"
       }
     },
-    "production": {}
+    "production": {},
+    "production-apk": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    }
   },
   "submit": {
     "production": {}

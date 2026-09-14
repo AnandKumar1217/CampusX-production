@@ -5,19 +5,21 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx"
   },
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
-    "@google/genai": "^2.19.0",
+    "@gorhom/bottom-sheet": "^5.2.14",
     "@hookform/resolvers": "^5.2.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
+    "@react-native-ml-kit/text-recognition": "^2.0.0",
     "@react-navigation/bottom-tabs": "^7.4.7",
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.26",
@@ -26,6 +28,7 @@
     "dayjs": "^1.11.18",
     "expo": "~54.0.33",
     "expo-blur": "~15.0.7",
+    "expo-build-properties": "~1.0.10",
     "expo-camera": "~17.0.9",
     "expo-constants": "~18.0.14",
     "expo-dev-client": "~6.0.21",
@@ -46,6 +49,7 @@
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-get-random-values": "~1.11.0",
+    "react-native-keyboard-controller": "1.18.5",
     "react-native-maps": "1.20.1",
     "react-native-markdown-display": "^7.0.2",
     "react-native-qrcode-svg": "^6.3.15",
@@ -54,16 +58,27 @@
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.0",
+    "react-native-webrtc": "^124.0.6",
     "socket.io-client": "^4.8.1",
     "uuid": "^7.0.3",
     "zod": "^4.1.11",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "@types/react": "~19.1.10",
     "@types/uuid": "^10.0.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "babel-plugin-transform-import-meta": "^3.0.0",
     "eslint": "^9.36.0",
     "typescript": "~5.9.2"
+  },
+  "expo": {
+    "autolinking": {
+      "searchPaths": [
+        "../../node_modules",
+        "./node_modules"
+      ]
+    }
   }
 }
