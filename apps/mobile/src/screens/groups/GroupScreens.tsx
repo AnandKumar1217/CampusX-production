@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useMemo, useState } from "react";
+import * as ImagePicker from "expo-image-picker";
 import {
   Pressable,
   ScrollView,
@@ -11,6 +12,7 @@ import {
   Alert,
   Modal,
   TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 
 import { CXUserRow } from "@/components/cards";
@@ -28,12 +30,19 @@ import {
   CXSearchBar,
   CXSectionHeader,
   CXText,
+  CXActionSheet,
+  type CXAction,
 } from "@/components/ui";
 
 import { api } from "@/services/api";
 import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
+import { groupService, Group } from "@/services/groupService";
+import { useFocusEffect } from "@react-navigation/native";
+import { ActivityIndicator } from "react-native";
+import { getSocket } from "@/services/socket";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
@@ -70,23 +79,43 @@ function GroupIcon({
   );
 }
 
-export function StudyGroupsScreen({ navigation }: StackProps<"StudyGroups">) {
-  const groups = useAppStore((state) => state.studyGroups);
-  const toggleJoined = useAppStore((state) => state.toggleGroupMembership);
+export function StudyGroupsScreen({ navigation, route }: StackProps<"StudyGroups">) {
   const user = useAppStore((state) => state.user);
-  
+
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<"All Groups" | "My Groups" | "Joined">("All Groups");
-  
-  const filtered = groups.filter((group) => {
-    const matchesQuery = group.name.toLowerCase().includes(query.toLowerCase()) || group.subtitle.toLowerCase().includes(query.toLowerCase());
-    const matchesCategory = 
-      category === "All Groups" ? true :
-      category === "Joined" ? group.joined :
-      category === "My Groups" ? group.creatorId === (user?.id ?? "guest") : true;
-      
-    return matchesQuery && matchesCategory;
+  const deferredQuery = React.useDeferredValue(query);
+  const [category, setCategory] = useState<"All Groups" | "My Groups" | "Joined">(route.params?.initialCategory ?? "All Groups");
+
+  const publicGroups = useInfiniteQuery({
+    queryKey: ["groups", user?.id, "public", deferredQuery],
+    enabled: !!user?.id && category === "All Groups",
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const response = await groupService.listGroups(deferredQuery, pageParam);
+      return response.data as { items: Group[]; page: number; limit: number; total: number };
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.limit < lastPage.total ? lastPage.page + 1 : undefined,
   });
+  const membershipGroups = useQuery({
+    queryKey: ["myGroups", user?.id, category, deferredQuery],
+    enabled: !!user?.id && category !== "All Groups",
+    queryFn: async () => {
+      const response = await groupService.getMyGroups(deferredQuery, category === "Joined" ? "joined" : undefined);
+      return (response.data ?? []) as Group[];
+    },
+  });
+  const groups = category === "All Groups"
+    ? publicGroups.data?.pages.flatMap((page) => page.items) ?? []
+    : membershipGroups.data ?? [];
+  const loading = category === "All Groups" ? publicGroups.isLoading : membershipGroups.isLoading;
+  const isRefetching = category === "All Groups" ? publicGroups.isRefetching : membershipGroups.isRefetching;
+  const isError = category === "All Groups" ? publicGroups.isError : membershipGroups.isError;
+  const refetch = category === "All Groups" ? publicGroups.refetch : membershipGroups.refetch;
+
+  useFocusEffect(React.useCallback(() => {
+    if (user?.id) void refetch();
+  }, [user?.id, refetch]));
   return (
     <CXScreen>
       <CXHeader
@@ -104,107 +133,270 @@ export function StudyGroupsScreen({ navigation }: StackProps<"StudyGroups">) {
           </CXRow>
         }
       />
-      <ScrollView contentContainerStyle={styles.page}>
-        <CXSearchBar
-          placeholder="Search groups, topics..."
-          value={query}
-          onChangeText={setQuery}
-        />
-        <CXRow style={styles.filters}>
+      <ScrollView
+        contentContainerStyle={styles.page}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.primary} />
+        }
+      >
+        <View style={{ paddingHorizontal: spacing.screen }}>
+          <CXSearchBar
+            placeholder="Search groups, topics..."
+            value={query}
+            onChangeText={setQuery}
+          />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.screen, gap: spacing.sm }}>
           <CXChip label="All Groups" active={category === "All Groups"} onPress={() => setCategory("All Groups")} />
           <CXChip label="My Groups" active={category === "My Groups"} onPress={() => setCategory("My Groups")} />
           <CXChip label="Joined" active={category === "Joined"} onPress={() => setCategory("Joined")} />
-        </CXRow>
-        <CXSectionHeader title="Popular Groups" action="See all" />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.popular}
-        >
-          {groups.slice(0, 3).map((group) => (
-            <Pressable
-              key={group.id}
-              onPress={() =>
-                navigation.navigate("GroupDetails", { groupId: group.id })
-              }
-            >
-              <CXCard style={styles.popularCard}>
-                <GroupIcon icon={group.icon} color={group.color} />
-                <CXText variant="bodyStrong" numberOfLines={2} align="center">
-                  {group.name}
-                </CXText>
-                <CXText variant="caption" color={colors.textMuted}>
-                  {group.members} members
-                </CXText>
-                <CXButton
-                  label={group.joined ? "Open" : "Join"}
-                  size="sm"
-                  variant={group.joined ? "outline" : "primary"}
-                  onPress={() => {
-                    if (group.joined) {
-                      navigation.navigate("GroupDetails", { groupId: group.id });
-                    } else {
-                      toggleJoined(group.id);
-                    }
-                  }}
-                />
-              </CXCard>
-            </Pressable>
-          ))}
         </ScrollView>
-        <CXSectionHeader title="All Groups" />
-        {filtered.map((group) => (
-          <Pressable
-            key={group.id}
-            onPress={() =>
-              navigation.navigate("GroupDetails", { groupId: group.id })
-            }
-          >
-            <CXCard style={styles.groupRow}>
-              <GroupIcon icon={group.icon} color={group.color} size={48} />
-              <View style={styles.flex}>
-                <CXText variant="bodyStrong">{group.name}</CXText>
-                <CXText variant="caption" color={colors.textMuted}>
-                  {group.subtitle}
+
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : isError ? (
+          <CXButton label="Retry groups" onPress={() => void refetch()} />
+        ) : (
+          <>
+            <View style={{ paddingHorizontal: spacing.screen, gap: spacing.md }}>
+              <CXSectionHeader title={category} />
+              {groups
+                .filter((g: any, index: number, self: any[]) => self.findIndex((t: any) => (t._id || t.id) === (g._id || g.id)) === index)
+                .map((group: any) => (
+                  <Pressable
+                    key={group._id || group.id}
+                    onPress={() =>
+                      navigation.navigate("GroupDetails", { groupId: group._id || group.id })
+                    }
+                  >
+                    <CXCard style={styles.groupRow}>
+                      {group.avatarUrl ? (
+                        <CXAvatar source={group.avatarUrl} name={group.name} size={48} />
+                      ) : (
+                        <GroupIcon icon="people" color={colors.primary} size={48} />
+                      )}
+
+                      <View style={styles.flex}>
+                        <CXText variant="bodyStrong">{group.name}</CXText>
+                        <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                          {group.description || group.category || "No description"}
+                        </CXText>
+                        <CXText variant="caption" color={colors.primary}>
+                          {group.memberCount} members
+                        </CXText>
+                      </View>
+                      <CXButton
+                        label="Open"
+                        size="sm"
+                        variant="primary"
+                        fullWidth={false}
+                        onPress={() => {
+                          navigation.navigate("GroupDetails", { groupId: group._id || group.id });
+                        }}
+                      />
+                    </CXCard>
+                  </Pressable>
+                ))}
+              {groups.length === 0 && (
+                <CXText color={colors.textMuted} style={{ textAlign: "center", marginTop: spacing.xl }}>
+                  No groups found.
                 </CXText>
-                <CXText variant="caption" color={colors.primary}>
-                  {group.members} members · Active now
-                </CXText>
-              </View>
-              <CXButton
-                label={group.joined ? "Open" : "Join"}
-                size="sm"
-                variant={group.joined ? "outline" : "primary"}
-                fullWidth={false}
-                onPress={() => {
-                  if (group.joined) {
-                    navigation.navigate("GroupDetails", { groupId: group.id });
-                  } else {
-                    toggleJoined(group.id);
-                  }
-                }}
-              />
-            </CXCard>
-          </Pressable>
-        ))}
+              )}
+              {category === "All Groups" && publicGroups.hasNextPage ? (
+                <CXButton label="Load more groups" loading={publicGroups.isFetchingNextPage} onPress={() => void publicGroups.fetchNextPage()} />
+              ) : null}
+            </View>
+          </>
+        )}
       </ScrollView>
     </CXScreen>
   );
 }
 
+
 export function GroupDetailsScreen({
   navigation,
   route,
 }: StackProps<"GroupDetails">) {
-  const allGroups = useAppStore(state => state.studyGroups);
   const user = useAppStore((state) => state.user);
-  const group = allGroups.find((item) => item.id === route.params.groupId) ?? allGroups[0]!;
-  const toggleJoined = useAppStore(state => state.toggleGroupMembership);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [membership, setMembership] = useState<any>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
-  
-  const isAdmin = group.creatorId === (user?.id ?? "guest");
-  const hasAccess = group.joined || isAdmin;
+  const [removeMemberId, setRemoveMemberId] = useState<string | null>(null);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const refreshGroupDataRef = React.useRef<() => void>(() => { });
+  const refreshGroup = () => {
+    refreshGroupDataRef.current();
+    void queryClient.invalidateQueries({ queryKey: ["groups"] });
+    void queryClient.invalidateQueries({ queryKey: ["myGroups"] });
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      let sequence = 0;
+      const fetchGroupData = async () => {
+        const currentRequest = ++sequence;
+        const stillCurrent = () => isActive && currentRequest === sequence && useAppStore.getState().user?.id === user?.id;
+        try {
+          const response = await groupService.getGroup(route.params.groupId);
+          if (!stillCurrent()) return;
+          const nextGroup = response.data.group as Group;
+          const nextMembership = response.data.membership;
+          setGroup(nextGroup);
+          setMembership(nextMembership);
+          setLoadError(null);
+          setMembers([]);
+          setRequests([]);
+          if (nextMembership?.status === "active") {
+            const [membersResponse, requestsResponse] = await Promise.all([
+              groupService.getMembers(route.params.groupId),
+              nextMembership.role === "owner" || nextMembership.role === "admin"
+                ? groupService.getJoinRequests(route.params.groupId)
+                : Promise.resolve({ data: [] }),
+            ]);
+            if (!stillCurrent()) return;
+            setMembers(membersResponse.data ?? []);
+            setRequests(requestsResponse.data ?? []);
+          }
+        } catch (error) {
+          if (stillCurrent()) {
+            setGroup(null);
+            setLoadError("This group is unavailable. Please try again.");
+          }
+        } finally {
+          if (stillCurrent()) setLoading(false);
+        }
+      };
+      refreshGroupDataRef.current = () => { void fetchGroupData(); };
+      void fetchGroupData();
+      const socket = getSocket();
+      const onChanged = (payload: { groupId?: string }) => {
+        if (String(payload?.groupId) === route.params.groupId) void fetchGroupData();
+      };
+      const onDeleted = (payload: { groupId?: string }) => {
+        if (String(payload?.groupId) !== route.params.groupId) return;
+        sequence += 1;
+        setGroup(null);
+        setLoadError("This group is no longer available.");
+        setLoading(false);
+      };
+      socket?.on("group:updated", onChanged);
+      socket?.on("group:membership:changed", onChanged);
+      socket?.on("group:deleted", onDeleted);
+      return () => {
+        isActive = false;
+        sequence += 1;
+        socket?.off("group:updated", onChanged);
+        socket?.off("group:membership:changed", onChanged);
+        socket?.off("group:deleted", onDeleted);
+      };
+    }, [route.params.groupId, user?.id])
+  );
+  if (loading || !group) {
+    return (
+      <CXScreen>
+        <CXHeader title="" onBack={navigation.goBack} />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          {loading ? (
+            <ActivityIndicator color={colors.primary} size="large" />
+          ) : (
+            <>
+              <CXText color={colors.textMuted} align="center">{loadError ?? "Group unavailable."}</CXText>
+              <CXButton label="Retry" onPress={refreshGroup} />
+            </>
+          )}
+        </View>
+      </CXScreen>
+    );
+  }
+
+  const isOwner = membership?.role === "owner";
+  const isAdmin = isOwner || membership?.role === "admin";
+  const hasAccess = membership?.status === "active";
+
+  const handleJoin = async () => {
+    try {
+      const response = await groupService.joinGroup(group._id);
+      if (response.data?.status === "requested") Alert.alert("Request sent", "An admin will review your request.");
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to join");
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      await groupService.leaveGroup(group._id);
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to leave");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await groupService.deleteGroup(group._id);
+      void queryClient.invalidateQueries({ queryKey: ["groups"] });
+      void queryClient.invalidateQueries({ queryKey: ["myGroups"] });
+      navigation.replace("StudyGroups");
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to delete");
+    }
+  };
+
+  const handleAcceptInvite = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await groupService.acceptInvite(group._id, user.id);
+      if (response.data?.status === "requested") Alert.alert("Request sent", "An admin will review your request.");
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to accept invite");
+    }
+  };
+
+  const handleDeclineInvite = async () => {
+    if (!user?.id) return;
+    try {
+      await groupService.declineInvite(group._id, user.id);
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to decline invite");
+    }
+  };
+
+  const handleApproveRequest = async (userId: string) => {
+    try {
+      await groupService.approveJoinRequest(group._id, userId);
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to approve request");
+    }
+  };
+
+  const handleRejectRequest = async (userId: string) => {
+    try {
+      await groupService.rejectJoinRequest(group._id, userId);
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to reject request");
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    try {
+      await groupService.removeMember(group._id, userId);
+      refreshGroup();
+    } catch (error: any) {
+      Alert.alert("Error", error.response?.data?.message || "Failed to remove member");
+    }
+  };
   return (
     <CXScrollScreen contentContainerStyle={styles.page}>
       <CXHeader
@@ -221,72 +413,51 @@ export function GroupDetailsScreen({
           ) : null
         }
       />
-      <Modal visible={menuVisible} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.dropdownMenu}>
-              <Pressable
-                style={styles.dropdownItem}
-                onPress={() => {
-                  setMenuVisible(false);
-                }}
-              >
-                <Ionicons name="notifications-off-outline" size={20} color={colors.ink} />
-                <CXText variant="body">Mute Notifications</CXText>
-              </Pressable>
-              
-              {isAdmin ? (
-                <>
-                  <Pressable
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setMenuVisible(false);
-                      navigation.navigate("EditGroup", { groupId: group.id });
-                    }}
-                  >
-                    <Ionicons name="pencil-outline" size={20} color={colors.ink} />
-                    <CXText variant="body">Edit Group</CXText>
-                  </Pressable>
-                  <Pressable
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setMenuVisible(false);
-                      useAppStore.getState().deleteStudyGroup(group.id);
-                      navigation.navigate("StudyGroups");
-                    }}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={colors.error} />
-                    <CXText variant="body" color={colors.error}>Delete Group</CXText>
-                  </Pressable>
-                </>
-              ) : (
-                <Pressable
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setMenuVisible(false);
-                    toggleJoined(group.id);
-                  }}
-                >
-                  <Ionicons 
-                    name={group.joined ? "exit-outline" : "enter-outline"} 
-                    size={20} 
-                    color={group.joined ? colors.error : colors.ink} 
-                  />
-                  <CXText variant="body" color={group.joined ? colors.error : colors.ink}>
-                    {group.joined ? "Leave Group" : "Join Group"}
-                  </CXText>
-                </Pressable>
-              )}
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+      <CXActionSheet
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        actions={
+          isAdmin
+            ? [
+              {
+                label: "Edit Group",
+                icon: "pencil-outline",
+                onPress: () => navigation.navigate("EditGroup", { groupId: group._id }),
+              },
+              ...(isOwner ? [{
+                label: "Delete Group",
+                icon: "trash-outline",
+                destructive: true,
+                confirmationTitle: "Delete Group",
+                confirmationMessage: "Are you sure you want to delete this group?",
+                confirmationButtonText: "Delete",
+                onPress: handleDelete,
+              }] : []),
+            ]
+            : [
+              {
+                label: hasAccess ? "Leave Group" : (membership?.status === "requested" ? "Requested" : "Join Group"),
+                icon: hasAccess ? "exit-outline" : "enter-outline",
+                destructive: hasAccess,
+                confirmationTitle: hasAccess ? "Leave Group" : undefined,
+                confirmationMessage: hasAccess ? "Are you sure?" : undefined,
+                confirmationButtonText: hasAccess ? "Leave" : undefined,
+                disabled: !hasAccess && membership?.status === "requested",
+                onPress: hasAccess ? handleLeave : handleJoin,
+              },
+            ]
+        }
+      />
       <CXCard style={styles.groupHero}>
-        <GroupIcon icon={group.icon} color={group.color} size={76} />
+        {group.avatarUrl ? (
+          <CXAvatar source={group.avatarUrl} name={group.name} size={76} />
+        ) : (
+          <GroupIcon icon="people" color={colors.primary} size={76} />
+        )}
         <View style={styles.flex}>
           <CXText variant="h3">{group.name}</CXText>
           <CXText variant="caption" color={colors.primary}>
-            {group.members} members · 12 online
+            {group.memberCount} members
           </CXText>
         </View>
       </CXCard>
@@ -294,55 +465,125 @@ export function GroupDetailsScreen({
         <CXSectionHeader title="Overview" />
         <CXCard>
           <CXText variant="body" color={colors.ink}>
-            {group.description || group.subtitle}
+            {group.description || group.category || "No description provided."}
           </CXText>
         </CXCard>
       </View>
       {!hasAccess ? (
-        <CXButton 
-          label="Join Group" 
-          onPress={() => toggleJoined(group.id)} 
-        />
+        membership?.status === "invited" ? (
+          <CXRow style={{ gap: spacing.md }}>
+            <CXButton label="Accept Invite" onPress={handleAcceptInvite} style={{ flex: 1 }} />
+            <CXButton label="Decline" variant="outline" onPress={handleDeclineInvite} style={{ flex: 1 }} />
+          </CXRow>
+        ) : (
+          <CXButton
+            label={membership?.status === "requested" ? "Requested" : "Join Group"}
+            onPress={handleJoin}
+            disabled={membership?.status === "requested"}
+          />
+        )
       ) : (
         <>
-          <CXRow style={styles.groupActions}>
+          <CXRow style={{ gap: spacing.sm, marginTop: spacing.xs }}>
             <CXButton
-              label="Join Chat"
+              label="Chat"
               iconLeft="chatbubble-outline"
-              onPress={() =>
-                navigation.reset({
-                  index: 1,
-                  routes: [
-                    { name: "Main", params: { screen: "Chats" } },
-                    { 
-                      name: "Conversation", 
-                      params: { conversationId: group.id, name: group.name } 
-                    }
-                  ]
-                })
-              }
+              style={{ flex: 1 }}
+              onPress={() => navigation.navigate("GroupConversation", { groupId: group._id, name: group.name })}
             />
             <CXButton
               label="Invite"
               iconLeft="person-add-outline"
               variant="outline"
+              style={{ flex: 1 }}
               onPress={() =>
-                navigation.navigate("InviteToGroup", { groupId: group.id })
+                navigation.navigate("InviteToGroup", { groupId: group._id })
               }
             />
             <CXButton
               label="Share"
               iconLeft="share-social-outline"
               variant="outline"
+              style={{ flex: 1 }}
               onPress={() => {
                 Share.share({
-                  message: `Check out the ${group.name} study group on CampusX!`,
+                  message: `Check out the ${group.name} study group on CampusX! campusx://group/${group._id}`,
                 });
               }}
             />
           </CXRow>
+
+          {isAdmin && requests.length > 0 && (
+            <View style={{ marginTop: spacing.xl }}>
+              <CXSectionHeader title="Pending Requests" />
+              <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+                {requests.map((req, i) => (
+                  <React.Fragment key={req.user._id}>
+                    {i > 0 && <View style={styles.divider} />}
+                    <CXRow style={{ alignItems: "center" }}>
+                      <View style={{ flex: 1 }}>
+                        <CXUserRow
+                          user={req.user}
+                          action="Approve"
+                          onAction={() => handleApproveRequest(req.user._id)}
+                        />
+                      </View>
+                      <CXIconButton
+                        icon="close-outline"
+                        label="Reject"
+                        color={colors.danger}
+                        backgroundColor={colors.surfaceLavender}
+                        onPress={() => handleRejectRequest((req.user as any)._id || req.user.id)}
+                        style={{ marginLeft: spacing.xs }}
+                      />
+                    </CXRow>
+                  </React.Fragment>
+                ))}
+              </CXCard>
+            </View>
+          )}
+
+          <View style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
+            <CXSectionHeader 
+              title="Members" 
+              action="See all"
+              onAction={() => navigation.navigate("GroupMembers", { groupId: group._id })}
+            />
+            <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+              {members.slice(0, 5).map((m, i) => (
+                <React.Fragment key={m.user._id}>
+                  {i > 0 && <View style={styles.divider} />}
+                  <CXUserRow
+                    user={m.user}
+                    onRemove={membership?.role === "owner" && ((m.user as any)._id || m.user.id) !== user?.id ? () => {
+                      setRemoveMemberId((m.user as any)._id || m.user.id);
+                    } : undefined}
+                    action={m.role === "owner" ? "Owner" : m.role === "admin" ? "Admin" : m.role === "moderator" ? "Mod" : undefined}
+                    onAction={() => { }}
+                  />
+                </React.Fragment>
+              ))}
+            </CXCard>
+          </View>
         </>
       )}
+      <CXActionSheet
+        visible={!!removeMemberId}
+        onClose={() => setRemoveMemberId(null)}
+        actions={[
+          {
+            label: "Remove Member",
+            icon: "person-remove-outline",
+            destructive: true,
+            confirmationTitle: "Remove Member?",
+            confirmationButtonText: "Remove",
+            onPress: () => {
+              if (removeMemberId) handleRemoveMember(removeMemberId);
+              setRemoveMemberId(null);
+            }
+          }
+        ]}
+      />
     </CXScrollScreen>
   );
 }
@@ -352,19 +593,55 @@ export function GroupMembersScreen({
   route,
 }: StackProps<"GroupMembers">) {
   const [query, setQuery] = useState("");
-  const friends = useAppStore(state => state.friends);
+  const [members, setMembers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      const fetchMembers = async () => {
+        try {
+          const res = await groupService.getMembers(route.params.groupId);
+          if (isActive) {
+            setMembers(res.data ?? []);
+            setLoadError(false);
+          }
+        } catch (e) {
+          if (isActive) setLoadError(true);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+      void fetchMembers();
+      const socket = getSocket();
+      const onMembershipChanged = (payload: { groupId?: string }) => {
+        if (String(payload?.groupId) === route.params.groupId) void fetchMembers();
+      };
+      socket?.on("group:membership:changed", onMembershipChanged);
+      return () => {
+        isActive = false;
+        socket?.off("group:membership:changed", onMembershipChanged);
+      };
+    }, [route.params.groupId])
+  );
+
   const filtered = useMemo(
     () =>
-      friends.filter((user) =>
-        user.name.toLowerCase().includes(query.toLowerCase()),
+      members.filter((m) =>
+        m.user?.name?.toLowerCase().includes(query.toLowerCase()),
       ),
-    [query, friends],
+    [query, members],
   );
+
+  const admins = filtered.filter(m => m.role === "owner" || m.role === "admin");
+  const moderators = filtered.filter(m => m.role === "moderator");
+  const regularMembers = filtered.filter(m => m.role === "member");
   return (
     <CXScreen>
       <CXHeader
         title="Group Members"
-        subtitle="482 members"
+        subtitle={`${members.length} members`}
         onBack={navigation.goBack}
         right={
           <CXIconButton
@@ -385,41 +662,72 @@ export function GroupMembersScreen({
           value={query}
           onChangeText={setQuery}
         />
-        <CXRow style={styles.filters}>
-          <CXChip label="All" active />
-          <CXChip label="Admins" />
-          <CXChip label="Moderators" />
-          <CXChip label="Online" />
-        </CXRow>
-        <CXSectionHeader title="Admins" action="Manage" />
-        {filtered.slice(0, 2).map((user) => (
-          <CXUserRow
-            key={user.id}
-            user={user}
-            action=""
-            onPress={() =>
-              navigation.navigate("UserProfile", { userId: user.id })
-            }
-          />
-        ))}
-        <CXSectionHeader title="Moderators" />
-        {filtered.slice(2, 4).map((user) => (
-          <CXUserRow key={user.id} user={user} action="" />
-        ))}
-        <CXSectionHeader title="Online Members" />
-        {filtered.slice(4).map((user) => (
-          <CXUserRow
-            key={user.id}
-            user={{ ...user, online: true }}
-            action="Message"
-            onAction={() =>
-              navigation.navigate("Conversation", {
-                conversationId: `conversation-${user.id}`,
-                name: user.name,
-              })
-            }
-          />
-        ))}
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : loadError ? (
+          <CXButton label="Retry members" onPress={() => navigation.replace("GroupMembers", { groupId: route.params.groupId })} />
+        ) : (
+          <>
+            {admins.length > 0 && (
+              <>
+                <CXSectionHeader title="Admins" />
+                <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+                  {admins.map((m, idx) => (
+                    <React.Fragment key={m.user._id}>
+                      {idx > 0 && <View style={styles.divider} />}
+                      <CXUserRow
+                        user={m.user}
+                        action=""
+                        onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
+                      />
+                    </React.Fragment>
+                  ))}
+                </CXCard>
+              </>
+            )}
+
+            {moderators.length > 0 && (
+              <>
+                <CXSectionHeader title="Moderators" />
+                <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+                  {moderators.map((m, idx) => (
+                    <React.Fragment key={m.user._id}>
+                      {idx > 0 && <View style={styles.divider} />}
+                      <CXUserRow
+                        user={m.user}
+                        action=""
+                        onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
+                      />
+                    </React.Fragment>
+                  ))}
+                </CXCard>
+              </>
+            )}
+
+            {regularMembers.length > 0 && (
+              <>
+                <CXSectionHeader title="Members" />
+                <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+                  {regularMembers.map((m, idx) => (
+                    <React.Fragment key={m.user._id}>
+                      {idx > 0 && <View style={styles.divider} />}
+                      <CXUserRow
+                        user={m.user}
+                        action=""
+                        onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
+                      />
+                    </React.Fragment>
+                  ))}
+                </CXCard>
+              </>
+            )}
+            {filtered.length === 0 && (
+              <CXText color={colors.textMuted} style={{ textAlign: "center", marginTop: spacing.xl }}>
+                No members found.
+              </CXText>
+            )}
+          </>
+        )}
       </ScrollView>
       <CXButton
         label="Invite Friends"
@@ -439,272 +747,228 @@ export function GroupPollsScreen({
   navigation,
   route,
 }: StackProps<"GroupPolls">) {
-  const friends = useAppStore((state) => state.friends);
-  const initial = [
-    {
-      id: "poll1",
-      question: "Best time for the next SQL revision session?",
-      options: [
-        { label: "Fri · 4 PM", votes: 18 },
-        { label: "Sat · 10 AM", votes: 31 },
-        { label: "Sun · 3 PM", votes: 12 },
-      ],
-    },
-    {
-      id: "poll2",
-      question: "Which topic should we revise next?",
-      options: [
-        { label: "Normalization", votes: 21 },
-        { label: "Transactions", votes: 17 },
-        { label: "Indexing", votes: 10 },
-      ],
-    },
-  ];
-  const [selected, setSelected] = useState<Record<string, number>>({});
-  const vote = (pollId: string, option: number) => {
-    setSelected((value) => ({ ...value, [pollId]: option }));
-    void api
-      .post(`/groups/${route.params.groupId}/polls/${pollId}/vote`, { option })
-      .catch(() =>
-        setSelected((value) => {
-          const next = { ...value };
-          delete next[pollId];
-          return next;
-        }),
-      );
+  const [polls, setPolls] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPolls = async () => {
+    try {
+      const res = await groupService.getPolls(route.params.groupId);
+      setPolls(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchPolls();
+    }, [route.params.groupId])
+  );
+
+  const vote = async (pollId: string, option: number) => {
+    try {
+      await groupService.votePoll(route.params.groupId, pollId, option);
+      fetchPolls();
+    } catch (err: any) {
+      Alert.alert("Error", err.response?.data?.message || "Failed to vote");
+    }
+  };
+
   return (
     <CXScreen>
       <CXHeader
         title="Group Polls"
-        subtitle="DBMS Study Circle"
+        subtitle="Polls"
         onBack={navigation.goBack}
-        right={<CXIconButton icon="add" label="Create poll" />}
       />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXRow style={styles.filters}>
-          <CXChip label="All" active />
-          <CXChip label="Active" />
-          <CXChip label="Closed" />
-          <CXChip label="My Polls" />
-        </CXRow>
-        {initial.map((poll) => {
-          const total =
-            poll.options.reduce((sum, option) => sum + option.votes, 0) +
-            (selected[poll.id] !== undefined ? 1 : 0);
-          return (
-            <CXCard key={poll.id} style={styles.poll}>
-              <CXRow>
-                <CXAvatar
-                  source={friends[0]?.avatar || ""}
-                  name={friends[0]?.name || "Friend"}
-                  size={36}
-                />
-                <View style={styles.flex}>
-                  <CXText variant="smallStrong">{friends[0]?.name || "Friend"}</CXText>
-                  <CXText variant="caption" color={colors.textMuted}>
-                    2 hours ago
-                  </CXText>
-                </View>
-                <Ionicons
-                  name="ellipsis-horizontal"
-                  size={18}
-                  color={colors.textMuted}
-                />
-              </CXRow>
-              <CXText variant="title">{poll.question}</CXText>
-              {poll.options.map((option, index) => {
-                const count =
-                  option.votes + (selected[poll.id] === index ? 1 : 0);
-                const percent = Math.round((count / total) * 100);
-                return (
-                  <Pressable
-                    key={option.label}
-                    onPress={() => vote(poll.id, index)}
-                    style={[
-                      styles.pollOption,
-                      selected[poll.id] === index && styles.pollSelected,
-                    ]}
-                  >
-                    <CXRow>
-                      <CXText variant="smallStrong" style={styles.flex}>
-                        {option.label}
-                      </CXText>
-                      <CXText variant="caption" color={colors.primary}>
-                        {percent}%
-                      </CXText>
-                    </CXRow>
-                    <View style={styles.pollTrack}>
-                      <View
-                        style={[styles.pollFill, { width: `${percent}%` }]}
-                      />
-                    </View>
-                  </Pressable>
-                );
-              })}
-              <CXText variant="caption" color={colors.textMuted}>
-                {total} votes · Ends in 2 days
-              </CXText>
-            </CXCard>
-          );
-        })}
-        <CXButton
-          label="Create New Poll"
-          iconLeft="add"
-          onPress={() => undefined}
-        />
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : polls.length === 0 ? (
+          <CXText color={colors.textMuted} style={{ textAlign: "center", marginTop: spacing.xl }}>
+            No polls found.
+          </CXText>
+        ) : (
+          polls.map((poll) => {
+            const total = poll.options.reduce((sum: number, option: any) => sum + option.voters.length, 0);
+            return (
+              <CXCard key={poll._id} style={styles.poll}>
+                <CXRow>
+                  <CXAvatar
+                    source={poll.author?.avatarUrl || ""}
+                    name={poll.author?.name || "Member"}
+                    size={36}
+                  />
+                  <View style={styles.flex}>
+                    <CXText variant="smallStrong">{poll.author?.name || "Member"}</CXText>
+                  </View>
+                </CXRow>
+                <CXText variant="title">{poll.question}</CXText>
+                {poll.options.map((option: any, index: number) => {
+                  const count = option.voters.length;
+                  const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+                  return (
+                    <Pressable
+                      key={index}
+                      onPress={() => vote(poll._id, index)}
+                      style={[
+                        styles.pollOption,
+                      ]}
+                    >
+                      <CXRow>
+                        <CXText variant="smallStrong" style={styles.flex}>
+                          {option.label}
+                        </CXText>
+                        <CXText variant="caption" color={colors.primary}>
+                          {percent}%
+                        </CXText>
+                      </CXRow>
+                      <View style={styles.pollTrack}>
+                        <View style={[styles.pollFill, { width: `${percent}%` }]} />
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                <CXText variant="caption" color={colors.textMuted}>
+                  {total} votes
+                </CXText>
+              </CXCard>
+            );
+          })
+        )}
       </ScrollView>
     </CXScreen>
   );
 }
 
-export function GroupFilesScreen({ navigation }: StackProps<"GroupFiles">) {
-  const files = [
-    ["Normalization.pdf", "PDF · 2.4 MB", "document-text-outline"],
-    ["ER Model Notes.docx", "DOCX · 1.8 MB", "document-outline"],
-    ["DBMS Architecture.pdf", "PDF · 3.2 MB", "reader-outline"],
-  ] as const;
+export function GroupFilesScreen({ navigation, route }: StackProps<"GroupFiles">) {
+  const [files, setFiles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  useFocusEffect(
+    React.useCallback(() => {
+      groupService.getFiles(route.params.groupId)
+        .then(res => setFiles(res.data))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }, [route.params.groupId])
+  );
+
   return (
     <CXScreen>
       <CXHeader
         title="Files & Notes"
         subtitle="Shared study resources"
         onBack={navigation.goBack}
-        right={<CXIconButton icon="cloud-upload-outline" label="Upload file" />}
       />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXSearchBar placeholder="Search files, notes, folders..." />
-        <CXRow style={styles.filters}>
-          <CXChip label="Files" active />
-          <CXChip label="Notes" />
-          <CXChip label="Links" />
-          <CXChip label="Saved" />
-        </CXRow>
-        <CXSectionHeader title="Recently Added" action="See all" />
-        {files.map(([title, subtitle, icon]) => (
-          <CXCard key={title} style={styles.fileRow}>
-            <View style={styles.fileIcon}>
-              <Ionicons name={icon} size={22} color={colors.primary} />
-            </View>
-            <View style={styles.flex}>
-              <CXText variant="smallStrong">{title}</CXText>
-              <CXText variant="caption" color={colors.textMuted}>
-                {subtitle} · Rohit Sharma
-              </CXText>
-            </View>
-            <CXIconButton
-              icon="ellipsis-vertical"
-              label="File options"
-              size={34}
-              backgroundColor={colors.transparent}
-            />
-          </CXCard>
-        ))}
-        <CXSectionHeader title="Folders" action="See all" />
-        <CXRow style={styles.folders}>
-          {["Unit 1", "Unit 2", "Unit 3", "Previous Papers"].map((folder) => (
-            <CXCard key={folder} style={styles.folder}>
-              <Ionicons name="folder" size={28} color={colors.primary} />
-              <CXText variant="smallStrong">{folder}</CXText>
-              <CXText variant="caption" color={colors.textMuted}>
-                12 files
-              </CXText>
-            </CXCard>
-          ))}
-        </CXRow>
-        <CXSectionHeader title="Top Notes" />
-        {files.slice(0, 2).map(([title]) => (
-          <CXCard key={title} style={styles.note}>
-            <CXText variant="bodyStrong">{title.replace(".pdf", "")}</CXText>
-            <CXText variant="small" color={colors.textMuted}>
-              Compact revision notes with examples, diagrams, and important
-              questions.
+        <CXSearchBar placeholder="Search files..." value={query} onChangeText={setQuery} />
+
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : files.length === 0 ? (
+          <CXCard style={{ marginTop: spacing.md }}>
+            <CXText variant="bodyStrong">No files yet</CXText>
+            <CXText variant="caption" color={colors.textMuted}>
+              There are no shared files in this group.
             </CXText>
-            <CXRow>
-              <CXChip label="DBMS" active />
-              <CXChip label="Unit 3" />
-            </CXRow>
           </CXCard>
-        ))}
+        ) : (
+          <>
+            <CXSectionHeader title="Shared Files" />
+            {files.filter((file) => (file.title || file.name || "").toLowerCase().includes(query.trim().toLowerCase())).map((file) => (
+              <CXCard key={file._id} style={styles.fileRow}>
+                <View style={styles.fileIcon}>
+                  <Ionicons name="document-text-outline" size={22} color={colors.primary} />
+                </View>
+                <View style={styles.flex}>
+                  <CXText variant="smallStrong">{file.title || file.name || "Document"}</CXText>
+                  <CXText variant="caption" color={colors.textMuted}>
+                    PDF · {file.uploadedBy?.name || "Member"}
+                  </CXText>
+                </View>
+              </CXCard>
+            ))}
+          </>
+        )}
       </ScrollView>
     </CXScreen>
   );
 }
 
-function SessionCard() {
+function SessionCard({ session }: { session: any }) {
+  const date = new Date(session.startsAt);
+  const dateString = date.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
     <CXCard style={styles.session}>
       <View style={styles.sessionIcon}>
         <Ionicons name="code-slash-outline" size={24} color={colors.primary} />
       </View>
       <View style={styles.flex}>
-        <CXText variant="bodyStrong">Dynamic Programming Deep Dive</CXText>
+        <CXText variant="bodyStrong">{session.title}</CXText>
         <CXText variant="caption" color={colors.textMuted}>
-          Thu, 22 May 2025 · 5:00–6:30 PM
+          {dateString} · {timeString}
         </CXText>
         <CXRow style={styles.sessionMeta}>
-          <CXChip label="Google Meet" icon="videocam-outline" />
-          <CXText variant="caption" color={colors.textMuted}>
-            28 going
-          </CXText>
+          {session.meetingUrl ? (
+            <CXChip label="Online" icon="videocam-outline" />
+          ) : (
+            <CXChip label={session.location || "TBD"} icon="location-outline" />
+          )}
         </CXRow>
       </View>
-      <CXButton label="Join" size="sm" fullWidth={false} />
     </CXCard>
   );
 }
 export function StudySessionsScreen({
   navigation,
+  route,
 }: StackProps<"StudySessions">) {
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const groupId = route.params?.groupId;
+      if (!groupId) return;
+      groupService.getSessions(groupId)
+        .then(res => setSessions(res.data))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }, [route.params?.groupId])
+  );
+
   return (
     <CXScreen>
       <CXHeader
         title="Study Sessions"
-        subtitle="Join and plan group study"
+        subtitle="Upcoming group study"
         onBack={navigation.goBack}
-        right={<CXIconButton icon="calendar-outline" label="Calendar" />}
       />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXRow style={styles.filters}>
-          <CXChip label="Upcoming" active />
-          <CXChip label="Ongoing" />
-          <CXChip label="Completed" />
-        </CXRow>
-        <CXSectionHeader title="Featured Session" action="See all" />
-        <SessionCard />
-        <CXSectionHeader title="Upcoming Sessions" />
-        {[
-          "SQL Quick Quiz",
-          "AI Problem Solving Practice",
-          "OS Revision Sprint",
-        ].map((title) => (
-          <CXCard key={title} style={styles.session}>
-            <View style={styles.sessionIcon}>
-              <Ionicons
-                name="school-outline"
-                size={23}
-                color={colors.primary}
-              />
-            </View>
-            <View style={styles.flex}>
-              <CXText variant="bodyStrong">{title}</CXText>
-              <CXText variant="caption" color={colors.textMuted}>
-                25 May · 4:00 PM · Online
-              </CXText>
-            </View>
-            <CXButton
-              label="Remind Me"
-              size="sm"
-              variant="outline"
-              fullWidth={false}
-            />
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : sessions.length === 0 ? (
+          <CXCard style={{ marginTop: spacing.md }}>
+            <CXText variant="bodyStrong">No sessions scheduled</CXText>
+            <CXText variant="caption" color={colors.textMuted}>
+              There are no upcoming sessions in this group.
+            </CXText>
           </CXCard>
-        ))}
-        <CXButton
-          label="Create Session"
-          iconLeft="add"
-          onPress={() => undefined}
-        />
+        ) : (
+          <>
+            <CXSectionHeader title="Upcoming Sessions" />
+            {sessions.map(session => (
+              <SessionCard key={session._id} session={session} />
+            ))}
+          </>
+        )}
+
       </ScrollView>
     </CXScreen>
   );
@@ -714,36 +978,61 @@ export function InviteToGroupScreen({
   navigation,
   route,
 }: StackProps<"InviteToGroup">) {
-  const allGroups = useAppStore(state => state.studyGroups);
-  const group = allGroups.find(g => g.id === route.params.groupId);
+  const [group, setGroup] = useState<Group | null>(null);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let isActive = true;
+      groupService.getGroup(route.params.groupId)
+        .then(res => { if (isActive) setGroup(res.data.group); })
+        .catch(console.error);
+
+      Promise.all([
+        api.get("/friends"),
+        groupService.getMembers(route.params.groupId)
+      ])
+        .then(([friendsRes, membersRes]) => {
+          if (isActive) {
+            const memberIds = new Set(membersRes.data.map((m: any) => m.user._id || m.user));
+            const availableFriends = friendsRes.data.data.filter((f: any) => !memberIds.has(f._id));
+            setFriends(availableFriends);
+          }
+        })
+        .catch(console.error)
+        .finally(() => { if (isActive) setLoadingFriends(false); });
+
+      return () => { isActive = false; };
+    }, [route.params.groupId])
+  );
 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All Friends");
 
   const toggle = (id: string) =>
     setSelected((items) =>
       items.includes(id) ? items.filter((item) => item !== id) : [...items, id],
     );
-    
-  const send = () => {
-    // Simulate sending invites
-    Alert.alert("Success", "Invites sent successfully!", [
-      { text: "OK", onPress: () => navigation.goBack() }
-    ]);
+
+  const send = async () => {
+    try {
+      await groupService.inviteUsers(route.params.groupId, selected);
+      Alert.alert("Success", "Invites sent successfully!", [
+        { text: "OK", onPress: () => navigation.goBack() }
+      ]);
+    } catch (err: any) {
+      Alert.alert("Error", err.response?.data?.message || "Failed to send invites");
+    }
   };
 
   let displayPeople = friends;
-  
+
   if (query.trim()) {
-    displayPeople = displayPeople.filter(p => 
-      p.name.toLowerCase().includes(query.toLowerCase()) || 
-      p.department.toLowerCase().includes(query.toLowerCase())
+    displayPeople = displayPeople.filter(p =>
+      p.name?.toLowerCase().includes(query.toLowerCase()) ||
+      p.department?.toLowerCase().includes(query.toLowerCase())
     );
-  } else {
-    if (activeFilter === "Recent") {
-      displayPeople = displayPeople.slice(0, 3);
-    }
   }
   return (
     <CXScreen>
@@ -753,62 +1042,77 @@ export function InviteToGroupScreen({
         onBack={navigation.goBack}
       />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXSearchBar 
-          placeholder="Search friends by name, department..." 
+        <CXSearchBar
+          placeholder="Search friends by name, department..."
           value={query}
           onChangeText={setQuery}
         />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.selected}
-        >
-          {selected.map((id) => {
-            const user = friends.find((item) => item.id === id)!;
-            return (
-              <Pressable
-                key={id}
-                onPress={() => toggle(id)}
-                style={styles.selectedPerson}
-              >
-                <CXAvatar source={user.avatar} name={user.name} size={42} />
-                <View style={styles.remove}>
-                  <Ionicons name="close" size={11} color={colors.white} />
-                </View>
-                <CXText variant="caption" numberOfLines={1}>
-                  {user.name.split(" ")[0]}
-                </CXText>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        <CXRow style={styles.filters}>
-          <CXChip label="All Friends" active={activeFilter === "All Friends"} onPress={() => setActiveFilter("All Friends")} />
-          <CXChip label="Recent" active={activeFilter === "Recent"} onPress={() => setActiveFilter("Recent")} />
-        </CXRow>
-        {displayPeople.map((user) => (
-          <Pressable key={user.id} onPress={() => toggle(user.id)}>
-            <CXRow style={styles.inviteRow}>
-              <CXAvatar source={user.avatar} name={user.name} />
-              <View style={styles.flex}>
-                <CXText variant="bodyStrong">{user.name}</CXText>
-                <CXText variant="caption" color={colors.textMuted}>
-                  {user.department} · {user.year}
-                </CXText>
-              </View>
-              <View
-                style={[
-                  styles.checkbox,
-                  selected.includes(user.id) && styles.checkboxActive,
-                ]}
-              >
-                {selected.includes(user.id) ? (
-                  <Ionicons name="checkmark" size={15} color={colors.white} />
-                ) : null}
-              </View>
-            </CXRow>
-          </Pressable>
-        ))}
+
+        {loadingFriends ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.selected}
+            >
+              {selected.map((id) => {
+                const user = friends.find((item) => item._id === id);
+                if (!user) return null;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => toggle(id)}
+                    style={styles.selectedPerson}
+                  >
+                    <CXAvatar source={user.avatarUrl} name={user.name} size={42} />
+                    <View style={styles.remove}>
+                      <Ionicons name="close" size={11} color={colors.white} />
+                    </View>
+                    <CXText variant="caption" numberOfLines={1}>
+                      {user.name.split(" ")[0]}
+                    </CXText>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            {displayPeople.length > 0 ? (
+              <CXCard style={{ padding: spacing.sm, gap: spacing.sm }}>
+                {displayPeople.map((user, idx) => (
+                  <React.Fragment key={user._id}>
+                    {idx > 0 && <View style={styles.divider} />}
+                    <Pressable onPress={() => toggle(user._id)}>
+                      <CXRow style={styles.inviteRow}>
+                        <CXAvatar source={user.avatarUrl} name={user.name} />
+                        <View style={styles.flex}>
+                          <CXText variant="bodyStrong">{user.name}</CXText>
+                          <CXText variant="caption" color={colors.textMuted}>
+                            {user.department || "No Department"} · {user.academicYear || "N/A"}
+                          </CXText>
+                        </View>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            selected.includes(user._id) && styles.checkboxActive,
+                          ]}
+                        >
+                          {selected.includes(user._id) ? (
+                            <Ionicons name="checkmark" size={15} color={colors.white} />
+                          ) : null}
+                        </View>
+                      </CXRow>
+                    </Pressable>
+                  </React.Fragment>
+                ))}
+              </CXCard>
+            ) : (
+              <CXText color={colors.textMuted} style={{ textAlign: "center", marginTop: spacing.xl }}>
+                No friends found.
+              </CXText>
+            )}
+          </>
+        )}
       </ScrollView>
       <View style={styles.inviteFooter}>
         <CXText variant="small" color={colors.textMuted}>
@@ -827,16 +1131,39 @@ export function InviteToGroupScreen({
 }
 
 export function GroupPostsScreen({ navigation, route }: StackProps<"GroupPosts">) {
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      groupService.getPosts(route.params.groupId)
+        .then(res => setPosts(res.data))
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    }, [route.params.groupId])
+  );
+
   return (
     <CXScreen>
       <CXHeader title="Group Posts" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXCard>
-          <CXText variant="bodyStrong">No posts yet</CXText>
-          <CXText variant="caption" color={colors.textMuted}>
-            Be the first to start a discussion in this group!
-          </CXText>
-        </CXCard>
+        {loading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : posts.length === 0 ? (
+          <CXCard>
+            <CXText variant="bodyStrong">No posts yet</CXText>
+            <CXText variant="caption" color={colors.textMuted}>
+              Be the first to start a discussion in this group!
+            </CXText>
+          </CXCard>
+        ) : (
+          posts.map(post => (
+            <CXCard key={post._id} style={{ marginBottom: spacing.sm }}>
+              <CXText variant="bodyStrong">{post.title || "Post"}</CXText>
+              <CXText variant="caption" color={colors.textMuted}>{post.content}</CXText>
+            </CXCard>
+          ))
+        )}
       </ScrollView>
     </CXScreen>
   );
@@ -846,98 +1173,301 @@ export function CreateGroupScreen({ navigation }: StackProps<"CreateGroup">) {
   const [name, setName] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
-  const addStudyGroup = useAppStore(state => state.addStudyGroup);
-  const user = useAppStore(state => state.user);
+  const [privacy, setPrivacy] = useState<"public" | "private">("public");
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleCreate = () => {
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  const handleCreate = async () => {
     if (!name.trim()) return;
+    setLoading(true);
+    try {
+      let finalAvatarUrl: string | undefined;
+      let finalAvatarPublicId: string | undefined;
 
-    const newGroup = {
-      id: "group-" + Date.now(),
-      name: name.trim(),
-      subtitle: subtitle.trim() || "A new study group",
-      description: description.trim(),
-      members: 1,
-      icon: "school-outline",
-      color: "#F59E0B", // Default color
-      joined: true,
-      creatorId: user?.id ?? "guest",
-    };
+      if (avatarUri) {
+        const formData = new FormData();
+        const filename = avatarUri.split('/').pop() || 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image";
 
-    addStudyGroup(newGroup);
-    navigation.goBack();
+        formData.append('file', {
+          uri: avatarUri,
+          name: filename,
+          type,
+        } as any);
+
+        const uploadRes = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        finalAvatarUrl = uploadRes.data.data.url;
+        finalAvatarPublicId = uploadRes.data.data.publicId;
+      }
+
+      const res = await groupService.createGroup({
+        name: name.trim(),
+        category: subtitle.trim(),
+        description: description.trim(),
+        privacy: privacy,
+        avatarUrl: finalAvatarUrl,
+        avatarPublicId: finalAvatarPublicId
+      });
+      navigation.navigate("GroupDetails", { groupId: res.data._id });
+    } catch (err: any) {
+      Alert.alert("Error", err.response?.data?.message || "Failed to create group");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <CXScreen>
+    <CXScreen style={{ backgroundColor: "#FAFAFA" }}>
       <CXHeader
         title="Create Group"
         subtitle="Start a new study circle"
         onBack={navigation.goBack}
       />
-      <ScrollView contentContainerStyle={styles.page}>
-        <CXCard>
-          <CXText variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
-            Group Name
+      <ScrollView contentContainerStyle={[styles.page, { paddingBottom: 100 }]}>
+
+        {/* Avatar Section */}
+        <View style={{ alignItems: "center", marginBottom: spacing.xl, marginTop: spacing.lg }}>
+          <Pressable onPress={pickImage} style={{ position: "relative" }}>
+            <CXAvatar size={100} source={avatarUri || undefined} name={name || "Group"} />
+            <View style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              backgroundColor: colors.primary,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 3,
+              borderColor: "#FAFAFA"
+            }}>
+              <Ionicons name="camera" size={16} color="white" />
+            </View>
+          </Pressable>
+          <CXText variant="caption" style={{ marginTop: spacing.sm, color: colors.textMuted }}>
+            Tap to upload group picture
+          </CXText>
+        </View>
+
+        {/* Form Section */}
+        <CXCard style={{ backgroundColor: "white", padding: spacing.lg, borderRadius: radius.lg, elevation: 1, shadowOpacity: 0.05, shadowRadius: 10 }}>
+
+          <CXText variant="caption" style={{ fontWeight: "700", color: colors.primary, marginBottom: spacing.xs, textTransform: "uppercase", letterSpacing: 1 }}>
+            Group Name *
           </CXText>
           <TextInput
-            style={[styles.input, { marginBottom: spacing.md }]}
-            placeholder="e.g. DBMS Study Circle"
+            style={[styles.input, { backgroundColor: "#F5F5F7", borderWidth: 0, fontSize: 16, paddingVertical: 14, marginBottom: spacing.lg }]}
+            placeholder="e.g. Algorithms & Data Structures"
+            placeholderTextColor={colors.textMuted}
             value={name}
             onChangeText={setName}
-            autoFocus
           />
 
-          <CXText variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
-            Subtitle / Topic
+          <CXText variant="caption" style={{ fontWeight: "700", color: colors.primary, marginBottom: spacing.xs, textTransform: "uppercase", letterSpacing: 1 }}>
+            Category
           </CXText>
           <TextInput
-            style={[styles.input, { marginBottom: spacing.md }]}
-            placeholder="e.g. Notes, queries, and discussions"
+            style={[styles.input, { backgroundColor: "#F5F5F7", borderWidth: 0, fontSize: 16, paddingVertical: 14, marginBottom: spacing.lg }]}
+            placeholder="e.g. Computer Science"
+            placeholderTextColor={colors.textMuted}
             value={subtitle}
             onChangeText={setSubtitle}
           />
 
-          <CXText variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
+          <CXText variant="caption" style={{ fontWeight: "700", color: colors.primary, marginBottom: spacing.xs, textTransform: "uppercase", letterSpacing: 1 }}>
             Description
           </CXText>
           <TextInput
-            style={[styles.input, { marginBottom: spacing.md, minHeight: 80, textAlignVertical: 'top' }]}
-            placeholder="Detailed description of the group"
+            style={[styles.input, { backgroundColor: "#F5F5F7", borderWidth: 0, fontSize: 16, paddingVertical: 14, minHeight: 100, textAlignVertical: 'top', marginBottom: spacing.lg }]}
+            placeholder="What is this group about?"
+            placeholderTextColor={colors.textMuted}
             value={description}
             onChangeText={setDescription}
             multiline
-            numberOfLines={4}
           />
 
-          <CXButton
-            label="Create Group"
-            onPress={handleCreate}
-            disabled={!name.trim()}
-          />
         </CXCard>
+
+        {/* Privacy Section */}
+        <View style={{ marginTop: spacing.xl, marginBottom: spacing.sm, paddingHorizontal: spacing.sm }}>
+          <CXText variant="bodyStrong" style={{ fontSize: 18, marginBottom: spacing.md }}>
+            Privacy Setting
+          </CXText>
+
+          <Pressable
+            onPress={() => setPrivacy("public")}
+            style={{
+              flexDirection: "row",
+              padding: spacing.lg,
+              backgroundColor: "white",
+              borderRadius: radius.md,
+              borderWidth: 2,
+              borderColor: privacy === "public" ? colors.primary : "transparent",
+              marginBottom: spacing.md,
+              alignItems: "center"
+            }}
+          >
+            <View style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: privacy === "public" ? `${colors.primary}15` : "#F5F5F7",
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: spacing.md
+            }}>
+              <Ionicons name="earth" size={24} color={privacy === "public" ? colors.primary : colors.textMuted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CXText variant="bodyStrong" style={{ fontSize: 16, color: privacy === "public" ? colors.ink : colors.textMuted }}>Public Group</CXText>
+              <CXText variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>Anyone on CampusX can find and join.</CXText>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setPrivacy("private")}
+            style={{
+              flexDirection: "row",
+              padding: spacing.lg,
+              backgroundColor: "white",
+              borderRadius: radius.md,
+              borderWidth: 2,
+              borderColor: privacy === "private" ? colors.primary : "transparent",
+              alignItems: "center"
+            }}
+          >
+            <View style={{
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              backgroundColor: privacy === "private" ? `${colors.primary}15` : "#F5F5F7",
+              justifyContent: "center",
+              alignItems: "center",
+              marginRight: spacing.md
+            }}>
+              <Ionicons name="lock-closed" size={24} color={privacy === "private" ? colors.primary : colors.textMuted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CXText variant="bodyStrong" style={{ fontSize: 16, color: privacy === "private" ? colors.ink : colors.textMuted }}>Private Group</CXText>
+              <CXText variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>Members must be invited or approved to join.</CXText>
+            </View>
+          </Pressable>
+
+        </View>
+
       </ScrollView>
+
+      <View style={{ padding: spacing.lg, backgroundColor: "white", borderTopWidth: 1, borderTopColor: colors.border }}>
+        <CXButton
+          label="Create Group"
+          onPress={handleCreate}
+          disabled={!name.trim() || loading}
+        />
+      </View>
     </CXScreen>
   );
 }
 
 export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) {
-  const allGroups = useAppStore(state => state.studyGroups);
-  const group = allGroups.find((item) => item.id === route.params.groupId);
-  const updateStudyGroup = useAppStore(state => state.updateStudyGroup);
+  const queryClient = useQueryClient();
+  const [group, setGroup] = useState<Group | null>(null);
 
-  const [name, setName] = useState(group?.name ?? "");
-  const [subtitle, setSubtitle] = useState(group?.subtitle ?? "");
-  const [description, setDescription] = useState(group?.description ?? "");
+  const [name, setName] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleUpdate = () => {
-    if (!name.trim() || !group) return;
-    updateStudyGroup(group.id, {
-      name: name.trim(),
-      subtitle: subtitle.trim(),
-      description: description.trim(),
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
     });
-    navigation.goBack();
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      setAvatarUri(result.assets[0].uri);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      groupService.getGroup(route.params.groupId)
+        .then(res => {
+          setGroup(res.data.group);
+          setName(res.data.group.name);
+          setSubtitle(res.data.group.category || "");
+          setDescription(res.data.group.description || "");
+          if (res.data.group.avatarUrl) setAvatarUri(res.data.group.avatarUrl);
+        })
+        .catch(console.error);
+    }, [route.params.groupId])
+  );
+
+  const handleUpdate = async () => {
+    if (!name.trim() || !group) return;
+    setLoading(true);
+    try {
+      let finalAvatarUrl = group.avatarUrl;
+      let finalAvatarPublicId = group.avatarPublicId;
+
+      if (avatarUri && avatarUri !== group.avatarUrl) {
+        const formData = new FormData();
+        const filename = avatarUri.split('/').pop() || 'avatar.jpg';
+        const match = /\\.(\\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image";
+
+        formData.append('file', {
+          uri: avatarUri,
+          name: filename,
+          type,
+        } as any);
+
+        const uploadRes = await api.post('/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        finalAvatarUrl = uploadRes.data.data.url;
+        finalAvatarPublicId = uploadRes.data.data.publicId;
+      }
+
+      await groupService.updateGroup(group._id || group.id, {
+        name: name.trim(),
+        category: subtitle.trim(),
+        description: description.trim(),
+        avatarUrl: finalAvatarUrl || null,
+        avatarPublicId: finalAvatarPublicId || null
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["groups"] });
+      queryClient.invalidateQueries({ queryKey: ["myGroups"] });
+      queryClient.invalidateQueries({ queryKey: ["group", group._id || group.id] });
+
+      navigation.goBack();
+    } catch (err: any) {
+      Alert.alert("Error", err.response?.data?.message || "Failed to update group");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!group) return null;
@@ -950,6 +1480,28 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
         onBack={navigation.goBack}
       />
       <ScrollView contentContainerStyle={styles.page}>
+        {/* Avatar Section */}
+        <View style={{ alignItems: "center", marginBottom: spacing.xl, marginTop: spacing.md }}>
+          <Pressable onPress={pickImage} style={{ position: "relative" }}>
+            <CXAvatar size={100} source={avatarUri || undefined} name={name || "Group"} />
+            <View style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              backgroundColor: colors.primary,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 3,
+              borderColor: "#FAFAFA"
+            }}>
+              <Ionicons name="camera" size={16} color="white" />
+            </View>
+          </Pressable>
+        </View>
+
         <CXCard>
           <CXText variant="bodyStrong" style={{ marginBottom: spacing.sm }}>
             Group Name
@@ -998,10 +1550,12 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   page: {
-    paddingHorizontal: spacing.screen,
+    paddingTop: spacing.md,
     paddingBottom: 100,
+    paddingHorizontal: spacing.screen,
     gap: spacing.md,
   },
+  divider: { height: 1, backgroundColor: colors.borderSoft },
   input: {
     padding: spacing.md,
     borderRadius: radius.md,

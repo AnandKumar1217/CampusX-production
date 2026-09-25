@@ -2,64 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 
-import { CXCard, CXIconButton, CXRow, CXScreen, CXText } from "@/components/ui";
+import { CXIconButton, CXRow, CXScreen, CXText } from "@/components/ui";
 import { useRootNavigation } from "@/hooks/useRootNavigation";
-import { colors, gradients, radius, spacing } from "@/theme";
+import { colors, radius, spacing } from "@/theme";
 
 const actions = [
-  [
-    "Create Post",
-    "Share updates, ideas, and moments",
-    "create-outline",
-    "CreatePost",
-    "#6D4AF6",
-  ],
-  [
-    "Create Story",
-    "Share moments that disappear in 24h",
-    "camera-outline",
-    "CreateStory",
-    "#EC4899",
-  ],
-  [
-    "Create Group",
-    "Build a community around your goals",
-    "people-outline",
-    "CreateGroup",
-    "#3B82F6",
-  ],
-  [
-    "Create Event",
-    "Plan and invite people to an event",
-    "calendar-outline",
-    "EditEvent",
-    "#F59E0B",
-  ],
-  [
-    "Create Trip",
-    "Plan a trip together with friends",
-    "map-outline",
-    "CreateTrip",
-    "#22C55E",
-  ],
-  [
-    "Sell Item",
-    "List books, gadgets, or furniture",
-    "storefront-outline",
-    "CreateListing",
-    "#F97316",
-  ],
-  [
-    "Ask CampusAI",
-    "Get instant help for your studies",
-    "sparkles-outline",
-    "AIChat",
-    "#111827",
-  ],
+  ["Group", "Build a community", "people", "CreateGroup", "#3B82F6", "#EFF6FF"],
+  ["Event", "Plan a gathering", "calendar", "EditEvent", "#F59E0B", "#FFFBEB"],
+  ["Trip", "Travel together", "map", "CreateTrip", "#10B981", "#ECFDF5"],
+  ["Sell Item", "List your stuff", "storefront", "CreateListing", "#8B5CF6", "#F5F3FF"],
 ] as const;
 
 export function CreateHubScreen() {
   const navigation = useRootNavigation();
+
   return (
     <CXScreen>
       <ScrollView
@@ -69,8 +25,8 @@ export function CreateHubScreen() {
         <CXRow style={styles.header}>
           <View style={styles.flex}>
             <CXText variant="h2">Create</CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              Start something on CampusX
+            <CXText variant="body" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
+              Bring your campus ideas to life.
             </CXText>
           </View>
           <CXIconButton
@@ -80,53 +36,46 @@ export function CreateHubScreen() {
             onPress={() => navigation.navigate("Notifications")}
           />
         </CXRow>
-        <LinearGradient colors={["#F6F1FF", "#FFFFFF"]} style={styles.hero}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="add" size={32} color={colors.white} />
-          </View>
-          <View style={styles.flex}>
-            <CXText variant="h3">What do you want to create?</CXText>
-            <CXText color={colors.textMuted}>
-              Choose an option below and bring your campus idea to life.
-            </CXText>
-          </View>
-        </LinearGradient>
-        <View style={styles.list}>
-          {actions.map(([title, subtitle, icon, route, color]) => (
+
+        <View style={styles.grid}>
+          {actions.map(([title, subtitle, icon, route, color, bg]) => (
             <Pressable
               key={title}
-              style={({ pressed }) => [pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.gridItem, 
+                pressed && styles.pressed,
+              ]}
               onPress={() => navigation.navigate(route as never)}
             >
-              <CXCard style={styles.actionRow}>
-                <View style={[styles.heroIcon, { backgroundColor: color }]}>
-                  <Ionicons name={icon} size={26} color={colors.white} />
+              <View style={styles.gridCard}>
+                <View style={[styles.gridIconContainer, { backgroundColor: bg }]}>
+                  <Ionicons name={icon as any} size={28} color={color} />
                 </View>
-                <View style={styles.flex}>
-                  <CXText variant="bodyStrong">{title}</CXText>
-                  <CXText variant="caption" color={colors.textMuted}>
-                    {subtitle}
-                  </CXText>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
-              </CXCard>
+                <CXText variant="bodyStrong" style={{ marginTop: spacing.md, marginBottom: 2 }}>{title}</CXText>
+                <CXText variant="caption" color={colors.textMuted} numberOfLines={2}>{subtitle}</CXText>
+              </View>
             </Pressable>
           ))}
         </View>
-        <LinearGradient colors={gradients.soft} style={styles.idea}>
-          <Ionicons name="bulb-outline" size={24} color={colors.primary} />
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong">Need ideas?</CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              Let CampusAI help you create something interesting.
-            </CXText>
-          </View>
-          <Pressable onPress={() => navigation.navigate("AIChat")}>
-            <CXText variant="smallStrong" color={colors.primary}>
-              Ask now
-            </CXText>
-          </Pressable>
-        </LinearGradient>
+
+        <Pressable 
+          style={({ pressed }) => [pressed && styles.pressed]}
+          onPress={() => navigation.navigate("AIChat")}
+        >
+          <LinearGradient colors={["#111827", "#1F2937"]} style={styles.aiBanner}>
+            <View style={styles.aiIcon}>
+              <Ionicons name="sparkles" size={24} color="#FFF" />
+            </View>
+            <View style={styles.flex}>
+              <CXText variant="bodyStrong" color="#FFF">Ask CampusAI</CXText>
+              <CXText variant="caption" color="#9CA3AF">
+                Get instant help for your studies and ideas.
+              </CXText>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#4B5563" />
+          </LinearGradient>
+        </Pressable>
+
       </ScrollView>
     </CXScreen>
   );
@@ -137,52 +86,62 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.screen,
     paddingBottom: spacing.xxxl,
-    gap: spacing.md,
   },
-  header: { minHeight: 58 },
-  hero: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+  header: { 
+    minHeight: 58,
+    marginBottom: spacing.md,
+    marginTop: spacing.sm,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  gridItem: {
+    width: "48%", // 48% width gives exactly space between for 2 columns
+    marginBottom: spacing.md, 
+  },
+  gridCard: {
     padding: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
+    borderRadius: radius.xl,
+    alignItems: "flex-start",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 15,
+    elevation: 3,
+    height: 140, // fixed height for consistency
   },
-  heroIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  list: { 
-    flexDirection: "column", 
-    gap: spacing.sm 
-  },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  icon: {
+  gridIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 15,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  pressed: { opacity: 0.75 },
-  idea: {
-    borderRadius: radius.md,
-    padding: spacing.md,
+  pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+  aiBanner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: spacing.lg,
+    borderRadius: radius.xl,
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  aiIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
-

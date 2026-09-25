@@ -2,23 +2,23 @@ import { create } from "zustand";
 
 type SignupDraft = {
   fullName: string;
+  username: string;
   email: string;
   password: string;
   college: string;
   department: string;
   academicYear: string;
-  graduationYear: string;
   interests: string[];
 };
 
 const initialDraft: SignupDraft = {
   fullName: "",
+  username: "",
   email: "",
   password: "",
   college: "",
   department: "",
   academicYear: "",
-  graduationYear: "",
   interests: [],
 };
 

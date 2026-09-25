@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { ScrollView, StyleSheet, View, Pressable, TextInput, Alert } from "react-native";
@@ -9,6 +8,7 @@ import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
 import {
   CXButton,
+  CXAvatar,
   CXHeader,
   CXKeyboardScreen,
   CXText,
@@ -16,8 +16,6 @@ import {
 } from "@/components/ui";
 
 import { colleges, departments, years } from "@/constants/academic";
-
-const defaultAvatar = require("../../../assets/avatars/anand.png");
 
 export function EditProfileScreen() {
   const navigation = useRootNavigation();
@@ -27,12 +25,20 @@ export function EditProfileScreen() {
   // Local state for the form
   const [name, setName] = useState(currentUser?.name || "");
   const [username, setUsername] = useState(currentUser?.username || "");
-  const [college, setCollege] = useState(currentUser?.college || "");
-  const [department, setDepartment] = useState(currentUser?.department || "");
+  const isCustomCollege = currentUser?.college && !colleges.includes(currentUser.college);
+  const [college, setCollege] = useState(isCustomCollege ? "Other" : (currentUser?.college || ""));
+  const [otherCollege, setOtherCollege] = useState(isCustomCollege ? currentUser.college : "");
+
+  const isCustomDept = currentUser?.department && !departments.includes(currentUser.department);
+  const [department, setDepartment] = useState(isCustomDept ? "Other" : (currentUser?.department || ""));
+  const [otherDepartment, setOtherDepartment] = useState(isCustomDept ? currentUser.department : "");
+
   const [academicYear, setAcademicYear] = useState(currentUser?.academicYear || "");
-  const [bio, setBio] = useState(currentUser?.bio || "Just a student at CampusX!");
+  const [bio, setBio] = useState(currentUser?.bio || "");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
   const toggleDropdown = (key: string) => {
     setOpenDropdown((prev) => (prev === key ? null : key));
@@ -46,21 +52,22 @@ export function EditProfileScreen() {
       quality: 0.8,
     });
 
-    if (!result.canceled) {
+    if (!result.canceled && result.assets?.[0]?.uri) {
       setAvatarUri(result.assets[0].uri);
     }
   };
   
     const handleSave = async () => {
-    try {
-      const { api } = require("@/services/api");
-      let finalAvatarUrl = currentUser?.avatarUrl;
+      setIsSaving(true);
+      try {
+        const { api } = require("@/services/api");
+        let finalAvatarUrl = currentUser?.avatarUrl;
       
       if (avatarUri && avatarUri !== currentUser?.avatarUrl) {
         const formData = new FormData();
         const filename = avatarUri.split('/').pop() || 'avatar.jpg';
         const match = /\.(\w+)$/.exec(filename);
-        const type = match ? "image/$(match[1])" : "image";
+        const type = match ? `image/${match[1]}` : "image";
 
         formData.append('file', {
           uri: avatarUri,
@@ -77,11 +84,21 @@ export function EditProfileScreen() {
         finalAvatarUrl = uploadRes.data.data.url;
       }
 
+      const finalCollege = college === "Other" ? (otherCollege ?? "").trim() : college;
+      const finalDepartment = department === "Other" ? (otherDepartment ?? "").trim() : department;
+
+      if (!finalCollege || !finalDepartment) {
+         Alert.alert("Error", "Please fill out all academic fields");
+         setIsSaving(false);
+         return;
+      }
+
       await api.patch("/users/me", {
         name,
+        username: username.trim().toLowerCase(),
         avatarUrl: finalAvatarUrl,
-        college,
-        department,
+        college: finalCollege,
+        department: finalDepartment,
         academicYear,
         bio,
       });
@@ -90,8 +107,8 @@ export function EditProfileScreen() {
         name,
         username,
         avatarUrl: finalAvatarUrl,
-        college,
-        department,
+        college: finalCollege,
+        department: finalDepartment,
         academicYear,
         bio,
       } as any);
@@ -99,22 +116,33 @@ export function EditProfileScreen() {
         screen: "Profile",
         params: { profileUpdated: true },
       });
-    } catch (e) {
-      Alert.alert("Error", "Failed to update profile");
+    } catch (_e) {
+      const e = _e as any;
+      if (e.response?.data?.code === "USERNAME_TAKEN") {
+        const suggestions = e.response.data.details?.suggestions;
+        if (suggestions && suggestions.length > 0) {
+          setUsernameSuggestions(suggestions);
+        }
+        Alert.alert("Username taken", "Username is already taken");
+      } else if (e.config?.url?.includes("/upload")) {
+        Alert.alert("Upload Failed", "Couldn't upload profile photo. Try again.");
+      } else {
+        Alert.alert("Error", "Couldn't save changes. Check your connection.");
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <CXKeyboardScreen>
       <CXHeader title="Edit Profile" onBack={navigation.goBack} />
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
         <View style={styles.avatarSection}>
           <View>
-            <Image
-              source={avatarUri ? { uri: avatarUri } : (currentUser?.avatarUrl ? { uri: currentUser.avatarUrl } : defaultAvatar)}
-              style={styles.avatar}
-              contentFit="cover"
-            />
+            <View style={styles.avatar}>
+              <CXAvatar source={avatarUri || currentUser?.avatarUrl || undefined} name={name || "CampusX user"} size={96} />
+            </View>
             <Pressable style={styles.editBadge} onPress={pickImage}>
               <Ionicons name="camera" size={16} color={colors.white} />
             </Pressable>
@@ -122,8 +150,8 @@ export function EditProfileScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <CXText variant="captionStrong" color={colors.textMuted}>Name</CXText>
-          <View style={styles.inputContainer}>
+          <CXText variant="smallStrong" color={colors.textMuted}>Name</CXText>
+          <View style={[styles.inputContainer, styles.editable]}>
             <TextInput
               style={styles.input}
               value={name}
@@ -135,18 +163,48 @@ export function EditProfileScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <CXText variant="captionStrong" color={colors.textMuted}>Username</CXText>
-          <View style={styles.inputContainer}>
+          <CXText variant="smallStrong" color={colors.textMuted}>Username</CXText>
+          <View style={[styles.inputContainer, styles.editable]}>
             <TextInput
-              style={[styles.input, { color: colors.textMuted }]}
+              style={styles.input}
               value={username}
-              onChangeText={setUsername}
+              onChangeText={(val) => {
+                setUsernameSuggestions([]);
+                setUsername(val);
+              }}
               placeholder="username"
               autoCapitalize="none"
               placeholderTextColor={colors.textMuted}
-              editable={false}
             />
           </View>
+          {usernameSuggestions.length > 0 && (
+            <View style={{ marginTop: spacing.sm }}>
+              <CXText variant="small" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                Suggestions:
+              </CXText>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs }}>
+                {usernameSuggestions.map((suggestion) => (
+                  <Pressable
+                    key={suggestion}
+                    onPress={() => {
+                      setUsername(suggestion);
+                      setUsernameSuggestions([]);
+                    }}
+                    style={{
+                      paddingHorizontal: spacing.sm,
+                      paddingVertical: spacing.xs,
+                      backgroundColor: colors.primaryTint,
+                      borderRadius: radius.pill,
+                    }}
+                  >
+                    <CXText variant="smallStrong" color={colors.primary}>
+                      {suggestion}
+                    </CXText>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={[styles.formGroup, { zIndex: 3 }]}>
@@ -160,8 +218,24 @@ export function EditProfileScreen() {
             onToggle={() => toggleDropdown("college")}
             onSelect={(val) => { setCollege(val); setOpenDropdown(null); }}
             onChangeText={setCollege}
+            editable={true}
+            containerStyle={styles.editable}
           />
         </View>
+
+        {college === "Other" && (
+          <View style={styles.formGroup}>
+            <View style={[styles.inputContainer, styles.editable]}>
+              <TextInput
+                style={styles.input}
+                value={otherCollege}
+                onChangeText={setOtherCollege}
+                placeholder="e.g. My Custom College"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          </View>
+        )}
 
         <View style={[styles.formGroup, { zIndex: 2 }]}>
           <CXDropdown
@@ -174,8 +248,24 @@ export function EditProfileScreen() {
             onToggle={() => toggleDropdown("department")}
             onSelect={(val) => { setDepartment(val); setOpenDropdown(null); }}
             onChangeText={setDepartment}
+            editable={true}
+            containerStyle={styles.editable}
           />
         </View>
+
+        {department === "Other" && (
+          <View style={styles.formGroup}>
+            <View style={[styles.inputContainer, styles.editable]}>
+              <TextInput
+                style={styles.input}
+                value={otherDepartment}
+                onChangeText={setOtherDepartment}
+                placeholder="e.g. History"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          </View>
+        )}
 
         <View style={[styles.formGroup, { zIndex: 1 }]}>
           <CXDropdown
@@ -188,18 +278,20 @@ export function EditProfileScreen() {
             onToggle={() => toggleDropdown("academicYear")}
             onSelect={(val) => { setAcademicYear(val); setOpenDropdown(null); }}
             onChangeText={setAcademicYear}
+            editable={true}
+            containerStyle={styles.editable}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <CXText variant="captionStrong" color={colors.textMuted}>Bio</CXText>
-          <View style={styles.inputContainer}>
+          <CXText variant="smallStrong" color={colors.textMuted}>Bio</CXText>
+          <View style={[styles.inputContainer, styles.editable, { minHeight: 100 }]}>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={bio}
               onChangeText={setBio}
               placeholder="Tell us about yourself"
-              multiline
+              multiline={true}
               numberOfLines={4}
               textAlignVertical="top"
               placeholderTextColor={colors.textMuted}
@@ -207,7 +299,12 @@ export function EditProfileScreen() {
           </View>
         </View>
 
-        <CXButton label="Save Changes" onPress={handleSave} style={{ marginTop: spacing.xl }} />
+        <CXButton 
+          label={isSaving ? "Saving..." : "Save Changes"} 
+          onPress={handleSave} 
+          disabled={isSaving} 
+          style={{ marginTop: spacing.xl }} 
+        />
       </ScrollView>
     </CXKeyboardScreen>
   );
@@ -250,8 +347,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
-    backgroundColor: colors.surfaceLavender,
     paddingHorizontal: spacing.sm,
+  },
+  editable: {
+    backgroundColor: colors.white,
+  },
+  locked: {
+    backgroundColor: colors.surfaceLavender,
+    borderColor: "transparent",
   },
   input: {
     height: 48,
@@ -259,7 +362,6 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   textArea: {
-    height: 100,
     paddingTop: spacing.sm,
   }
 });

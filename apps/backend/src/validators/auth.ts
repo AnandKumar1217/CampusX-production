@@ -14,12 +14,12 @@ export const signupSchema = z.object({
   query,
   body: z.object({
     fullName: z.string().min(2).max(80),
+    username: z.string().min(3).max(30).regex(/^[a-z0-9_.]+$/, "Username can only contain lowercase letters, numbers, dots, and underscores"),
     email: z.string().min(5).max(120),
     password,
     college: z.string().min(2).max(120),
     department: z.string().min(2).max(100),
     academicYear: z.string().min(1).max(30),
-    graduationYear: z.string().max(10).optional(),
     interests: z.array(z.string().max(50)).max(20).default([]),
   }),
 });
@@ -28,6 +28,7 @@ export const checkIdentitySchema = z.object({
   query,
   body: z.object({
     email: z.string().min(5).max(120),
+    username: z.string().min(3).max(30).regex(/^[a-z0-9_.]+$/, "Username can only contain lowercase letters, numbers, dots, and underscores").optional(),
   }),
 });
 export const loginSchema = z.object({

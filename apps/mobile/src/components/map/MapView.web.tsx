@@ -1,26 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
-const MapView = ({ children, style, ...props }: any) => (
-  <View style={[style, styles.container]}>
-    <Text style={styles.text}>Map is not supported on web</Text>
-    <View style={{ display: 'none' }}>{children}</View>
+const MapView = (props: any) => (
+  <View style={[{ backgroundColor: '#e0e0e0', alignItems: 'center', justifyContent: 'center' }, props.style]}>
+    <Text>Map not supported on Web</Text>
   </View>
 );
 
-export const Marker = ({ children }: any) => <>{children}</>;
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    color: '#6b7280',
-    fontSize: 16,
-    fontWeight: '500',
-  }
-});
+export const Marker = () => null;
+export const Callout = () => null;
 
 export default MapView;

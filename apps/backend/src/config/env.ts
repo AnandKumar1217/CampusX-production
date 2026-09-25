@@ -22,13 +22,19 @@ const schema = z.object({
     .string()
     .default("http://localhost:8081,http://localhost:19006"),
   PASSWORD_RESET_URL: z.string().default("campusx://reset-password"),
-  AI_PROVIDER: z.enum(["disabled", "openai-compatible"]).default("disabled"),
-  AI_API_KEY: z.string().optional(),
-  WEATHER_API_KEY: z.string().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
+  GROQ_MODEL: z.string().default("llama3-8b-8192"),
+  OPENROUTER_MODEL: z.string().default("openrouter/free"),
+  ORS_API_KEY: z.string().optional(),
+  OPENROUTER_VISION_MODEL: z.string().optional(),
+  AI_PROVIDER_ORDER: z.string().default("groq,openrouter"),
+  AI_FORCE_FAIL_PROVIDER: z.string().optional(),
   UPLOAD_DIRECTORY: z.string().default("uploads"),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),
+
 });
 
 const parsed = schema.safeParse(process.env);

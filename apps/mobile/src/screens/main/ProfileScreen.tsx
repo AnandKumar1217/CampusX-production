@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
-import { useRoute } from "@react-navigation/native";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, Share } from "react-native";
+import { useRoute, useFocusEffect } from "@react-navigation/native";
+import { useEffect, useState, useCallback } from "react";
+import { Pressable, ScrollView, StyleSheet, View, Share, BackHandler } from "react-native";
 
 import {
   CXButton,
+  CXAvatar,
   CXCard,
   CXIconButton,
   CXListRow,
@@ -18,18 +18,43 @@ import {
 import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
-
-const avatar = require("../../../assets/avatars/anand.png");
+import { DeleteAccountModal } from "@/components/modals/DeleteAccountModal";
+import { api } from "@/services/api";
+import { queryClient } from "@/query/queryClient";
+import { useQuery } from "@tanstack/react-query";
 
 export function ProfileScreen() {
   const navigation = useRootNavigation();
+
   const route = useRoute<any>();
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const user = useAppStore((state) => state.user);
-  const postsCount = useAppStore((state) => state.events).filter((e) => e?.author?.id === user?.id).length + useAppStore((state) => state.listings).filter((l) => l?.seller?.id === user?.id).length;
-  const connectionsCount = useAppStore((state) => state.friends).length;
-  const groupsCount = useAppStore((state) => state.studyGroups).filter((g) => g.joined).length;
+  
+  const { data: stats } = useQuery({
+    queryKey: ["profile-summary", user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: async () => {
+      const response = await api.get<{
+        data: { stats: { eventsCount: number; friendsCount: number; groupsCount: number } };
+      }>(`/users/${user!.id}/profile-summary`);
+      return response.data.data.stats;
+    },
+  });
+  const eventsCount = stats?.eventsCount ?? 0;
+  const connectionsCount = stats?.friendsCount ?? 0;
+  const groupsCount = stats?.groupsCount ?? 0;
+
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ["profile-summary", user.id] });
+      }
+    }, [user?.id])
+  );
 
   useEffect(() => {
     if (route.params?.profileUpdated) {
@@ -43,6 +68,23 @@ export function ProfileScreen() {
     await clearSession();
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   };
+
+  const handleDeleteAccount = async (password: string) => {
+    setIsDeleting(true);
+    try {
+      await api.delete("/users/me", { data: { password } });
+      await clearSession();
+      queryClient.clear();
+      setDeleteModalVisible(false);
+      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+    } catch (error: any) {
+      console.error("Failed to delete account", error);
+      alert(error.response?.data?.message || "Failed to delete account");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleShare = async () => {
     try {
       await Share.share({
@@ -69,7 +111,9 @@ export function ProfileScreen() {
         </CXRow>
         <View style={styles.identity}>
           <Pressable onPress={() => navigation.navigate("EditProfile")}>
-            <Image source={user?.avatarUrl ? { uri: user.avatarUrl } : avatar} contentFit="cover" style={styles.avatar} />
+            <View style={styles.avatar}>
+              <CXAvatar source={user?.avatarUrl || undefined} name={user?.name || "CampusX user"} size={90} />
+            </View>
             <View style={styles.editBadge}>
               <Ionicons name="pencil" size={12} color={colors.white} />
             </View>
@@ -82,21 +126,21 @@ export function ProfileScreen() {
               color={colors.primary}
             />
           </CXRow>
-          <CXText variant="small" color={colors.textMuted}>
+          <CXText variant="small" color={colors.textMuted} align="center">
             @{user?.username || "campusxuser"}
           </CXText>
           {user?.department || user?.academicYear ? (
-            <CXText variant="small" color={colors.textMuted}>
+            <CXText variant="small" color={colors.textMuted} align="center">
               {[user.department, user.academicYear].filter(Boolean).join(" · ")}
             </CXText>
           ) : null}
           {user?.college ? (
-            <CXText variant="small" color={colors.textMuted}>
+            <CXText variant="small" color={colors.textMuted} align="center">
               {user.college}
             </CXText>
           ) : null}
           {user?.bio ? (
-            <CXText variant="body" color={colors.text} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.lg }}>
+            <CXText variant="body" color={colors.ink} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.lg }}>
               {user.bio}
             </CXText>
           ) : null}
@@ -123,13 +167,17 @@ export function ProfileScreen() {
         </CXRow>
         <CXCard style={styles.stats}>
           {[
-            [String(postsCount), "Posts"],
-            [String(connectionsCount), "Connections"],
-            [String(groupsCount), "Groups"],
-          ].map(([value, label], index) => (
-            <View
+            [String(eventsCount), "Events", "MyEvents"],
+            [String(connectionsCount), "Connections", "Friends"],
+            [String(groupsCount), "Groups", "StudyGroups"],
+          ].map(([value, label, target], index) => (
+            <Pressable
               key={label}
               style={[styles.stat, index > 0 && styles.statBorder]}
+              accessibilityRole="button"
+              onPress={() => target === "StudyGroups"
+                ? navigation.navigate("StudyGroups", { initialCategory: "My Groups" })
+                : navigation.navigate(target as "MyPosts" | "Friends" | "MyEvents")}
             >
               <CXText variant="title" color={colors.primary}>
                 {value}
@@ -137,7 +185,7 @@ export function ProfileScreen() {
               <CXText variant="caption" color={colors.textMuted}>
                 {label}
               </CXText>
-            </View>
+            </Pressable>
           ))}
         </CXCard>
 
@@ -152,7 +200,7 @@ export function ProfileScreen() {
           <CXListRow
             icon="bookmark-outline"
             title="Saved Items"
-            subtitle="Posts, events and listings"
+            subtitle="Events and listings"
             onPress={() => navigation.navigate("Saved")}
           />
           <CXListRow
@@ -166,19 +214,14 @@ export function ProfileScreen() {
         <CXSectionHeader title="Settings" />
         <CXCard style={styles.links}>
           <CXListRow
-            icon="shield-checkmark-outline"
-            title="Privacy & Security"
-            onPress={() => navigation.navigate("GhostMode")}
+            icon="location-outline"
+            title="Location Sharing"
+            onPress={() => navigation.navigate("LocationSettings")}
           />
           <CXListRow
             icon="notifications-outline"
             title="Notifications"
             onPress={() => navigation.navigate("Notifications")}
-          />
-          <CXListRow
-            icon="location-outline"
-            title="Location Settings"
-            onPress={() => navigation.navigate("LocationSettings")}
           />
           <CXListRow
             icon="language-outline"
@@ -200,14 +243,30 @@ export function ProfileScreen() {
             subtitle="Version 1.0.0"
           />
         </CXCard>
-
-        <Pressable onPress={() => void logout()} style={styles.logout}>
-          <Ionicons name="log-out-outline" size={18} color={colors.danger} />
-          <CXText variant="bodyStrong" color={colors.danger}>
-            Sign Out
-          </CXText>
-        </Pressable>
+        <CXSectionHeader title="Account" />
+        <View style={{ gap: spacing.md, paddingHorizontal: spacing.md, marginTop: spacing.sm }}>
+          <CXButton
+            label="Sign Out"
+            iconLeft="log-out-outline"
+            variant="outline"
+            onPress={() => void logout()}
+          />
+          <CXButton
+            label="Delete Account"
+            iconLeft="trash-outline"
+            variant="primary"
+            style={{ backgroundColor: colors.danger, borderColor: colors.danger }}
+            onPress={() => setDeleteModalVisible(true)}
+          />
+        </View>
       </ScrollView>
+
+      <DeleteAccountModal
+        visible={deleteModalVisible}
+        onDismiss={() => setDeleteModalVisible(false)}
+        onConfirm={handleDeleteAccount}
+        isDeleting={isDeleting}
+      />
 
       <CXSnackbar
         visible={snackbarVisible}
@@ -259,16 +318,4 @@ const styles = StyleSheet.create({
   },
 
   links: { paddingVertical: spacing.xs },
-
-  logout: {
-    minHeight: 48,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.dangerTint,
-    backgroundColor: colors.white,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-  },
 });

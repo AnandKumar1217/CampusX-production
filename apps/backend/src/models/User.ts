@@ -28,12 +28,14 @@ const userSchema = new Schema(
     },
     phone: { type: String, trim: true, sparse: true, unique: true },
     passwordHash: { type: String, required: true, select: false },
-    avatarUrl: { type: String },
+    avatarUrl: { 
+      type: String, 
+      default: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y" 
+    },
     bio: { type: String, maxlength: 300 },
     college: { type: String, required: true, trim: true },
     department: { type: String, required: true, trim: true },
     academicYear: { type: String, required: true },
-    graduationYear: { type: String },
     interests: [{ type: String, trim: true }],
     verified: { type: Boolean, default: false },
     online: { type: Boolean, default: false },
@@ -41,6 +43,7 @@ const userSchema = new Schema(
     roles: { type: [String], default: ["student"] },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },
+    qrToken: { type: String, unique: true, sparse: true },
   },
   { timestamps: true, versionKey: false },
 );

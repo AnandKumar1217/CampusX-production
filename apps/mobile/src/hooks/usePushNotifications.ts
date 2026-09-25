@@ -4,20 +4,26 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { api } from "../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+export const PUSH_TOKEN_KEY = "campusx.push.token";
 
 // Set how foreground notifications are handled
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true, // We will show it if they are NOT on the specific screen
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: false,
-    shouldSetBadge: false, // Badge is handled via socket/backend
+    shouldSetBadge: false,
   }),
 });
 
+import { navigationRef, setPendingRoute, handleNotification } from "../navigation/PushRoutingManager";
+
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
-  const notificationListener = useRef<Notifications.EventSubscription>();
-  const responseListener = useRef<Notifications.EventSubscription>();
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   async function registerForPushNotificationsAsync() {
     let token;
@@ -47,7 +53,7 @@ export function usePushNotifications() {
       const projectId =
         Constants?.expoConfig?.extra?.eas?.projectId ??
         Constants?.easConfig?.projectId;
-        
+
       if (!projectId || projectId === "REPLACE_WITH_EAS_PROJECT_ID") {
         console.warn("Project ID not found in app.json. Cannot get Expo Push Token.");
         return;
@@ -71,26 +77,48 @@ export function usePushNotifications() {
   // Register the token with our backend
   const registerToken = async (token: string) => {
     try {
-      await api("/push/register", "POST", {
+      await api.post("/push/register", {
         token,
         deviceId: Device.osBuildId,
         platform: Platform.OS,
       });
+      await AsyncStorage.setItem(PUSH_TOKEN_KEY, token);
     } catch (e) {
-      console.error("Failed to register push token with backend", e);
+      console.warn("Failed to register push token with backend", e);
     }
   };
 
   // Unregister token from backend
   const unregisterToken = async (token: string) => {
     try {
-      await api("/push/unregister", "POST", {
+      await api.post("/push/unregister", {
         token,
       });
     } catch (e) {
-      console.error("Failed to unregister push token", e);
+      console.warn("Failed to unregister push token", e);
     }
   };
+
+  useEffect(() => {
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data) {
+        if (data.route) {
+          handleNotification(data);
+        } else if (data.url) {
+          import("react-native").then(({ Linking }) => {
+            Linking.openURL(data.url as string).catch(err => console.log("Failed to open notification url", err));
+          });
+        }
+      }
+    });
+
+    return () => {
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
+  }, []);
 
   return {
     expoPushToken,

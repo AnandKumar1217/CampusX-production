@@ -5,3 +5,5 @@ export * from "./CXScreen";
 export * from "./CXText";
 export * from "./CXDropdown";
 export * from "./CXSnackbar";
+export * from "./CXBottomActionArea";
+export * from "./CXActionSheet";

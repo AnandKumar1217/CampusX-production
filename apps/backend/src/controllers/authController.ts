@@ -18,9 +18,14 @@ const meta = (request: Request) => ({
 });
 
 export async function signupController(request: Request, response: Response) {
+  const result = await signup(request.body, meta(request));
+  const io = request.app.get("io");
+  if (io) {
+    io.emit("user:registered", result.user);
+  }
   return sendSuccess(
     response,
-    await signup(request.body, meta(request)),
+    result,
     "Account created",
     201,
   );
@@ -29,7 +34,7 @@ export async function signupController(request: Request, response: Response) {
 export async function checkIdentityController(request: Request, response: Response) {
   return sendSuccess(
     response,
-    await checkIdentity(request.body.email),
+    await checkIdentity(request.body.email, request.body.username),
     "Identity available",
   );
 }

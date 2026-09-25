@@ -11,3 +11,5 @@ coverage/
 apps/mobile/web-build/
 apps/mobile/dist-check/
 apps/backend/uploads/
+apps/mobile/android/local.properties
+apps/mobile/android/

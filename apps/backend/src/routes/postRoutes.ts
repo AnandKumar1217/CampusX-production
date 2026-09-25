@@ -1,14 +1,16 @@
 import { Router } from "express";
+import type { Request } from "express";
 import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 
-import { Comment, Notification, Post, Reaction, SavedItem } from "../models/Social.js";
+import { Comment, Notification, Post, Reaction, SavedItem, Friendship } from "../models/Social.js";
+import { GroupMembership } from "../models/Group.js";
 import { cloudinaryService } from "../services/cloudinary.js";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 import { pagination } from "../utils/pagination.js";
 import { pushService } from "../services/pushService.js";
 
-async function formatPosts(posts: any[], userId: string | undefined) {
+export async function formatPosts(posts: any[], userId: string | undefined) {
   if (!posts.length) return [];
   const postIds = posts.map(p => p._id);
   const [reactions, saved] = await Promise.all([
@@ -34,12 +36,56 @@ async function formatPosts(posts: any[], userId: string | undefined) {
 
 export const postRouter = Router();
 
+// The feed contains public posts plus content this account is allowed to see.
+// Reuse the same filter for detail and interaction endpoints so a guessed ID
+// cannot bypass the feed's visibility rules.
+async function readablePostFilter(userId: string) {
+  const [friendships, memberships] = await Promise.all([
+    Friendship.find({ users: userId }).select("users"),
+    GroupMembership.find({ user: userId, status: "active" }).select("group"),
+  ]);
+  const friendIds = friendships.flatMap((friendship) => friendship.users)
+    .filter((id) => id.toString() !== userId);
+  const groupIds = memberships.map((membership) => membership.group);
+  return {
+    deletedAt: { $exists: false },
+    $or: [
+      { visibility: "public" },
+      { author: userId },
+      { visibility: "friends", author: { $in: friendIds } },
+      { visibility: "group", group: { $in: groupIds } },
+    ],
+  };
+}
+
+async function emitPostEvent(request: Request, post: any, event: string) {
+  const io = request.app.get("io");
+  const postId = post._id.toString();
+  const authorId = post.author.toString();
+  const payload = { postId, authorId, ...(post.group ? { groupId: post.group.toString() } : {}) };
+  if (post.visibility === "public") {
+    io?.emit(event, payload);
+    return;
+  }
+  const recipients = new Set([authorId]);
+  if (post.visibility === "group" && post.group) {
+    const members = await GroupMembership.find({ group: post.group, status: "active" }).select("user");
+    members.forEach((member) => recipients.add(member.user.toString()));
+  } else if (post.visibility === "friends") {
+    const friendships = await Friendship.find({ users: post.author }).select("users");
+    friendships.flatMap((friendship) => friendship.users)
+      .forEach((id) => recipients.add(id.toString()));
+  }
+  recipients.forEach((id) => io?.to(`user:${id}`).emit(event, payload));
+}
+
 postRouter.get(
   "/",
   asyncHandler(async (request, response) => {
     const { page, limit, skip } = pagination(request.query);
+    const filter = await readablePostFilter(request.user!._id.toString());
     const [items, total] = await Promise.all([
-      Post.find({ deletedAt: { $exists: false } })
+      Post.find(filter)
         .populate(
           "author",
           "name username avatarUrl department academicYear verified",
@@ -47,7 +93,7 @@ postRouter.get(
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Post.countDocuments({ deletedAt: { $exists: false } }),
+      Post.countDocuments(filter),
     ]);
     const formattedItems = await formatPosts(items, request.user?._id?.toString());
     return sendSuccess(response, { items: formattedItems, page, limit, total });
@@ -76,10 +122,11 @@ postRouter.get(
       itemType: "post",
     }).sort({ createdAt: -1 });
     const postIds = saved.map(s => s.item);
+    const readable = await readablePostFilter(request.user!._id.toString());
     
     const items = await Post.find({
+      ...readable,
       _id: { $in: postIds },
-      deletedAt: { $exists: false },
     })
       .populate("author", "name username avatarUrl department academicYear verified");
       
@@ -125,8 +172,25 @@ postRouter.post(
         (value) => value.body.trim() || value.media.length,
         "Post needs text or media",
       )
+      .refine(
+        (value) => {
+          if (value.visibility === "group" && !value.group) return false;
+          if (value.visibility !== "group" && value.group) return false;
+          return true;
+        },
+        "Group ID is required for group posts and must not be provided for non-group posts"
+      )
       .parse(request.body);
+
+    if (input.visibility === "group") {
+      const membership = await GroupMembership.exists({ group: input.group, user: request.user!._id, status: "active" });
+      if (!membership) throw new AppError(403, "You must be an active member of the group to post in it", "FORBIDDEN");
+    }
+
     const item = await Post.create({ ...input, author: request.user!._id });
+    
+    await emitPostEvent(request, item, "post:created");
+
     return sendSuccess(response, item, "Post created", 201);
   }),
 );
@@ -136,10 +200,11 @@ postRouter.get(
   asyncHandler(async (request, response) => {
     if (!isValidObjectId(request.params.id))
       throw new AppError(400, "Invalid post id", "INVALID_ID");
+    const readable = await readablePostFilter(request.user!._id.toString());
     const [post, comments] = await Promise.all([
       Post.findOne({
+        ...readable,
         _id: request.params.id,
-        deletedAt: { $exists: false },
       }).populate(
         "author",
         "name username avatarUrl department academicYear verified",
@@ -186,6 +251,7 @@ postRouter.delete(
       Reaction.deleteMany({ post: request.params.id }),
       SavedItem.deleteMany({ itemType: "post", item: request.params.id }),
     ]);
+    await emitPostEvent(request, item, "post:deleted");
 
     return sendSuccess(response, null, "Post deleted");
   }),
@@ -200,9 +266,10 @@ postRouter.post(
         parent: z.string().optional(),
       })
       .parse(request.body);
+    const readable = await readablePostFilter(request.user!._id.toString());
     const post = await Post.findOne({
+      ...readable,
       _id: request.params.id,
-      deletedAt: { $exists: false },
     });
     if (!post) throw new AppError(404, "Post not found", "POST_NOT_FOUND");
     const comment = await Comment.create({
@@ -215,13 +282,14 @@ postRouter.post(
       { _id: request.params.id },
       { $inc: { commentCount: 1 } },
     );
+    await emitPostEvent(request, post, "post:comment");
     if (post.author.toString() !== request.user!._id.toString()) {
       const notification = await Notification.findOneAndUpdate(
         { user: post.author, actor: request.user!._id, type: "post_comment", "target.params.postId": post._id.toString() },
         {
           $set: {
             title: `${request.user!.name} commented on your post`,
-            target: { route: "PostDetail", params: { postId: post._id.toString() } }
+            target: { route: "PostDetails", params: { postId: post._id.toString() } }
           },
           $unset: { readAt: "" }
         },
@@ -248,6 +316,9 @@ postRouter.get(
   asyncHandler(async (request, response) => {
     if (!isValidObjectId(request.params.id))
       throw new AppError(400, "Invalid post id", "INVALID_ID");
+    const readable = await readablePostFilter(request.user!._id.toString());
+    const post = await Post.exists({ ...readable, _id: request.params.id });
+    if (!post) throw new AppError(404, "Post not found", "POST_NOT_FOUND");
     const reactions = await Reaction.find({ post: request.params.id })
       .populate("user", "name username avatarUrl department academicYear verified")
       .sort({ createdAt: -1 });
@@ -264,7 +335,8 @@ postRouter.post(
         type: z.enum(["like", "love", "fire", "celebrate"]).nullable(),
       })
       .parse(request.body);
-    const post = await Post.findOne({ _id: request.params.id, deletedAt: { $exists: false } });
+    const readable = await readablePostFilter(request.user!._id.toString());
+    const post = await Post.findOne({ ...readable, _id: request.params.id });
     if (!post) throw new AppError(404, "Post not found", "POST_NOT_FOUND");
 
     const existing = await Reaction.findOne({
@@ -278,6 +350,7 @@ postRouter.post(
           { _id: request.params.id },
           { $inc: { reactionCount: -1 } },
         );
+        await emitPostEvent(request, post, "post:like");
         if (post.author.toString() !== request.user!._id.toString()) {
           await Notification.deleteOne({ user: post.author, actor: request.user!._id, type: "post_reaction", "target.params.postId": post._id.toString() });
         }
@@ -301,7 +374,7 @@ postRouter.post(
           {
             $set: {
               title: `${request.user!.name} reacted to your post`,
-              target: { route: "PostDetail", params: { postId: post._id.toString() } }
+              target: { route: "PostDetails", params: { postId: post._id.toString() } }
             },
             $unset: { readAt: "" }
           },
@@ -320,6 +393,7 @@ postRouter.post(
         });
       }
     }
+    await emitPostEvent(request, post, "post:like");
     return sendSuccess(response, reaction, "Reaction updated");
   }),
 );
@@ -330,6 +404,11 @@ postRouter.post(
     const { saved } = z
       .object({ saved: z.boolean().default(true) })
       .parse(request.body);
+    if (saved) {
+      const readable = await readablePostFilter(request.user!._id.toString());
+      const post = await Post.exists({ ...readable, _id: request.params.id });
+      if (!post) throw new AppError(404, "Post not found", "POST_NOT_FOUND");
+    }
     if (saved)
       await SavedItem.updateOne(
         { user: request.user!._id, itemType: "post", item: request.params.id },
@@ -348,6 +427,7 @@ postRouter.post(
         itemType: "post",
         item: request.params.id,
       });
+    request.app.get("io")?.to(`user:${request.user!._id}`).emit("post:saved", { postId: request.params.id, saved });
     return sendSuccess(
       response,
       { saved },

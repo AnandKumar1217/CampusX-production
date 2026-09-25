@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
+import { randomUUID } from "node:crypto";
 
 import { env } from "../config/env.js";
 import { RefreshToken } from "../models/RefreshToken.js";
@@ -26,18 +27,18 @@ type AuthUser = {
   college: string;
   department: string;
   academicYear: string;
-  graduationYear?: string | null;
   interests: string[];
   verified: boolean;
+  qrToken?: string | null;
 };
 type SignupInput = {
   fullName: string;
+  username: string;
   email: string;
   password: string;
   college: string;
   department: string;
   academicYear: string;
-  graduationYear?: string;
   interests?: string[];
 };
 
@@ -53,9 +54,9 @@ function safeUser(user: AuthUser) {
     college: user.college,
     department: user.department,
     academicYear: user.academicYear,
-    graduationYear: user.graduationYear,
     interests: user.interests,
     verified: user.verified,
+    qrToken: user.qrToken,
   };
 }
 
@@ -75,47 +76,62 @@ async function issueSession(user: AuthUser, meta: SessionMeta) {
   return { user: safeUser(user), accessToken, refreshToken };
 }
 
-export async function checkIdentity(identityRaw: string) {
-  const identity = identityRaw.trim().toLowerCase();
-  const isEmail = identity.includes("@");
-  const email = isEmail ? identity : `${identity}@phone.campusx.local`;
-  const phone = isEmail ? undefined : identity;
+export async function checkIdentity(identityRaw: string, usernameRaw?: string) {
+  const email = identityRaw.trim().toLowerCase();
 
-  if (await User.exists({ $or: [{ email }, ...(phone ? [{ phone }] : [])] }))
+  if (await User.exists({ email }))
     throw new AppError(
       409,
-      "An account with this email or phone already exists",
+      "An account with this email already exists",
       "EMAIL_EXISTS",
     );
+
+  if (usernameRaw) {
+    const username = usernameRaw.trim().toLowerCase();
+    if (await User.exists({ username })) {
+      const suggestions: string[] = [];
+      let attempts = 0;
+      while (suggestions.length < 3 && attempts < 20) {
+        const randomNum = Math.floor(Math.random() * 999) + 1;
+        const suggestion = `${username}${randomNum}`;
+        if (!(await User.exists({ username: suggestion })) && !suggestions.includes(suggestion)) {
+          suggestions.push(suggestion);
+        }
+        attempts++;
+      }
+      throw new AppError(409, "Username is already taken", "USERNAME_TAKEN", { suggestions });
+    }
+  }
+
   return { available: true };
 }
 
+export async function generateUniqueQrToken(): Promise<string> {
+  const maxRetries = 3;
+  for (let i = 0; i < maxRetries; i++) {
+    const token = randomUUID();
+    const exists = await User.exists({ qrToken: token });
+    if (!exists) return token;
+  }
+  throw new AppError(500, "Could not generate unique QR identity.", "QR_GENERATION_FAILED");
+}
+
 export async function signup(input: SignupInput, meta: SessionMeta) {
-  await checkIdentity(input.email);
+  await checkIdentity(input.email, input.username);
   
-  const identity = input.email.trim().toLowerCase();
-  const isEmail = identity.includes("@");
-  const email = isEmail ? identity : `${identity}@phone.campusx.local`;
-  const phone = isEmail ? undefined : identity;
-  const baseUsername =
-    input.fullName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ".")
-      .replace(/^\.|\.$/g, "")
-      .slice(0, 22) || "student";
-  const username = `${baseUsername}.${nanoid(5).toLowerCase()}`;
+  const email = input.email.trim().toLowerCase();
+  const username = input.username.trim().toLowerCase();
   const passwordHash = await bcrypt.hash(input.password, 12);
   const user = await User.create({
     name: input.fullName.trim(),
     email,
-    phone,
     username,
     passwordHash,
     college: input.college.trim(),
     department: input.department.trim(),
     academicYear: input.academicYear,
-    graduationYear: input.graduationYear,
     interests: input.interests ?? [],
+    qrToken: await generateUniqueQrToken(),
   });
   return issueSession(user, meta);
 }
@@ -130,7 +146,6 @@ export async function login(
     $or: [
       { email: normalized },
       { username: normalized },
-      { phone: identity.trim() },
     ],
   }).select("+passwordHash");
   if (!user || !(await bcrypt.compare(password, user.passwordHash)))

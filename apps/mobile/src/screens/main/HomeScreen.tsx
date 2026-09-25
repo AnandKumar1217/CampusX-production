@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
-import { Pressable, ScrollView, StyleSheet, View, Alert, Keyboard, Modal, TextInput, KeyboardAvoidingView, Platform } from "react-native";
-
+import { Pressable, ScrollView, StyleSheet, View, Alert, Keyboard, Modal, TextInput, KeyboardAvoidingView, Platform, BackHandler, ToastAndroid } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import {
+  CXAvatar,
   CXButton,
   CXCard,
   CXIconButton,
@@ -16,10 +17,16 @@ import {
 } from "@/components/ui";
 import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useAppStore } from "@/store/appStore";
+import { eventService } from "@/services/eventService";
+import { EventItem } from "@/types/domain";
+import { timetableService } from "@/services/timetableService";
+import { getUpcomingClass, parseTimeToMins } from "@/utils/timetable";
+import { fetchWeatherForLocation } from "@/services/weatherService";
+import * as Location from "expo-location";
+import { useQuery } from "@tanstack/react-query";
+import { TimetableEntry } from "@/types/domain";
 
 import { colors, gradients, radius, spacing } from "@/theme";
-
-const avatar = require("../../../assets/avatars/anand.png");
 
 const quickActions = [
   {
@@ -41,16 +48,28 @@ const quickActions = [
     color: "#22C55E",
   },
   {
-    label: "Study Groups",
-    icon: "people-outline",
-    route: "StudyGroups",
-    color: "#3B82F6",
+    label: "People",
+    icon: "person-add-outline",
+    route: "People",
+    color: "#14B8A6",
   },
   {
     label: "Games",
     icon: "game-controller-outline",
     route: "GamesHub",
     color: "#8B5CF6",
+  },
+  {
+    label: "Study Groups",
+    icon: "people-outline",
+    route: "StudyGroups",
+    color: "#3B82F6",
+  },
+  {
+    label: "Trips",
+    icon: "airplane-outline",
+    route: "Trips",
+    color: "#F59E0B",
   },
   { label: "More", icon: "grid-outline", route: "CreateHub", color: "#EC4899" },
 ] as const;
@@ -65,28 +84,74 @@ function getGreeting() {
 
 export function HomeScreen() {
   const navigation = useRootNavigation();
-  const { user, weather, fetchWeather, sgpas, updateSgpa } = useAppStore();
-  const timetable = useAppStore((state) => state.timetable);
-  const events = useAppStore((state) => state.events);
+  const user = useAppStore(state => state.user);
+
+  const { data: weather, refetch: refetchWeather } = useQuery({
+    queryKey: ["weather", "current", "HomeScreen"],
+    queryFn: async () => {
+      let lat = 12.9716;
+      let lon = 77.5946;
+      let city = "Bengaluru, India";
+
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status === "granted") {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          lat = loc.coords.latitude;
+          lon = loc.coords.longitude;
+          city = "Current Location";
+          try {
+            const reverse = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
+            if (reverse && reverse.length > 0) {
+              const place = reverse[0]!.city || reverse[0]!.subregion || reverse[0]!.region;
+              if (place) city = `${place}, ${reverse[0]!.country || ""}`.trim().replace(/,\s*$/, "");
+            }
+          } catch (e) {}
+        }
+      } catch (e) {}
+
+      return fetchWeatherForLocation(lat, lon, city);
+    },
+    staleTime: 1000 * 60 * 15, // 15 mins for home screen
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchWeather();
+    }, [refetchWeather])
+  );
+  const sgpas = useAppStore(state => state.sgpas);
+  const { data: serverTimetable = [] } = useQuery<TimetableEntry[]>({
+    queryKey: ["timetable", user?.id],
+    queryFn: timetableService.getTimetable,
+    enabled: !!user?.id,
+  });
+  const timetable = serverTimetable || [];
   const unreadNotifications = useAppStore((state) => state.unreadNotifications);
-  
+
+  const { data: events = [], refetch: refetchEvents } = useQuery<EventItem[]>({
+    queryKey: ["events", user?.id, "home"],
+    enabled: !!user?.id,
+    queryFn: async () => (await eventService.listEvents()).items,
+  });
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) void refetchEvents();
+    }, [refetchEvents, user?.id])
+  );
+
   const [currentTimeObj, setCurrentTimeObj] = useState(new Date());
-  const [isSgpaModalVisible, setSgpaModalVisible] = useState(false);
-  
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTimeObj(new Date()), 60000); // 1 minute
     return () => clearInterval(timer);
   }, []);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterActive, setFilterActive] = useState(false);
   const [activeFilter, setActiveFilter] = useState("All");
-  
-  useEffect(() => {
-    if (!weather) {
-      void fetchWeather();
-    }
-  }, [weather, fetchWeather]);
+
+
 
   const firstName = user?.name ? user.name.split(" ")[0] : "Student";
   const now = new Date();
@@ -110,14 +175,14 @@ export function HomeScreen() {
       m = months.indexOf(monthStr) + 1;
       y = parts[2] ? Number(parts[2]) : new Date().getFullYear();
     }
-    
+
     let totalMinutes = 0;
     if (timeStr) {
       const [time, modifier] = timeStr.split(" ");
       if (time) {
         let [hours, minutes] = time.split(":").map(Number);
         if (hours === 12) hours = 0;
-        if (modifier && modifier.toLowerCase() === "pm") hours += 12;
+        if (modifier && modifier.toLowerCase() === "pm" && hours !== undefined) hours += 12;
         totalMinutes = (hours || 0) * 60 + (minutes || 0);
       }
     }
@@ -141,96 +206,28 @@ export function HomeScreen() {
     return pa.t - pb.t;
   });
 
-  const featured = upcomingEvents[0] ?? events[0]!;
+  const featured = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
-  const gridTimeSlots = useAppStore((state) => state.gridTimeSlots);
-  const currentDayOfWeek = currentTimeObj.getDay() === 0 ? 7 : currentTimeObj.getDay();
-  
-  // To perfectly sync the Home Screen with the Timetable Screen, we only count
-  // the exact unique classes that successfully bind to a valid grid slot.
-  const getDisplayedClasses = (dayIndex: number) => {
-    const dayClasses = timetable.filter((c) => c.day === dayIndex);
-    const displayed = [];
-    for (const slot of gridTimeSlots) {
-      if (slot.break) continue;
-      const slotClass = dayClasses.find(c => c.startTime === slot.start || (c.startTime < slot.start && c.endTime > slot.start));
-      if (slotClass && !displayed.includes(slotClass)) {
-        displayed.push(slotClass);
-      }
-    }
-    return displayed;
-  };
+  const jsDay = currentTimeObj.getDay();
+  const currentDayOfWeek = jsDay === 0 ? 7 : jsDay;
+  const classesForToday = timetable
+    .filter((c) =>
+      c.days?.includes(currentDayOfWeek) &&
+      c.subject !== "BREAK" &&
+      c.subject !== "BLANK"
+    )
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-  const classesForToday = getDisplayedClasses(currentDayOfWeek);
+  const upcomingData = getUpcomingClass(timetable);
+  const nextClassTimeStr = upcomingData?.timeContext;
 
-  const parseTime = (timeStr: string) => {
-    const match = timeStr.match(/(\d+):(\d+)/);
-    if (!match) return 0;
-    let h = parseInt(match[1], 10);
-    const m = parseInt(match[2], 10);
-    if (timeStr.toLowerCase().includes("pm") && h < 12) h += 12;
-    if (timeStr.toLowerCase().includes("am") && h === 12) h = 0;
-    return h * 60 + m;
-  };
-
-  const currentTimeMins = currentTimeObj.getHours() * 60 + currentTimeObj.getMinutes();
-  
-  let realNextClass = null;
-  let nextClassDayDiff = 0;
-
-  for (let offset = 0; offset < 7; offset++) {
-    let checkDay = currentDayOfWeek + offset;
-    if (checkDay > 7) checkDay -= 7;
-
-    const dayClasses = getDisplayedClasses(checkDay);
-    if (dayClasses.length === 0) continue;
-
-    let upcoming = dayClasses;
-    if (offset === 0) {
-      upcoming = dayClasses.filter(c => parseTime(c.endTime) > currentTimeMins);
-    }
-    
-    if (upcoming.length > 0) {
-      upcoming = [...upcoming].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
-      realNextClass = upcoming[0];
-      nextClassDayDiff = offset;
-      break;
-    }
-  }
-
-  let nextClassTimeStr = "";
-  if (realNextClass) {
-    if (nextClassDayDiff === 0) {
-      const startMins = parseTime(realNextClass.startTime);
-      if (startMins <= currentTimeMins) {
-        nextClassTimeStr = "Happening Now";
-      } else {
-        const diffMins = startMins - currentTimeMins;
-        if (diffMins >= 60) {
-          const h = Math.floor(diffMins / 60);
-          const m = diffMins % 60;
-          nextClassTimeStr = `In ${h}h ${m}m`;
-        } else {
-          nextClassTimeStr = `In ${diffMins} min`;
-        }
-      }
-    } else if (nextClassDayDiff === 1) {
-      nextClassTimeStr = "Tomorrow";
-    } else {
-      const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      let d = currentTimeObj.getDay() + nextClassDayDiff;
-      if (d >= 7) d -= 7;
-      nextClassTimeStr = shortDays[d] || "Upcoming";
-    }
-  }
-  
   const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const todayDateStr = `${shortDays[currentTimeObj.getDay()]}, ${currentTimeObj.getDate()} ${shortMonths[currentTimeObj.getMonth()]}`;
 
   const sgpaValues = Object.values(sgpas).filter((val): val is number => typeof val === 'number' && !isNaN(val) && val > 0);
-  const calculatedCgpa = sgpaValues.length > 0 
-    ? (sgpaValues.reduce((a, b) => a + b, 0) / sgpaValues.length).toFixed(2) 
+  const calculatedCgpa = sgpaValues.length > 0
+    ? (sgpaValues.reduce((a, b) => a + b, 0) / sgpaValues.length).toFixed(2)
     : "N/A";
 
   const filteredEvents = events.filter((e) =>
@@ -238,11 +235,16 @@ export function HomeScreen() {
     (e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.location.toLowerCase().includes(searchQuery.toLowerCase()))
   );
-  
+
   const filteredClasses = timetable.filter((c) =>
     (activeFilter === "All" || activeFilter === "Classes") &&
     (c.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.room.toLowerCase().includes(searchQuery.toLowerCase()))
+    c.room?.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const filteredFeatures = quickActions.filter((f) =>
+    (activeFilter === "All" || activeFilter === "Features") &&
+    (f.label.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -265,12 +267,12 @@ export function HomeScreen() {
             badge={unreadNotifications}
             onPress={() => navigation.navigate("Notifications")}
           />
-          <Pressable onPress={() => navigation.navigate("Settings")}>
-            <Image source={user?.avatarUrl ? { uri: user.avatarUrl } : avatar} contentFit="cover" style={styles.avatar} />
+          <Pressable onPress={() => navigation.navigate("Main", { screen: "Profile" })}>
+            <CXAvatar source={user?.avatarUrl ?? undefined} name={user?.name ?? "You"} size={40} />
           </Pressable>
         </CXRow>
-        <CXSearchBar 
-          placeholder="Search people, events, groups..." 
+        <CXSearchBar
+          placeholder="Search people, events, groups..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           onClear={() => {
@@ -283,7 +285,7 @@ export function HomeScreen() {
 
         {isFilterActive && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.sm }}>
-            {["All", "Classes", "Events", "Groups"].map(f => (
+            {["All", "Classes", "Events", "Features"].map(f => (
               <Pressable
                 key={f}
                 onPress={() => setActiveFilter(f)}
@@ -311,8 +313,8 @@ export function HomeScreen() {
               <View style={{ gap: spacing.sm }}>
                 <CXText variant="smallStrong" color={colors.textMuted}>Classes</CXText>
                 {filteredClasses.map((c) => (
-                  <Pressable 
-                    key={c.id} 
+                  <Pressable
+                    key={c.id}
                     onPress={() => {
                       setSearchQuery("");
                       setFilterActive(false);
@@ -335,13 +337,13 @@ export function HomeScreen() {
                 ))}
               </View>
             )}
-            
+
             {filteredEvents.length > 0 && (
               <View style={{ gap: spacing.sm }}>
                 <CXText variant="smallStrong" color={colors.textMuted}>Events</CXText>
                 {filteredEvents.map((e) => (
-                  <Pressable 
-                    key={e.id} 
+                  <Pressable
+                    key={e.id}
                     onPress={() => {
                       setSearchQuery("");
                       setFilterActive(false);
@@ -363,7 +365,33 @@ export function HomeScreen() {
               </View>
             )}
 
-            {filteredClasses.length === 0 && filteredEvents.length === 0 && (
+            {filteredFeatures.length > 0 && (
+              <View style={{ gap: spacing.sm }}>
+                <CXText variant="smallStrong" color={colors.textMuted}>Features</CXText>
+                {filteredFeatures.map((f) => (
+                  <Pressable
+                    key={f.label}
+                    onPress={() => {
+                      setSearchQuery("");
+                      setFilterActive(false);
+                      Keyboard.dismiss();
+                      navigation.navigate(f.route as never);
+                    }}
+                  >
+                    <CXCard style={styles.classCard}>
+                      <View style={[styles.classIcon, { backgroundColor: `${f.color}16` }]}>
+                        <Ionicons name={f.icon as any} size={23} color={f.color} />
+                      </View>
+                      <View style={styles.flex}>
+                        <CXText variant="bodyStrong">{f.label}</CXText>
+                      </View>
+                    </CXCard>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {filteredClasses.length === 0 && filteredEvents.length === 0 && filteredFeatures.length === 0 && (
               <CXText color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>
                 No results found for "{searchQuery}"
               </CXText>
@@ -380,10 +408,10 @@ export function HomeScreen() {
               colors={["#FFFFFF", "#F1ECFF"]}
               style={styles.weatherCard}
             >
-              <Ionicons 
+              <Ionicons
                 name={(weather?.iconOutline as any) ?? "sunny-outline"}
-                size={32} 
-                color={colors.primary} 
+                size={32}
+                color={colors.primary}
               />
               <View>
                 <CXText variant="h2">{weather ? `${weather.temp}°C` : "--"}</CXText>
@@ -433,7 +461,7 @@ export function HomeScreen() {
                   { backgroundColor: `${item.color}16` },
                 ]}
               >
-                <Ionicons name={item.icon} size={21} color={item.color} />
+                <Ionicons name={item.icon as any} size={21} color={item.color} />
               </View>
               <CXText variant="caption" align="center">
                 {item.label}
@@ -442,68 +470,134 @@ export function HomeScreen() {
           ))}
         </ScrollView>
 
-        <CXSectionHeader
-          title="Upcoming Classes"
-          action="See all"
-          onAction={() => navigation.navigate("Timetable")}
-        />
-        {realNextClass ? (
-          <Pressable onPress={() => navigation.navigate("Timetable")}>
-            <CXCard style={styles.classCard}>
-              <View style={styles.classIcon}>
-                <Ionicons name="book-outline" size={23} color={colors.primary} />
-              </View>
-              <View style={styles.flex}>
-                <CXText variant="bodyStrong">{realNextClass.subject}</CXText>
-                <CXText variant="caption" color={colors.textMuted}>
-                  {realNextClass.startTime} – {realNextClass.endTime} · {realNextClass.room}
+                  <CXSectionHeader
+            title="Upcoming Classes"
+            action="See all"
+            onAction={() => navigation.navigate("Timetable")}
+          />
+          {(() => {
+            const jsDay = currentTimeObj.getDay();
+            const currentDayOfWeek = jsDay === 0 ? 7 : jsDay;
+            const currentMins = currentTimeObj.getHours() * 60 + currentTimeObj.getMinutes();
+            
+            let upcomingClass: any = null;
+            let timeText = "";
+            let isCurrent = false;
+
+            for (let offset = 0; offset < 7; offset++) {
+              const checkDay = ((currentDayOfWeek - 1 + offset) % 7) + 1;
+              const dayClasses = timetable
+                .filter(c => c.days?.includes(checkDay) && c.subject !== "BREAK" && c.subject !== "BLANK")
+                .sort((a, b) => parseTimeToMins(a.startTime) - parseTimeToMins(b.startTime));
+
+              if (dayClasses.length === 0) continue;
+
+              if (offset === 0) {
+                // Today
+                const validClasses = dayClasses.filter(c => parseTimeToMins(c.endTime) > currentMins);
+                if (validClasses.length > 0) {
+                  upcomingClass = validClasses[0];
+                  
+                  const startMins = parseTimeToMins(upcomingClass.startTime);
+                  const endMins = parseTimeToMins(upcomingClass.endTime);
+                  isCurrent = startMins <= currentMins && endMins > currentMins;
+                  
+                  if (isCurrent) {
+                    timeText = "Happening Now";
+                  } else {
+                    const diffMin = startMins - currentMins;
+                    if (diffMin > 0 && diffMin < 60) {
+                      timeText = `In ${diffMin} min`;
+                    } else if (diffMin >= 60) {
+                      const h = Math.floor(diffMin / 60);
+                      const m = diffMin % 60;
+                      timeText = `In ${h}h ${m}m`;
+                    }
+                  }
+                  break;
+                }
+              } else {
+                // Future day
+                upcomingClass = dayClasses[0];
+                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+                const targetJsDay = checkDay === 7 ? 0 : checkDay;
+                timeText = offset === 1 ? "Tomorrow" : daysOfWeek[targetJsDay];
+                break;
+              }
+            }
+
+            if (!upcomingClass) {
+              return (
+                <CXText variant="body" color={colors.textMuted} align="center" style={{ marginVertical: spacing.md }}>
+                  You have no upcoming classes! 🎉
                 </CXText>
+              );
+            }
+
+            return (
+              <View style={{ gap: spacing.sm }}>
+                <Pressable onPress={() => navigation.navigate("Timetable")}>
+                  <CXCard style={styles.classCard}>
+                    <View style={styles.classIcon}>
+                      <Ionicons name="book-outline" size={23} color={colors.primary} />
+                    </View>
+                    <View style={styles.flex}>
+                      <CXText variant="bodyStrong">{upcomingClass.subject || ""}</CXText>
+                      <CXText variant="caption" color={colors.textMuted}>
+                        {`${upcomingClass.startTime || ""} - ${upcomingClass.endTime || ""} • ${upcomingClass.room || "No room"}`}
+                      </CXText>
+                    </View>
+                    {timeText ? (
+                      <View style={styles.timeBadge}>
+                        <CXText variant="caption" color={colors.primary}>
+                          {timeText}
+                        </CXText>
+                      </View>
+                    ) : null}
+                  </CXCard>
+                </Pressable>
               </View>
-              <View style={styles.timeBadge}>
-                <CXText variant="caption" color={colors.primary}>
-                  {nextClassTimeStr}
-                </CXText>
-              </View>
-            </CXCard>
-          </Pressable>
-        ) : (
-          <CXText variant="body" color={colors.textMuted} align="center" style={{ marginVertical: spacing.md }}>
-            You have no more classes for today! 🎉
-          </CXText>
-        )}
+            );
+          })()}
 
         <CXSectionHeader
           title="Campus Events"
           action="See all"
           onAction={() => navigation.navigate("Events")}
         />
-        <Pressable
-          onPress={() =>
-            navigation.navigate("EventDetails", { eventId: featured.id })
-          }
-        >
-          <CXCard style={styles.eventCard}>
-            <Image
-              source={featured.image}
-              contentFit="cover"
-              style={styles.eventImage}
-            />
-            <View style={styles.flex}>
-              <CXText variant="bodyStrong">{featured.title}</CXText>
-              <CXText variant="caption" color={colors.textMuted}>
-                {featured.date} · {featured.location}
-              </CXText>
-            </View>
-            <Ionicons
-              name="bookmark-outline"
-              size={18}
-              color={colors.primary}
-            />
-          </CXCard>
-        </Pressable>
+        {featured ? (
+          <Pressable
+            onPress={() =>
+              navigation.navigate("EventDetails", { eventId: featured.id })
+            }
+          >
+            <CXCard style={styles.eventCard}>
+              <Image
+                source={featured.image}
+                contentFit="cover"
+                style={styles.eventImage}
+              />
+              <View style={styles.flex}>
+                <CXText variant="bodyStrong">{featured.title}</CXText>
+                <CXText variant="caption" color={colors.textMuted}>
+                  {featured.date} · {featured.location}
+                </CXText>
+              </View>
+              <Ionicons
+                name="bookmark-outline"
+                size={18}
+                color={colors.primary}
+              />
+            </CXCard>
+          </Pressable>
+        ) : (
+          <CXText variant="body" color={colors.textMuted} align="center" style={{ marginVertical: spacing.md }}>
+            No upcoming events right now.
+          </CXText>
+        )}
 
         <CXSectionHeader title="Your Progress" />
-        <Pressable onPress={() => setSgpaModalVisible(true)}>
+        <Pressable onPress={() => navigation.navigate("SGPACalculator" as never)}>
           <CXCard style={styles.classCard}>
             <View style={styles.classIcon}>
               <Ionicons name="school-outline" size={23} color={colors.primary} />
@@ -543,66 +637,6 @@ export function HomeScreen() {
         </View>
         )}
       </ScrollView>
-
-      <Modal
-        visible={isSgpaModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSgpaModalVisible(false)}
-      >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === "ios" ? "padding" : "height"} 
-          style={{ flex: 1 }}
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setSgpaModalVisible(false)}
-          >
-            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-              <CXRow style={{ justifyContent: "space-between", marginBottom: spacing.md }}>
-                <CXText variant="h3">Calculate CGPA</CXText>
-                <CXIconButton
-                  icon="close"
-                  onPress={() => setSgpaModalVisible(false)}
-                />
-              </CXRow>
-              
-              <CXText variant="body" color={colors.textMuted} style={{ marginBottom: spacing.md }}>
-                Enter your SGPA for each semester to automatically calculate your overall CGPA.
-              </CXText>
-              
-              <View style={{ alignItems: "center", marginBottom: spacing.lg }}>
-                <CXText variant="caption" color={colors.textMuted}>Current CGPA</CXText>
-                <CXText variant="h1" color={colors.primary}>{calculatedCgpa}</CXText>
-              </View>
-
-              <ScrollView style={{ maxHeight: 300, marginBottom: spacing.md }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                  <View key={sem} style={styles.sgpaInputRow}>
-                    <CXText variant="bodyStrong">Semester {sem}</CXText>
-                    <TextInput
-                      style={styles.sgpaInput}
-                      placeholder="e.g. 8.5"
-                      keyboardType="decimal-pad"
-                      defaultValue={sgpas[sem] ? sgpas[sem].toString() : ""}
-                      onChangeText={(text) => {
-                        if (text.trim() === "") {
-                          updateSgpa(sem, undefined as any);
-                          return;
-                        }
-                        const val = parseFloat(text);
-                        if (!isNaN(val) && val <= 10 && val >= 0) {
-                          updateSgpa(sem, val);
-                        }
-                      }}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Modal>
     </CXScreen>
   );
 }
@@ -615,7 +649,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   header: { minHeight: 58, gap: spacing.xs },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
   topCards: { gap: spacing.sm, marginTop: spacing.sm },
   weatherCard: {
     minHeight: 92,

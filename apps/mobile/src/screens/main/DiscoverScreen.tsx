@@ -10,6 +10,7 @@ import {
 } from "@/components/ui";
 import { TextInput, Text } from "react-native";
 import { useRootNavigation } from "@/hooks/useRootNavigation";
+import { useOpenChat } from "@/hooks/useOpenChat";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
@@ -24,6 +25,7 @@ const categories = [
 
 export function DiscoverScreen() {
   const navigation = useRootNavigation();
+  const { openChat, isMessaging } = useOpenChat();
   const [region, setRegion] = useState({
     latitude: 12.9676,
     longitude: 77.7154,
@@ -36,9 +38,22 @@ export function DiscoverScreen() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [mapMarkers, setMapMarkers] = useState<any[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<any | null>(null);
+  const [selectedFriend, setSelectedFriend] = useState<any | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeMode, setActiveMode] = useState<"places" | "friends">("places");
   const friends = useAppStore(state => state.friends);
+  const friendLocations = useAppStore(state => state.friendLocations);
+  const activeOnlineFriends = Object.values(friendLocations).filter(loc => ["active", "stale"].includes(loc.status || ""));
+  const user = useAppStore(state => state.user);
+  const setLocationCoords = useAppStore(state => state.setLocationCoords);
+  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
+  const cameraRef = useRef<any>(null);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const stateRef = useRef({ searchQuery, isSearchFocused, selectedPlace, mapMarkers, activeMode });
   stateRef.current = { searchQuery, isSearchFocused, selectedPlace, mapMarkers, activeMode };
@@ -51,11 +66,12 @@ export function DiscoverScreen() {
           setActiveMode("places");
           return true; // intercept default back behavior
         }
-        if (searchQuery || isSearchFocused || selectedPlace || mapMarkers.length > 0) {
+        if (searchQuery || isSearchFocused || selectedPlace || selectedFriend || mapMarkers.length > 0) {
           setSearchQuery("");
           setSearchResults([]);
           setIsSearchFocused(false);
           setSelectedPlace(null);
+          setSelectedFriend(null);
           setMapMarkers([]);
           return true; // intercept default back behavior
         }
@@ -69,8 +85,8 @@ export function DiscoverScreen() {
 
   const addToRecent = (query: string) => {
     if (!query) return;
-    setRecentSearches(prev => {
-      const filtered = prev.filter(q => q !== query);
+    setRecentSearches((prev: any) => {
+      const filtered = prev.filter((q: any) => q !== query);
       return [query, ...filtered].slice(0, 5); // Keep last 5
     });
   };
@@ -104,6 +120,15 @@ export function DiscoverScreen() {
         return;
       }
       
+      if (activeMode === "friends") {
+        const queryLower = searchQuery.toLowerCase();
+        const matchedFriends = friends.filter(f => 
+          f.online && f.lat && f.lon && f.name.toLowerCase().includes(queryLower)
+        );
+        setSearchResults(matchedFriends);
+        return;
+      }
+
       // Use Photon API for better POI autocomplete heavily biased to user's location
       fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(searchQuery)}&lat=${region.latitude}&lon=${region.longitude}&limit=8`, {
         headers: {
@@ -131,7 +156,7 @@ export function DiscoverScreen() {
     }, 400); // 400ms debounce
 
     return () => clearTimeout(handler);
-  }, [searchQuery, region.latitude, region.longitude]);
+  }, [searchQuery, region.latitude, region.longitude, activeMode, friends]);
 
   const handleSelectPlace = (place: any) => {
     const formatted = formatPlace(place);
@@ -143,6 +168,11 @@ export function DiscoverScreen() {
       latitudeDelta: 0.005,
       longitudeDelta: 0.005,
     });
+    cameraRef.current?.easeTo({
+      center: [formatted.lon, formatted.lat],
+      zoom: 15,
+      duration: 600
+    });
     setSearchQuery(formatted.display_name);
     setIsSearchFocused(false);
   };
@@ -152,6 +182,28 @@ export function DiscoverScreen() {
     setSearchQuery(query);
     addToRecent(query);
     
+    if (activeMode === "friends") {
+      const queryLower = query.toLowerCase();
+      const matched = friends.filter(f => f.name.toLowerCase().includes(queryLower));
+      const firstOnline = matched.find(f => f.online && f.lat && f.lon);
+      if (firstOnline) {
+        setRegion((prev: any) => ({
+          ...prev,
+          latitude: firstOnline.lat!,
+          longitude: firstOnline.lon!,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        }));
+        cameraRef.current?.easeTo({
+          center: [firstOnline.lon!, firstOnline.lat!],
+          zoom: 15,
+          duration: 600
+        });
+        setIsSearchFocused(false);
+      }
+      return;
+    }
+
     fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${region.latitude}&lon=${region.longitude}&limit=15`, {
       headers: { "User-Agent": "CampusXApp/1.0" }
     })
@@ -165,13 +217,18 @@ export function DiscoverScreen() {
           
           // Center the map on the first result so they aren't lost
           const first = formatted[0];
-          setRegion(prev => ({
+          setRegion((prev: any) => ({
             ...prev,
             latitude: first.lat,
             longitude: first.lon,
             latitudeDelta: 0.02, // Zoom out slightly to show multiple pins
             longitudeDelta: 0.02,
           }));
+          cameraRef.current?.easeTo({
+            center: [first.lon, first.lat],
+            zoom: 14,
+            duration: 600
+          });
         } else {
           // If no results, just close search
           setIsSearchFocused(false);
@@ -191,6 +248,7 @@ export function DiscoverScreen() {
           try {
             // Immediately clear the UI so it visually resets with zero latency
             setSelectedPlace(null);
+            setSelectedFriend(null);
             setMapMarkers([]);
             setSearchQuery("");
             setSearchResults([]);
@@ -207,11 +265,18 @@ export function DiscoverScreen() {
             }
             
             if (location) {
+              setUserLocation({ lat: location.coords.latitude, lon: location.coords.longitude });
+              setLocationCoords({ lat: location.coords.latitude, lon: location.coords.longitude });
               setRegion({
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
                 latitudeDelta: 0.005,
                 longitudeDelta: 0.005,
+              });
+              cameraRef.current?.easeTo({
+                center: [location.coords.longitude, location.coords.latitude],
+                zoom: 15,
+                duration: 600
               });
             }
           } catch (error) {
@@ -224,6 +289,7 @@ export function DiscoverScreen() {
   return (
     <View style={styles.container}>
       <MapView
+        cameraRef={cameraRef}
         style={StyleSheet.absoluteFill}
         region={region}
         toolbarEnabled={false}
@@ -232,10 +298,10 @@ export function DiscoverScreen() {
         scrollEnabled={true}
         zoomEnabled={true}
         zoomControlEnabled={false}
-        showsUserLocation={true}
+        showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
-        onPoiClick={(e) => {
+        onPoiClick={(e: any) => {
           if (activeMode !== "places") return;
           const { coordinate, name } = e.nativeEvent;
           setSelectedPlace({
@@ -245,19 +311,45 @@ export function DiscoverScreen() {
             formatted_address: "Point of Interest",
           });
           setSearchQuery(name);
-          // Center the map on the tapped POI
-          setRegion(prev => ({
-            ...prev,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-          }));
+          setRegion((prev: any) => ({ ...prev, latitude: coordinate.latitude, longitude: coordinate.longitude }));
+          cameraRef.current?.easeTo({ center: [coordinate.longitude, coordinate.latitude], zoom: 15, duration: 600 });
         }}
-        onPress={(e) => {
-          // If the user taps the map and it's NOT a POI, we can clear the selection.
-          // Note: depending on the platform, onPress might fire alongside onPoiClick, 
-          // but we will just rely on onPoiClick to set it. We'll leave onPress empty 
-          // or use it to dismiss the keyboard if needed, but let's avoid conflicting with POIs.
+        onPress={(e: any) => {
           Keyboard.dismiss();
+          if (activeMode !== "places") return;
+          const { coordinate, name } = e.nativeEvent;
+          if (coordinate) {
+            setSelectedPlace({
+              lat: coordinate.latitude,
+              lon: coordinate.longitude,
+              display_name: name || "Finding location...",
+              formatted_address: "Selected location on map",
+            });
+            setRegion((prev: any) => ({ ...prev, latitude: coordinate.latitude, longitude: coordinate.longitude }));
+            cameraRef.current?.easeTo({ center: [coordinate.longitude, coordinate.latitude], zoom: 15, duration: 600 });
+
+            if (!name) {
+              fetch(`https://photon.komoot.io/reverse?lon=${coordinate.longitude}&lat=${coordinate.latitude}`)
+                .then(res => res.json())
+                .then(data => {
+                  if (data && data.features && data.features.length > 0) {
+                    const props = data.features[0].properties;
+                    const placeName = props.name || props.street || props.locality || props.city || "Unknown Place";
+                    const address = [props.locality, props.city, props.state].filter(Boolean).join(", ");
+                    setSelectedPlace((prev: any) => prev ? {
+                      ...prev,
+                      display_name: placeName,
+                      formatted_address: address || "Selected location on map"
+                    } : null);
+                  } else {
+                    setSelectedPlace((prev: any) => prev ? { ...prev, display_name: "Selected location" } : null);
+                  }
+                })
+                .catch(() => {
+                  setSelectedPlace((prev: any) => prev ? { ...prev, display_name: "Selected location" } : null);
+                });
+            }
+          }
         }}
       >
         {activeMode === "places" && mapMarkers.map((marker, index) => (
@@ -265,12 +357,16 @@ export function DiscoverScreen() {
             key={`search-${index}`}
             coordinate={{ latitude: marker.lat, longitude: marker.lon }}
             title={marker.display_name}
-            pinColor={colors.primary}
+            anchor="bottom"
             onPress={() => {
               setSelectedPlace(marker);
               setSearchQuery(marker.display_name);
             }}
-          />
+          >
+            <View style={{ alignItems: "center", justifyContent: "center", width: 36, height: 36 }}>
+              <Ionicons name="location" size={36} color="#EA4335" style={{ textShadowColor: 'rgba(0, 0, 0, 0.3)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 3 } as any} />
+            </View>
+          </Marker>
         ))}
         {activeMode === "places" && selectedPlace && (
           <Marker
@@ -279,29 +375,88 @@ export function DiscoverScreen() {
               longitude: selectedPlace.lon,
             }}
             title={selectedPlace.display_name}
-            pinColor={colors.primary}
-          />
+            anchor="bottom"
+          >
+            <View style={{ alignItems: "center", justifyContent: "center", width: 48, height: 48 }}>
+              <Ionicons name="location" size={48} color="#EA4335" style={{ textShadowColor: 'rgba(0, 0, 0, 0.4)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 4 } as any} />
+            </View>
+          </Marker>
         )}
         
+        {/* User's Current Location Marker */}
+        {userLocation && (
+          <Marker
+            coordinate={{ latitude: userLocation.lat, longitude: userLocation.lon }}
+            title="You"
+            anchor="center"
+          >
+            <View style={{ alignItems: "center", justifyContent: "center", width: 60, height: 60 }}>
+              <View style={{ position: "absolute", width: 60, height: 60, borderRadius: 30, backgroundColor: "rgba(99, 56, 242, 0.2)" }} />
+              <View style={{ position: "absolute", width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(99, 56, 242, 0.4)" }} />
+              <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: "#6338F2", borderWidth: 3, borderColor: "white", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 4 }} />
+            </View>
+          </Marker>
+        )}
+
         {/* Friends Mode Markers */}
-        {activeMode === "friends" && friends.filter(p => p.online).map((friend) => {
+        {activeMode === "friends" && activeOnlineFriends.map((friend) => {
           if (!friend.lat || !friend.lon) return null;
+          
+          const friendObj = friends.find(f => f.id === friend.userId);
+          const displayName = friendObj?.name || friend.name || "User";
+          const avatar = friendObj?.avatar || friendObj?.avatarUrl || friend.avatarUrl;
+          const isSelected = selectedFriend?.userId === friend.userId;
+
           return (
             <Marker
-              key={`friend-${friend.id}`}
+              key={`friend-${friend.userId}`}
               coordinate={{ latitude: friend.lat, longitude: friend.lon }}
-              onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${friend.lat},${friend.lon}`)}
+              onPress={() => {
+                setSelectedFriend({ ...friend, friendObj, displayName, avatar });
+                cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
+              }}
+              style={{ zIndex: isSelected ? 100 : 1 }}
             >
               <View style={{ alignItems: "center" }}>
-                <View style={{ backgroundColor: "rgba(255,255,255,0.9)", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginBottom: 4 }}>
-                  <CXText variant="caption" style={{ fontSize: 10, fontWeight: "bold" }}>{friend.name.split(" ")[0]}</CXText>
-                </View>
-                <View style={[styles.friendMarkerContainer, { elevation: 5, shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 4 }]}>
-                  {friend.avatar ? (
-                    <CXAvatar source={typeof friend.avatar === 'string' ? { uri: friend.avatar } : friend.avatar} size={36} name={friend.name} />
+                {/* Real Image with white border and CampusX purple outer ring */}
+                <View style={{
+                  padding: 2,
+                  borderRadius: 30,
+                  backgroundColor: colors.white,
+                  borderWidth: 2,
+                  borderColor: isSelected ? colors.primary : colors.primaryLight,
+                  shadowColor: colors.primary,
+                  shadowOpacity: isSelected ? 0.6 : 0.3,
+                  shadowRadius: isSelected ? 10 : 5,
+                  shadowOffset: { width: 0, height: 3 },
+                  elevation: isSelected ? 10 : 5,
+                  transform: [{ scale: isSelected ? 1.2 : 1 }]
+                }}>
+                  {avatar ? (
+                    <CXAvatar source={avatar} size={40} name={displayName} />
                   ) : (
-                    <Ionicons name="person" size={16} color={colors.white} />
+                    <View style={{ width: 40, height: 40, backgroundColor: colors.surface, borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="person" size={24} color={colors.textMuted} />
+                    </View>
                   )}
+                  {/* Status indicator dot */}
+                  <View style={{
+                    position: "absolute",
+                    bottom: 0,
+                    right: 0,
+                    width: 14,
+                    height: 14,
+                    borderRadius: 7,
+                    backgroundColor: friend.status === "active" ? colors.success : colors.warning,
+                    borderWidth: 2,
+                    borderColor: colors.white
+                  }} />
+                </View>
+                {/* Name Tag */}
+                <View style={{ backgroundColor: isSelected ? colors.primary : "rgba(0,0,0,0.65)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginTop: 6 }}>
+                  <CXText variant="small" color={colors.white} style={{ fontSize: 11, fontWeight: "600" }}>
+                    {displayName.split(" ")[0]}
+                  </CXText>
                 </View>
               </View>
             </Marker>
@@ -309,46 +464,79 @@ export function DiscoverScreen() {
         })}
       </MapView>
 
-      {/* Small Floating Toggle Button */}
-      <View style={styles.modeSwitcherContainer}>
-        <Pressable 
-          style={styles.fabSmall} 
-          onPress={() => setActiveMode(prev => prev === "places" ? "friends" : "places")}
-        >
-          <Ionicons 
-            name={activeMode === "places" ? "people" : "location"} 
-            size={22} 
-            color={colors.primary} 
-          />
-        </Pressable>
-      </View>
+      {/* Mode Switcher */}
+      {!isSearchFocused && (
+        <View style={styles.modeSwitcherContainer}>
+          <Pressable 
+            style={[styles.fabSmall, activeMode === "friends" && { backgroundColor: colors.primary }]}
+            onPress={() => {
+              setActiveMode((prev: any) => prev === "places" ? "friends" : "places");
+              setSelectedPlace(null);
+              setSelectedFriend(null);
+              setSearchQuery("");
+              setMapMarkers([]);
+              setSearchResults([]);
+              Keyboard.dismiss();
+            }}
+          >
+            <Ionicons name={activeMode === "places" ? "people" : "location"} size={20} color={activeMode === "friends" ? colors.white : colors.primary} />
+          </Pressable>
+        </View>
+      )}
 
       {/* Map Controls (Bottom Right) */}
-      <View style={[styles.mapControls, selectedPlace && { bottom: 180 }, isSearchFocused && { display: "none" }, activeMode === "friends" && { bottom: 220 }]}>
-        <Pressable style={styles.fab} onPress={() => {
-          Location.getCurrentPositionAsync({}).then(loc => {
-            setRegion(prev => ({ ...prev, latitude: loc.coords.latitude, longitude: loc.coords.longitude }));
-          }).catch(console.log);
+      <View style={[styles.mapControls, (selectedPlace || selectedFriend) && { bottom: 180 }, isSearchFocused && { display: "none" }, activeMode === "friends" && !selectedFriend && { bottom: 220 }]}>
+        <Pressable style={styles.fab} onPress={async () => {
+          try {
+            if (userLocation) {
+              cameraRef.current?.easeTo({
+                center: [userLocation.lon, userLocation.lat],
+                zoom: 15,
+                duration: 600
+              });
+              return;
+            }
+
+            let location = await Location.getLastKnownPositionAsync();
+            if (!location) {
+              location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            }
+            if (location) {
+              setUserLocation({ lat: location.coords.latitude, lon: location.coords.longitude });
+              setLocationCoords({ lat: location.coords.latitude, lon: location.coords.longitude });
+              setRegion((prev: any) => ({ 
+                ...prev, 
+                latitude: location.coords.latitude, 
+                longitude: location.coords.longitude 
+              }));
+              cameraRef.current?.easeTo({
+                center: [location.coords.longitude, location.coords.latitude],
+                zoom: 15,
+                duration: 600
+              });
+            }
+          } catch(e) {
+            console.log("Recenter Error:", e);
+          }
         }}>
-          <Ionicons name="navigate" size={22} color={colors.text} />
+          <Ionicons name="locate" size={24} color="#5F6368" />
         </Pressable>
       </View>
 
       {/* Floating / Fullscreen Search Container */}
-      {activeMode === "places" && (
-        <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused]}>
+      <View style={[styles.searchContainer, isSearchFocused && styles.searchContainerFocused, activeMode === "friends" && !isSearchFocused && { display: "none" }]}>
         <View style={[styles.searchBar, isSearchFocused && styles.searchBarFocused]}>
           {isSearchFocused ? (
             <Pressable onPress={() => { setIsSearchFocused(false); setSearchQuery(""); }} style={styles.backBtn}>
-              <Ionicons name="arrow-back" size={24} color={colors.text} />
+              <Ionicons name="arrow-back" size={24} color={colors.ink} />
             </Pressable>
           ) : (
-            <Ionicons name="menu" size={24} color={colors.text} />
+            <Ionicons name="menu" size={24} color={colors.ink} />
           )}
           
           <TextInput
             style={styles.searchInput}
-            placeholder="Search here"
+            placeholder={activeMode === "friends" ? "Search friends" : "Search places"}
             placeholderTextColor={colors.textFaint}
             value={searchQuery}
             onChangeText={(text) => {
@@ -362,6 +550,7 @@ export function DiscoverScreen() {
             onFocus={() => {
               setIsSearchFocused(true);
               setSelectedPlace(null);
+              setSelectedFriend(null);
               setMapMarkers([]);
               setSearchQuery("");
               setSearchResults([]);
@@ -376,6 +565,7 @@ export function DiscoverScreen() {
               setSearchQuery(""); 
               setSearchResults([]);
               setSelectedPlace(null);
+              setSelectedFriend(null);
               setMapMarkers([]);
             }}>
               <Ionicons name="close" size={24} color={colors.textMuted} />
@@ -386,72 +576,89 @@ export function DiscoverScreen() {
         {/* Search Mode Content */}
         {isSearchFocused && (
           <View style={styles.searchModeContent}>
-            {!searchQuery ? (
+            {activeMode === "friends" ? (
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                {friends
+                  .filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .map((item, index) => {
+                    const liveLoc = friendLocations[item.id];
+                    const isOnline = liveLoc?.status === "active" && liveLoc?.lat && liveLoc?.lon;
+                    return (
+                      <Pressable 
+                        key={`friend-search-${item.id}`} 
+                        style={[styles.searchResultItem, { gap: 12, opacity: isOnline ? 1 : 0.5 }]} 
+                        onPress={() => {
+                          if (isOnline) {
+                            setRegion((prev: any) => ({ ...prev, latitude: liveLoc.lat, longitude: liveLoc.lon, latitudeDelta: 0.02, longitudeDelta: 0.02 }));
+                            cameraRef.current?.easeTo({ center: [liveLoc.lon, liveLoc.lat], zoom: 15, duration: 600 });
+                            setIsSearchFocused(false);
+                          }
+                        }}
+                      >
+                        <CXAvatar source={item.avatar || item.avatarUrl || undefined} size={32} name={item.name} />
+                        <View style={styles.flex}>
+                          <CXText variant="bodyStrong">{item.name}</CXText>
+                          <CXText variant="caption" color={isOnline ? colors.primary : colors.textMuted}>
+                            {isOnline ? "Online" : "Offline"}
+                          </CXText>
+                        </View>
+                        {isOnline && <Ionicons name="navigate-circle" size={24} color={colors.primary} />}
+                      </Pressable>
+                    );
+                  })}
+              </ScrollView>
+            ) : (
               <>
-                <View style={styles.categoriesWrapper}>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryChips}>
-                    {[
-                      { name: "Restaurants", icon: "restaurant" },
-                      { name: "Coffee", icon: "cafe" },
-                      { name: "Groceries", icon: "cart" },
-                      { name: "Parks", icon: "leaf" },
-                      { name: "ATMs", icon: "cash" },
-                    ].map(cat => (
-                      <Pressable key={cat.name} style={styles.categoryChip} onPress={() => handleCategorySearch(cat.name)}>
-                        <Ionicons name={cat.icon as any} size={16} color={colors.text} />
-                        <CXText variant="bodyStrong">{cat.name}</CXText>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
-                
-                {recentSearches.length > 0 && (
-                  <View style={styles.recentSearchesContainer}>
-                    {recentSearches.map((query, index) => (
-                      <Pressable key={index} style={styles.recentSearchItem} onPress={() => executeMapSearch(query)}>
-                        <Ionicons name="time-outline" size={20} color={colors.textMuted} />
-                        <CXText variant="body" numberOfLines={1}>{query}</CXText>
-                      </Pressable>
-                    ))}
-                  </View>
+                {!searchQuery && (
+                  <>
+                    {recentSearches.length > 0 && (
+                      <View style={styles.recentSearchesContainer}>
+                        {recentSearches.map((query, index) => (
+                          <Pressable key={index} style={styles.recentSearchItem} onPress={() => executeMapSearch(query)}>
+                            <Ionicons name="time-outline" size={20} color={colors.textMuted} />
+                            <CXText variant="body" numberOfLines={1}>{query}</CXText>
+                          </Pressable>
+                        ))}
+                      </View>
+                    )}
+                  </>
                 )}
-              </>
-            ) : null}
 
-            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-              {searchResults.map((place, index) => {
-                const name = place?.properties?.name || place?.properties?.street || "Unknown Place";
-                const details = [place?.properties?.street, place?.properties?.city, place?.properties?.state].filter(Boolean).join(", ");
-                
-                return (
-                  <Pressable 
-                    key={index} 
-                    style={[
-                      styles.searchResultItem,
-                      index === searchResults.length - 1 && { borderBottomWidth: 0 }
-                    ]} 
-                    onPress={() => handleSelectPlace(place)}
-                  >
-                    <View style={styles.searchResultIcon}>
-                      <Ionicons name="location" size={18} color={colors.textMuted} />
-                    </View>
-                    <View style={styles.flex}>
-                      <CXText variant="bodyStrong" numberOfLines={1}>
-                        {name}
-                      </CXText>
-                      <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
-                        {details || "Location"}
-                      </CXText>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                  {searchResults.map((item, index) => {
+                    const name = item?.properties?.name || item?.properties?.street || "Unknown Place";
+                    const details = [item?.properties?.street, item?.properties?.city, item?.properties?.state].filter(Boolean).join(", ");
+                    
+                    return (
+                      <Pressable 
+                        key={`place-${index}`} 
+                        style={[
+                          styles.searchResultItem,
+                          index === searchResults.length - 1 && { borderBottomWidth: 0 }
+                        ]} 
+                        onPress={() => handleSelectPlace(item)}
+                      >
+                        <View style={styles.searchResultIcon}>
+                          <Ionicons name="location" size={18} color={colors.textMuted} />
+                        </View>
+                        <View style={styles.flex}>
+                          <CXText variant="bodyStrong" numberOfLines={1}>
+                            {name}
+                          </CXText>
+                          <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                            {details || "Location"}
+                          </CXText>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
           </View>
         )}
       </View>
-      )}
-
+      
       {/* Selected Place Bottom Sheet/Card */}
       {selectedPlace && !isSearchFocused && activeMode === "places" && (
         <View style={styles.bottomCard}>
@@ -492,44 +699,145 @@ export function DiscoverScreen() {
         </View>
       )}
 
+      {/* Selected Friend Bottom Sheet/Card */}
+      {selectedFriend && !isSearchFocused && activeMode === "friends" && (
+        <View style={styles.bottomCard}>
+          <View style={styles.bottomCardHeader}>
+            <View style={[styles.flex, { flexDirection: "row", alignItems: "center", gap: 12 }]}>
+              {selectedFriend.avatar ? (
+                <CXAvatar source={selectedFriend.avatar} size={48} name={selectedFriend.displayName} />
+              ) : (
+                <View style={{ width: 48, height: 48, backgroundColor: colors.surface, borderRadius: 24, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="person" size={24} color={colors.textMuted} />
+                </View>
+              )}
+              <View style={styles.flex}>
+                <CXText variant="h3" numberOfLines={1}>
+                  {selectedFriend.displayName}
+                </CXText>
+                <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
+                  {selectedFriend.friendObj?.username ? `@${selectedFriend.friendObj.username} • ` : ""}
+                  {selectedFriend.status === "active" ? "Live" : "Recently active"}
+                </CXText>
+              </View>
+            </View>
+            <Pressable 
+              onPress={() => setSelectedFriend(null)} 
+              style={styles.closeBtn}
+            >
+              <Ionicons name="close" size={20} color={colors.textMuted} />
+            </Pressable>
+          </View>
+          
+          <View style={[styles.actionRow, { flexDirection: "row", gap: spacing.md }]}>
+            <Pressable 
+              style={[styles.primaryAction, { flex: 1 }]}
+              onPress={() => {
+                navigation.navigate("UserProfile", { userId: selectedFriend.userId });
+              }}
+            >
+              <Ionicons name="person" size={20} color={colors.white} />
+              <CXText variant="bodyStrong" color={colors.white}>View Profile</CXText>
+            </Pressable>
+            <Pressable 
+              style={[styles.secondaryAction, { flex: 1, justifyContent: "center" }]}
+              disabled={isMessaging}
+              onPress={() => {
+                if (user) {
+                  void openChat(selectedFriend.userId, selectedFriend.displayName);
+                }
+              }}
+            >
+              <Ionicons name="chatbubble" size={20} color={colors.primary} />
+              <CXText variant="bodyStrong" color={colors.primary}>Message</CXText>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       {/* Friends Mode Bottom Sheet */}
       {activeMode === "friends" && (
         <View style={styles.friendsBottomCard}>
           <View style={styles.friendsBottomCardHeader}>
-            <CXText variant="h3">Online Friends</CXText>
-            <CXText variant="body" color={colors.primary}>
-              {friends.filter(p => p.online).length} nearby
-            </CXText>
+            <View>
+              <CXText variant="h3">Tracking Friends</CXText>
+              <CXText variant="body" color={colors.primary}>
+                {activeOnlineFriends.length} sharing location
+              </CXText>
+            </View>
+            <Pressable onPress={() => setIsSearchFocused(true)}>
+              <Ionicons name="search" size={24} color={colors.ink} />
+            </Pressable>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.friendsListRow}>
-            {friends.filter(p => p.online).map((friend) => (
-              <Pressable 
-                key={friend.id} 
-                style={styles.friendListItem}
-                onPress={() => {
-                  if (friend.lat && friend.lon) {
-                    setRegion(prev => ({
-                      ...prev,
-                      latitude: friend.lat!,
-                      longitude: friend.lon!,
-                    }));
+          {activeOnlineFriends.length === 0 ? (
+            <View style={{ padding: spacing.md, alignItems: "center", justifyContent: "center" }}>
+              <CXText color={colors.textMuted} align="center">
+                No friends are sharing their location right now.
+              </CXText>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: spacing.md }}>
+              {activeOnlineFriends.map((friend) => {
+                const friendObj = friends.find(f => f.id === friend.userId);
+                const displayName = friendObj?.name || friend.name || "User";
+                const avatar = friendObj?.avatar || friendObj?.avatarUrl || friend.avatarUrl;
+                
+                let freshnessStatus = "Live now";
+                if (friend.status === "active") {
+                  const updatedAt = friend.updatedAt || Date.now();
+                  const diffMin = Math.floor((Date.now() - updatedAt) / 60000);
+                  if (diffMin > 1) {
+                    freshnessStatus = `Updated ${diffMin} min ago`;
+                  } else if (diffMin === 1) {
+                    freshnessStatus = `Updated 1 min ago`;
+                  } else {
+                    const diffSec = Math.floor((Date.now() - updatedAt) / 1000);
+                    if (diffSec > 10) {
+                      freshnessStatus = `Updated ${diffSec} sec ago`;
+                    }
                   }
-                }}
-              >
-                {friend.avatar ? (
-                  <CXAvatar source={typeof friend.avatar === 'string' ? { uri: friend.avatar } : friend.avatar} size={56} name={friend.name} />
-                ) : (
-                  <View style={[styles.friendMarkerContainer, { width: 56, height: 56, borderRadius: 28 }]}>
-                    <Ionicons name="person" size={24} color={colors.white} />
-                  </View>
-                )}
-                <View style={styles.onlineIndicator} />
-                <CXText variant="caption" numberOfLines={1} style={{ marginTop: spacing.xs, width: 60, textAlign: "center" }}>
-                  {friend.name?.split(" ")[0] || "User"}
-                </CXText>
-              </Pressable>
-            ))}
-          </ScrollView>
+                } else if (friend.status === "stale") {
+                  freshnessStatus = "Updated a while ago";
+                }
+
+                return (
+                  <Pressable 
+                    key={friend.userId} 
+                    style={{
+                      alignItems: "center",
+                      width: 76,
+                    }}
+                    onPress={() => {
+                      if (friend.lat && friend.lon) {
+                        setRegion((prev: any) => ({
+                          ...prev,
+                          latitude: friend.lat!,
+                          longitude: friend.lon!,
+                        }));
+                        cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
+                      }
+                    }}
+                  >
+                    {avatar ? (
+                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: friend.status === "active" ? colors.success : colors.warning, alignItems: "center", justifyContent: "center" }}>
+                        <CXAvatar source={avatar} size={50} name={displayName} />
+                      </View>
+                    ) : (
+                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: friend.status === "active" ? colors.success : colors.warning, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }}>
+                        <Ionicons name="person" size={24} color={colors.textMuted} />
+                      </View>
+                    )}
+                    <View style={{ alignItems: "center", marginTop: spacing.xs }}>
+                      <CXText variant="caption" numberOfLines={1} align="center">{displayName.split(" ")[0]}</CXText>
+                      <CXText color={friend.status === "active" ? colors.success : colors.warning} align="center" numberOfLines={1} style={{ fontSize: 9 }}>
+                        {freshnessStatus}
+                      </CXText>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
       )}
     </View>
@@ -624,7 +932,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontFamily: "Inter-Regular",
-    color: colors.text,
+    color: colors.ink,
   },
   searchResults: {
     marginTop: spacing.sm,
@@ -791,7 +1099,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   friendsListRow: {
     paddingHorizontal: spacing.lg,

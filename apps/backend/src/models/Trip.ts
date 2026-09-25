@@ -4,10 +4,22 @@ const objectId = Schema.Types.ObjectId;
 const tripSchema = new Schema(
   {
     title: { type: String, required: true },
+    description: String,
     destination: { type: String, required: true },
+    destinationName: String,
+    destinationAddress: String,
+    destinationLat: Number,
+    destinationLng: Number,
+    placeId: String,
     imageUrl: String,
     startDate: Date,
     endDate: Date,
+    meetingPoint: String,
+    departureTime: String,
+    tripType: {
+      type: String,
+      enum: ["Day Trip", "Overnight", "Multi-day"],
+    },
     budgetPerPerson: { type: Number, min: 0 },
     createdBy: { type: objectId, ref: "User", required: true, index: true },
     status: {

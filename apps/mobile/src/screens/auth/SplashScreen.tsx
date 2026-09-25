@@ -10,13 +10,19 @@ import { CXScreen } from "@/components/ui";
 import { colors } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { useAppStore } from "@/store/appStore";
+import { consumePendingRoute, isColdStartProcessed, markColdStartProcessed } from "@/navigation/PushRoutingManager";
+import * as Notifications from "expo-notifications";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 const logo = require("../../../assets/branding/campusx-logo-new-transparent.png");
 
 export function SplashScreen({ navigation }: Props) {
-  const { hydrated, onboardingComplete, accessToken, hydrate, fetchCurrentUser } = useAppStore();
+  const hydrated = useAppStore(state => state.hydrated);
+  const onboardingComplete = useAppStore(state => state.onboardingComplete);
+  const accessToken = useAppStore(state => state.accessToken);
+  const hydrate = useAppStore(state => state.hydrate);
+  const fetchCurrentUser = useAppStore(state => state.fetchCurrentUser);
   const { width, height } = useWindowDimensions();
 
   // Animation values
@@ -85,7 +91,36 @@ export function SplashScreen({ navigation }: Props) {
       if (accessToken) {
         try {
           await fetchCurrentUser();
-          if (isMounted) navigation.replace("Main");
+          if (isMounted) {
+            let target = consumePendingRoute();
+            
+            if (!isColdStartProcessed()) {
+              markColdStartProcessed();
+              const response = await Notifications.getLastNotificationResponseAsync();
+              const data = response?.notification?.request?.content?.data;
+              if (!target && data) {
+                if (data.route) {
+                  target = { screen: data.route as any, params: data.params };
+                } else if (data.url) {
+                  const url = data.url as string;
+                  const screenStr = url.replace("campusx://", "");
+                  target = { screen: (screenStr || "Main") as any, params: data.params };
+                }
+              }
+            }
+
+            if (target && target.screen && target.screen !== "Main") {
+              navigation.reset({
+                index: 1,
+                routes: [
+                  { name: "Main" },
+                  { name: target.screen, params: target.params }
+                ]
+              });
+            } else {
+              navigation.replace("Main");
+            }
+          }
         } catch (error) {
           console.log("Failed to fetch user on startup:", error);
           if (isMounted) navigation.replace("Login");

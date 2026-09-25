@@ -6,6 +6,7 @@ const eventSchema = new Schema(
     title: { type: String, required: true, index: true },
     description: { type: String, maxlength: 5000 },
     imageUrl: String,
+    imagePublicId: String,
     category: { type: String, index: true },
     startsAt: { type: Date, required: true, index: true },
     endsAt: Date,
@@ -34,6 +35,7 @@ const listingSchema = new Schema(
     price: { type: Number, required: true, min: 0 },
     negotiable: { type: Boolean, default: true },
     images: [String],
+    imagePublicIds: [String],
     condition: String,
     location: String,
     status: {
@@ -62,6 +64,7 @@ const timetableEntrySchema = new Schema(
       enum: ["none", "weekly", "custom"],
       default: "weekly",
     },
+    importBatchId: { type: String, index: true },
   },
   { timestamps: true, versionKey: false },
 );
@@ -70,3 +73,41 @@ timetableEntrySchema.index({ user: 1, days: 1, startTime: 1 });
 export const Event = model("Event", eventSchema);
 export const MarketplaceListing = model("MarketplaceListing", listingSchema);
 export const TimetableEntry = model("TimetableEntry", timetableEntrySchema);
+
+const timetableSettingsSchema = new Schema(
+  {
+    user: { type: objectId, ref: "User", required: true, unique: true, index: true },
+    activeImportBatchId: { type: String },
+    timetableRevision: { type: Number, default: 0 },
+    gridTimeSlots: [
+      {
+        id: { type: String, required: true },
+        label: { type: String, required: true },
+        start: { type: String, required: true },
+        break: { type: Boolean, default: false }
+      }
+    ]
+  },
+  { timestamps: true, versionKey: false },
+);
+
+export const TimetableSettings = model("TimetableSettings", timetableSettingsSchema);
+
+const calendarItemSchema = new Schema(
+  {
+    user: { type: objectId, ref: "User", required: true, index: true },
+    title: { type: String, required: true, trim: true, maxlength: 200 },
+    type: { type: String, required: true, enum: ["exam", "assignment", "reminder", "personal"] },
+    date: { type: String, required: true }, // YYYY-MM-DD local
+    allDay: { type: Boolean, default: true },
+    startTime: { type: String }, // HH:MM
+    endTime: { type: String }, // HH:MM
+    notes: { type: String, trim: true, maxlength: 2000 },
+    location: { type: String, trim: true, maxlength: 200 },
+    color: String,
+  },
+  { timestamps: true, versionKey: false },
+);
+calendarItemSchema.index({ user: 1, date: 1 });
+
+export const CalendarItem = model("CalendarItem", calendarItemSchema);

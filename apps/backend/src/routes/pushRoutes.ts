@@ -11,8 +11,8 @@ pushRouter.post(
     const { token, deviceId, platform } = z
       .object({
         token: z.string(),
-        deviceId: z.string().optional(),
-        platform: z.string().optional(),
+        deviceId: z.string().nullish(),
+        platform: z.string().nullish(),
       })
       .parse(request.body);
 

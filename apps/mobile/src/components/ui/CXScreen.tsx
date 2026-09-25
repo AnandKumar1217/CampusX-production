@@ -1,6 +1,5 @@
 import type { PropsWithChildren } from "react";
 import {
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -8,7 +7,8 @@ import {
   type ScrollViewProps,
   type ViewProps,
 } from "react-native";
-import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets, type Edge } from "react-native-safe-area-context";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 import { colors, spacing } from "@/theme";
 
@@ -22,7 +22,7 @@ type ScreenProps = PropsWithChildren<
 
 export function CXScreen({
   children,
-  edges = ["top", "right", "left"],
+  edges = ["top", "right", "left", "bottom"],
   padded = false,
   backgroundColor = colors.background,
   style,
@@ -34,12 +34,13 @@ export function CXScreen({
       style={[
         styles.screen,
         { backgroundColor },
-        padded && styles.padded,
         style,
       ]}
       {...props}
     >
-      {children}
+      <View style={[styles.contentContainer, padded && styles.padded]}>
+        {children}
+      </View>
     </SafeAreaView>
   );
 }
@@ -58,35 +59,57 @@ export function CXScrollScreen({
   contentContainerStyle,
   ...props
 }: ScrollProps) {
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView edges={edges} style={[styles.screen, { backgroundColor }]}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          padded && styles.padded,
-          contentContainerStyle,
-        ]}
-        {...props}
-      >
-        {children}
-      </ScrollView>
+      <View style={styles.contentContainer}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            padded && styles.padded,
+            { paddingBottom: Math.max(insets.bottom + spacing.xxl, spacing.xxxl) },
+            contentContainerStyle,
+          ]}
+          {...props}
+        >
+          {children}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
-export function CXKeyboardScreen({ children, style, ...props }: ScreenProps) {
+export function CXKeyboardScreen({
+  children,
+  edges = ["top", "right", "left"],
+  padded = true,
+  backgroundColor = colors.background,
+  contentContainerStyle,
+  style,
+  ...props
+}: ScrollProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <CXScreen style={style} {...props}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
-        style={styles.screen}
-      >
-        {children}
-      </KeyboardAvoidingView>
-    </CXScreen>
+    <SafeAreaView edges={edges} style={[styles.screen, { backgroundColor }, style]}>
+      <View style={styles.contentContainer}>
+        <KeyboardAwareScrollView
+          bottomOffset={Platform.OS === "ios" ? 8 : 0}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            padded && styles.padded,
+            { paddingBottom: Math.max(insets.bottom + spacing.xxl, spacing.xxxl) },
+            contentContainerStyle,
+          ]}
+          {...props}
+        >
+          {children}
+        </KeyboardAwareScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -96,6 +119,12 @@ export function CXRow({ style, ...props }: ViewProps) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  contentContainer: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 600,
+    alignSelf: "center",
+  },
   padded: { paddingHorizontal: spacing.screen },
   scrollContent: { flexGrow: 1, paddingBottom: spacing.xxxl },
   row: { flexDirection: "row", alignItems: "center" },

@@ -21,8 +21,8 @@ import { colors, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 
 const schema = z.object({
-  identity: z.string().min(3, "Enter your email, username, or phone number"),
-  password: z.string().min(8, "Password must contain at least 8 characters"),
+  identity: z.string().min(1, "Enter your email or username."),
+  password: z.string().min(1, "Enter your password."),
 });
 type Form = z.infer<typeof schema>;
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
@@ -101,9 +101,9 @@ export function LoginScreen({ navigation }: Props) {
             name="identity"
             render={({ field, fieldState }) => (
               <CXInput
-                label="Email / Username / Phone"
+                label="Email / Username"
                 icon="person-outline"
-                placeholder="Enter email, username, or phone"
+                placeholder="Enter email or username"
                 autoCapitalize="none"
                 autoComplete="username"
                 value={field.value}

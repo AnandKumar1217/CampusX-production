@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
+import React, { useState } from "react";
 
 import { colors, radius, spacing } from "@/theme";
 import type { Post, User } from "@/types/domain";
 import { useAppStore } from "@/store/appStore";
 
-import { CXAvatar, CXButton, CXCard, CXRow, CXText, CXIconButton } from "../ui";
+import { CXAvatar, CXButton, CXCard, CXRow, CXText, CXIconButton, CXActionSheet } from "../ui";
 
 export function CXUserRow({
   user,
@@ -22,13 +23,13 @@ export function CXUserRow({
   onRemove?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => pressed && styles.pressed}
-    >
-      <CXRow style={styles.userRow}>
-        <CXAvatar source={user.avatar} name={user.name} online={user.online} />
+    <CXRow style={styles.userRow}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        style={({ pressed }) => [{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }, pressed && styles.pressed]}
+      >
+        <CXAvatar source={user.avatarUrl || user.avatar} name={user.name} online={user.online} />
         <View style={styles.flex}>
           <CXRow style={styles.nameRow}>
             <CXText variant="bodyStrong" numberOfLines={1}>
@@ -43,10 +44,11 @@ export function CXUserRow({
             ) : null}
           </CXRow>
           <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
-            {user.department} · {user.year}
+            {[user.department, user.academicYear || user.year].filter(Boolean).join(" · ")}
           </CXText>
         </View>
-        {onRemove && (
+      </Pressable>
+      {onRemove && (
           <CXIconButton
             icon="person-remove-outline"
             label="Remove friend"
@@ -60,11 +62,11 @@ export function CXUserRow({
             size="sm"
             variant="outline"
             fullWidth={false}
+            style={{ alignSelf: "center" }}
             onPress={onAction}
           />
         ) : null}
       </CXRow>
-    </Pressable>
   );
 }
 
@@ -85,7 +87,7 @@ export function CXStoryAvatar({
     >
       <View style={[styles.storyRing, add && styles.storyRingAdd]}>
         <CXAvatar
-          source={user.avatar}
+          source={user.avatarUrl || user.avatar}
           name={user.name}
           size={50}
           online={false}
@@ -114,28 +116,41 @@ export function CXPostCard({
   onLike?: () => void;
   onSave?: () => void;
 }) {
+  const currentUser = useAppStore(state => state.user);
+  const [optionsVisible, setOptionsVisible] = useState(false);
   const isSaved = post.saved;
 
   return (
     <CXCard style={styles.postCard}>
       <CXRow style={styles.postHeader}>
         <CXAvatar
-          source={post.author.avatar}
+          source={post.author.avatarUrl || post.author.avatar}
           name={post.author.name}
           size={42}
         />
         <View style={styles.flex}>
           <CXText variant="bodyStrong">{post.author.name}</CXText>
           <CXText variant="caption" color={colors.textMuted}>
-            {post.author.department} · {post.createdAt}
+            {post.author.department} · {new Date(post.createdAt).toLocaleString()}
           </CXText>
         </View>
-        <Ionicons
-          name="ellipsis-horizontal"
-          size={20}
-          color={colors.textMuted}
-        />
+        <Pressable onPress={() => setOptionsVisible(true)} hitSlop={10}>
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={20}
+            color={colors.textMuted}
+          />
+        </Pressable>
       </CXRow>
+      <CXActionSheet
+        visible={optionsVisible}
+        onClose={() => setOptionsVisible(false)}
+        actions={[
+          { label: "Share Post", icon: "share-outline", onPress: () => {} },
+          { label: "Save Post", icon: "bookmark-outline", onPress: onSave || (() => {}) },
+          { label: "Report", icon: "flag-outline", destructive: true, onPress: () => {} }
+        ]}
+      />
       <Pressable onPress={onOpen} accessibilityRole="button">
         <CXText style={styles.postBody}>{post.body}</CXText>
         {post.image ? (
@@ -216,7 +231,7 @@ function PostAction({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { opacity: 0.72 },
-  userRow: { minHeight: 66, gap: spacing.sm },
+  userRow: { minHeight: 66, gap: spacing.sm, alignItems: "center" },
   nameRow: { gap: spacing.xxs },
   story: { width: 64, alignItems: "center", gap: spacing.xxs },
   storyRing: {

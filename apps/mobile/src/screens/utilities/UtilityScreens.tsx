@@ -2,7 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Linking,
   Pressable,
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   View,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 
@@ -27,48 +29,96 @@ import {
   CXScrollScreen,
   CXSectionHeader,
   CXText,
+  CXBottomActionArea,
 } from "@/components/ui";
 
 import { api } from "@/services/api";
 import { useAppStore } from "@/store/appStore";
 import { colors, gradients, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
+import type { Notification } from "@/types/domain";
+import { handleNotification } from "@/navigation/PushRoutingManager";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
   Name
 >;
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Notification } from "@/types/domain";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 export function NotificationsScreen({
   navigation,
 }: StackProps<"Notifications">) {
   const queryClient = useQueryClient();
   const fetchUnreadNotifications = useAppStore((state) => state.fetchUnreadNotifications);
-  const [activeFilter, setActiveFilter] = useState<"All" | "Unread" | "Mentions" | "Other">("All");
+  const [activeFilter, setActiveFilter] = useState<string>("All");
 
-  const { data: items = [], isLoading } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: async () => {
-      const res = await api.get("/notifications");
-      return (res.data?.data?.items || []) as Notification[];
+  const userId = useAppStore((state) => state.user?.id);
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["notifications", userId, activeFilter],
+    enabled: !!userId,
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const res = await api.get("/notifications", { 
+        params: { page: pageParam, limit: 20, filter: activeFilter } 
+      });
+      return res.data.data as { items: Notification[]; page: number; limit: number; total: number };
     },
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.limit < lastPage.total ? lastPage.page + 1 : undefined,
   });
+  const items = data?.pages.flatMap((page) => page.items) ?? [];
+  const filteredItems = items;
+
+  useFocusEffect(React.useCallback(() => {
+    if (userId) void refetch();
+  }, [refetch, userId]));
 
   const markAll = async () => {
-    await api.patch("/notifications/read-all");
-    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    fetchUnreadNotifications();
+    try {
+      await api.patch("/notifications/read-all");
+      void queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+      void fetchUnreadNotifications();
+    } catch {
+      Alert.alert("Couldn't update notifications", "Please try again.");
+    }
   };
 
+  const openTarget = (item: Notification) => {
+    if (!item.target || !item.target.route) {
+      Alert.alert("Content unavailable", "This notification has no available destination.");
+      return;
+    }
+    handleNotification(item.target);
+  };
   const getIcon = (type: string) => {
-    if (type.startsWith("friend")) return { name: "person-add-outline" as any, color: "#6338F2" };
+    if (type.startsWith("friend") || type.includes("request") || type.includes("invite")) return { name: "person-add-outline" as any, color: "#6338F2" };
     if (type.startsWith("post")) return { name: "heart-outline" as any, color: "#EC4899" };
     if (type === "message") return { name: "chatbubble-outline" as any, color: "#22C55E" };
     return { name: "notifications-outline" as any, color: "#F59E0B" };
   };
+
+  const getCategoryName = (type: string) => {
+    if (type.startsWith("friend") || type.includes("request") || type.includes("invite")) return "Requests";
+    if (type.startsWith("post")) return "Posts";
+    if (type === "message") return "Messages";
+    return "Others";
+  };
+
+  const groupedItems = filteredItems.reduce((acc, item) => {
+    const category = getCategoryName(item.type);
+    if (!acc[category]) acc[category] = [];
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, typeof filteredItems>);
 
   return (
     <CXScreen>
@@ -76,82 +126,97 @@ export function NotificationsScreen({
         title="Notifications"
         onBack={navigation.goBack}
         right={
-          <CXRow>
-            <CXIconButton
-              icon="checkmark-done-outline"
-              label="Mark all read"
-              backgroundColor={colors.transparent}
-              onPress={markAll}
-            />
-            <CXIconButton
-              icon="settings-outline"
-              label="Notification settings"
-              backgroundColor={colors.transparent}
-              onPress={() => navigation.navigate("Settings")}
-            />
-          </CXRow>
+          <CXIconButton
+            icon="checkmark-done-outline"
+            label="Mark all read"
+            backgroundColor={colors.transparent}
+            onPress={markAll}
+          />
         }
       />
       <ScrollView contentContainerStyle={styles.page}>
         <CXRow style={styles.filters}>
-          {(["All", "Unread", "Mentions", "Other"] as const).map((f) => (
-            <Pressable key={f} onPress={() => setActiveFilter(f)}>
-              <CXChip label={f} active={activeFilter === f} />
-            </Pressable>
+          {(["All", "Unread", "Requests", "Posts", "Messages", "Others"] as const).map((f) => (
+            <CXChip 
+              key={f} 
+              label={f} 
+              active={activeFilter === f} 
+              onPress={() => setActiveFilter(f)} 
+            />
           ))}
         </CXRow>
-        <CXSectionHeader title={activeFilter === "All" ? "New" : activeFilter} />
-        {items.filter((item) => {
-          if (activeFilter === "Unread") return !item.readAt;
-          if (activeFilter === "Mentions") return item.type.startsWith("post");
-          if (activeFilter === "Other") return !item.type.startsWith("post");
-          return true;
-        }).map((item) => {
-          const isUnread = !item.readAt;
-          const { name, color } = getIcon(item.type);
-          return (
-            <Pressable
-              key={item._id}
-              onPress={async () => {
-                if (isUnread) {
-                  await api.patch(`/notifications/${item._id}/read`);
-                  queryClient.invalidateQueries({ queryKey: ["notifications"] });
-                  fetchUnreadNotifications();
-                }
-                if (item.target?.route === "Chats") {
-                  navigation.navigate("Main", { screen: "Chats" });
-                } else if (item.target?.route) {
-                  navigation.navigate(item.target.route as never, item.target.params as never);
-                }
-              }}
-            >
-              <CXRow
-                style={[
-                  styles.notification,
-                  isUnread && styles.notificationUnread,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.notificationIcon,
-                    { backgroundColor: `${color}18` },
-                  ]}
+        {isLoading ? (
+          <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        ) : isError ? (
+          <CXButton label="Retry notifications" onPress={() => void refetch()} />
+        ) : filteredItems.length === 0 ? (
+          <CXText color={colors.textMuted} align="center">
+            {hasNextPage ? "No matches on loaded pages. Load more to check older notifications." : "No notifications here yet."}
+          </CXText>
+        ) : Object.keys(groupedItems).map((category) => (
+          <View key={category}>
+            <CXSectionHeader title={category} />
+            {groupedItems[category].map((item) => {
+              const isUnread = !item.readAt;
+              const { name, color } = getIcon(item.type);
+              return (
+                <Pressable
+                  key={item._id}
+                  onPress={async () => {
+                    if (isUnread) {
+                      try {
+                        await api.patch(`/notifications/${item._id}/read`);
+                        void queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+                        void fetchUnreadNotifications();
+                      } catch {
+                        Alert.alert("Couldn't mark notification as read", "Please try again later.");
+                      }
+                    }
+                    openTarget(item);
+                  }}
                 >
-                  <Ionicons name={name} size={20} color={color} />
-                </View>
-                <View style={styles.flex}>
-                  <CXText variant={isUnread ? "bodyStrong" : "body"}>
-                    {item.title}
-                  </CXText>
-                  <CXText variant="caption" color={colors.textMuted}>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </CXText>
-                </View>
-                {isUnread ? <View style={styles.unreadDot} /> : null}
-              </CXRow>
-            </Pressable>
-          );
-        })}
+                  <CXRow
+                    style={[
+                      styles.notification,
+                      isUnread && styles.notificationUnread,
+                    ]}
+                  >
+                    <View style={styles.notificationIconContainer}>
+                      {item.actor ? (
+                        <CXAvatar
+                          source={item.actor.avatarUrl}
+                          name={item.actor.name}
+                          size={44}
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.notificationIcon,
+                            { backgroundColor: `${color}18` },
+                          ]}
+                        >
+                          <Ionicons name={name} size={20} color={color} />
+                        </View>
+                      )}
+                      {isUnread ? <View style={styles.unreadBadge} /> : null}
+                    </View>
+                    <View style={styles.flex}>
+                      <CXText variant={isUnread ? "bodyStrong" : "body"}>
+                        {item.title}
+                      </CXText>
+                      <CXText variant="caption" color={colors.textMuted}>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </CXText>
+                    </View>
+                  </CXRow>
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
+        {hasNextPage ? (
+          <CXButton label="Load more" loading={isFetchingNextPage} onPress={() => void fetchNextPage()} />
+        ) : null}
       </ScrollView>
     </CXScreen>
   );
@@ -159,9 +224,34 @@ export function NotificationsScreen({
 
 export function MyQRScreen({ navigation }: StackProps<"MyQR">) {
   const user = useAppStore((state) => state.user);
-  const value = `campusx://user/${user?.id || "unknown"}`;
+  const fetchCurrentUser = useAppStore((state) => state.fetchCurrentUser);
+
+  useEffect(() => {
+    if (!user?.qrToken) {
+      void fetchCurrentUser();
+    }
+  }, [user?.qrToken, fetchCurrentUser]);
+
+  if (!user?.qrToken) {
+    return (
+      <CXScreen padded>
+        <CXHeader title="My QR Code" onBack={navigation.goBack} />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <Ionicons name="sync-outline" size={48} color={colors.primary} style={{ marginBottom: spacing.lg }} />
+          <CXText variant="h3" align="center" style={{ marginBottom: spacing.sm }}>
+            Your CampusX QR is being prepared...
+          </CXText>
+          <CXText color={colors.textMuted} align="center">
+            We are securely syncing your unique identity.
+          </CXText>
+        </View>
+      </CXScreen>
+    );
+  }
+
+  const value = `campusx://profile/${user.qrToken}`;
   return (
-    <CXScrollScreen>
+    <CXScreen edges={["top", "left", "right"]}>
       <CXHeader
         title="My QR Code"
         onBack={navigation.goBack}
@@ -172,25 +262,28 @@ export function MyQRScreen({ navigation }: StackProps<"MyQR">) {
             backgroundColor={colors.transparent}
             onPress={() =>
               void Share.share({
-                message: `Connect with ${user?.name || "someone"} on CampusX: ${value}`,
+                message: `Connect with ${user?.name || "someone"} on CampusX: campusx://user/${user?.id}`,
               })
             }
           />
         }
       />
-      <LinearGradient colors={gradients.primaryStrong} style={styles.qrCard}>
-        <CXRow>
-          <Ionicons name="school" size={22} color={colors.white} />
-          <CXText variant="title" color={colors.white}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.xl, paddingBottom: spacing.xxxl }}>
+        <LinearGradient colors={gradients.primaryStrong} style={styles.qrCard}>
+        <CXRow style={{ marginBottom: spacing.md, gap: spacing.xs }}>
+          <Ionicons name="school" size={24} color={colors.white} />
+          <CXText variant="h3" color={colors.white}>
             CampusX
           </CXText>
         </CXRow>
-        <CXText variant="h2" color={colors.white}>
-          {user?.name || "CampusX User"}
-        </CXText>
-        <CXText variant="small" color="#EDE9FF">
-          @{user?.username || "user"}
-        </CXText>
+        <View style={{ alignItems: "center", marginBottom: spacing.lg }}>
+          <CXText variant="h1" color={colors.white} align="center" style={{ marginBottom: 4 }}>
+            {user?.name || "CampusX User"}
+          </CXText>
+          <CXText variant="body" color="#EDE9FF">
+            @{user?.username || "user"}
+          </CXText>
+        </View>
         <View style={styles.qrWrap}>
           <QRCode
             value={value}
@@ -200,10 +293,10 @@ export function MyQRScreen({ navigation }: StackProps<"MyQR">) {
             quietZone={12}
           />
         </View>
-        <CXText color={colors.white} align="center">
+        <CXText color={colors.white} align="center" style={{ marginTop: spacing.md, marginBottom: spacing.xl }}>
           Scan to connect with me on CampusX
         </CXText>
-        <CXRow style={[styles.qrActions, { justifyContent: "center", gap: spacing.md }]}>
+        <CXRow style={[styles.qrActions, { justifyContent: "center", gap: spacing.md, flexWrap: "wrap" }]}>
           <CXButton
             label="Share QR"
             iconLeft="share-social-outline"
@@ -211,7 +304,7 @@ export function MyQRScreen({ navigation }: StackProps<"MyQR">) {
             fullWidth={false}
             onPress={() =>
               void Share.share({
-                message: `Connect with ${user?.name || "someone"} on CampusX: ${value}`,
+                message: `Connect with ${user?.name || "someone"} on CampusX: campusx://user/${user?.id}`,
               })
             }
           />
@@ -229,24 +322,27 @@ export function MyQRScreen({ navigation }: StackProps<"MyQR">) {
           />
         </CXRow>
       </LinearGradient>
-      <CXButton
-        label="Scan Someone’s QR"
-        iconLeft="scan-outline"
-        variant="outline"
-        onPress={() => navigation.navigate("QRScanner")}
-      />
-      <CXCard style={styles.info}>
-        <Ionicons
-          name="shield-checkmark-outline"
-          size={24}
-          color={colors.primary}
+        <CXCard style={styles.info}>
+          <Ionicons
+            name="shield-checkmark-outline"
+            size={24}
+            color={colors.primary}
+          />
+          <CXText color={colors.textMuted} style={styles.flex}>
+            Your QR contains only a safe CampusX profile link. It never includes
+            your email, password, or private account data.
+          </CXText>
+        </CXCard>
+      </ScrollView>
+      <CXBottomActionArea>
+        <CXButton
+          style={{ flex: 1 }}
+          label="Scan Someone’s QR"
+          iconLeft="qr-code-outline"
+          onPress={() => navigation.navigate("QRScanner")}
         />
-        <CXText color={colors.textMuted} style={styles.flex}>
-          Your QR contains only a safe CampusX profile link. It never includes
-          your email, password, or private account data.
-        </CXText>
-      </CXCard>
-    </CXScrollScreen>
+      </CXBottomActionArea>
+    </CXScreen>
   );
 }
 
@@ -254,10 +350,13 @@ export function QRScannerScreen({ navigation }: StackProps<"QRScanner">) {
   const [permission, requestPermission] = useCameraPermissions();
   const [locked, setLocked] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scan = ({ data }: { data: string }) => {
+  const scan = async ({ data }: { data: string }) => {
     if (locked) return;
     setLocked(true);
-    if (!data.startsWith("campusx://user/")) {
+
+    // Strict parsing
+    const match = data.match(/^campusx:\/\/profile\/([a-f0-9\-]{36})$/i);
+    if (!match) {
       setError("This is not a valid CampusX user QR code.");
       setTimeout(() => {
         setLocked(false);
@@ -265,13 +364,25 @@ export function QRScannerScreen({ navigation }: StackProps<"QRScanner">) {
       }, 1800);
       return;
     }
-    const userId = data.replace("campusx://user/", "");
-    if (userId === useAppStore.getState().user?.id) {
-      setError("This is your own CampusX QR code.");
-      setTimeout(() => setLocked(false), 1800);
-      return;
+
+    const qrToken = match[1];
+
+    try {
+      const { api } = await import("@/services/api");
+      const res = await api.get(`/users/qr/${qrToken}`);
+      const scannedUser = res.data.data.user;
+
+      if (scannedUser._id === useAppStore.getState().user?.id) {
+        setError("This is your own CampusX QR code.");
+        setTimeout(() => setLocked(false), 1800);
+        return;
+      }
+
+      navigation.replace("UserProfile", { userId: scannedUser._id });
+    } catch (err: any) {
+      setError(err.response?.data?.message || "CampusX profile not found");
+      setTimeout(() => setLocked(false), 2500);
     }
-    navigation.replace("UserProfile", { userId });
   };
   if (!permission)
     return (
@@ -379,7 +490,7 @@ export function SettingsScreen({ navigation }: StackProps<"Settings">) {
       <CXHeader title="Settings" onBack={navigation.goBack} />
       <CXRow style={styles.settingsUser}>
         <CXAvatar
-          source={user?.avatarUrl}
+          source={user?.avatar as any}
           name={user?.name || "User"}
           size={56}
         />
@@ -401,7 +512,7 @@ export function SettingsScreen({ navigation }: StackProps<"Settings">) {
         <CXListRow
           icon="shield-checkmark-outline"
           title="Privacy & Security"
-          onPress={() => navigation.navigate("GhostMode")}
+          onPress={() => navigation.navigate("LocationSettings")}
         />
         <CXListRow
           icon="notifications-outline"
@@ -457,24 +568,39 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   notificationUnread: { backgroundColor: colors.backgroundLavender },
+  notificationIconContainer: {
+    marginRight: spacing.xs,
+    position: "relative",
+  },
   notificationIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  unreadBadge: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: colors.white,
     backgroundColor: colors.primary,
   },
   qrCard: {
-    borderRadius: radius.lg,
+    margin: spacing.md,
+    borderRadius: radius.xl,
     padding: spacing.xl,
     alignItems: "center",
     gap: spacing.sm,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   qrWrap: {
     borderRadius: radius.md,

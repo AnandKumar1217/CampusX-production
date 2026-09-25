@@ -9,13 +9,21 @@ const defaultSocketUrl =
     : "http://localhost:5000";
 
 export function connectSocket(token: string) {
-  if (socket?.connected) return socket;
+  if (socket) {
+    socket.auth = { token };
+    if (!socket.connected) socket.connect();
+    return socket;
+  }
   socket = io(process.env.EXPO_PUBLIC_SOCKET_URL ?? defaultSocketUrl, {
     transports: ["websocket"],
     auth: { token },
     reconnection: true,
   });
   return socket;
+}
+
+export function updateSocketAuthToken(token: string) {
+  if (socket) socket.auth = { token };
 }
 
 export function disconnectSocket() {

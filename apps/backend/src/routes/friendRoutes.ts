@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { z } from "zod";
 
 import { FriendRequest, Friendship, Notification } from "../models/Social.js";
@@ -54,16 +54,62 @@ friendRouter.get(
     const relations = await Friendship.find({
       users: request.user!._id,
     }).select("users");
+    
+    // Also exclude pending requests
+    const pendingRequests = await FriendRequest.find({
+      $or: [
+        { requester: request.user!._id, status: "pending" },
+        { recipient: request.user!._id, status: "pending" }
+      ]
+    }).select("requester recipient");
+    
     const excluded = new Set(
       relations.flatMap((item) => item.users.map((id) => id.toString())),
     );
+    
+    pendingRequests.forEach(req => {
+      excluded.add(req.requester.toString());
+      excluded.add(req.recipient.toString());
+    });
+    
     excluded.add(request.user!._id.toString());
-    const suggestions = await User.find({ _id: { $nin: [...excluded] } })
-      .select(
-        "name username avatarUrl college department academicYear verified",
-      )
-      .limit(30);
-    return sendSuccess(response, suggestions);
+    const currentUser = await User.findById(request.user!._id).select("college department");
+    
+    // Try to find users from the same college or department first
+    let suggestions = await User.find({
+      _id: { $nin: [...excluded] },
+      ...(currentUser?.college || currentUser?.department ? {
+        $or: [
+          ...(currentUser.college ? [{ college: currentUser.college }] : []),
+          ...(currentUser.department ? [{ department: currentUser.department }] : [])
+        ]
+      } : {})
+    })
+      .select("name username avatarUrl college department academicYear verified")
+      .limit(10);
+
+    // If not enough suggestions, fill with others
+    if (suggestions.length < 10) {
+      const moreExcluded = new Set([...excluded, ...suggestions.map(s => s._id.toString())]);
+      const more = await User.find({ _id: { $nin: [...moreExcluded] } })
+        .select("name username avatarUrl college department academicYear verified")
+        .limit(10 - suggestions.length);
+      suggestions = [...suggestions, ...more];
+    }
+    
+    // Ensure we only select the fields frontend expects
+    const formatted = suggestions.map(u => ({
+      _id: u._id,
+      name: u.name,
+      username: u.username,
+      avatarUrl: u.avatarUrl,
+      college: u.college,
+      department: u.department,
+      academicYear: u.academicYear,
+      verified: u.verified
+    }));
+    
+    return sendSuccess(response, formatted);
   }),
 );
 
@@ -148,7 +194,7 @@ friendRouter.post(
       {
         $set: {
           title: `${request.user!.name} sent you a friend request`,
-          target: { route: "FriendRequests" }
+          target: { route: "People" }
         },
         $unset: { readAt: "" }
       },
@@ -226,7 +272,7 @@ friendRouter.post(
         {
           $set: {
             title: `${request.user!.name} accepted your friend request`,
-            target: { route: "Friends" }
+            target: { route: "UserProfile", params: { userId: request.user!._id.toString() } }
           },
           $unset: { readAt: "" }
         },
@@ -277,6 +323,16 @@ friendRouter.delete(
         .get("io")
         ?.to(`user:${request.params.id}`)
         .emit("friend:removed", { userId: request.user!._id.toString() });
+        
+      request.app
+        .get("io")
+        ?.to(`user:${request.params.id}`)
+        .emit("location:friend_unavailable", { userId: request.user!._id.toString() });
+        
+      request.app
+        .get("io")
+        ?.to(`user:${request.user!._id.toString()}`)
+        .emit("location:friend_unavailable", { userId: request.params.id });
     }
 
     return sendSuccess(response, null, "Friend removed");

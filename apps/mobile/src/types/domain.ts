@@ -1,16 +1,27 @@
 export type Id = string;
 export type ImageSource = string | number;
 
+export type TimeSlot = {
+  id: string;
+  label: string;
+  start: string;
+  break?: boolean;
+};
+
 export type User = {
   id: Id;
   name: string;
   username: string;
   avatar?: ImageSource;
+  avatarUrl?: string;
   college?: string;
   department?: string;
   year?: string;
+  academicYear?: string;
   verified?: boolean;
   online?: boolean;
+  lastSeenAt?: string;
+  qrToken?: string | null;
   bio?: string;
   interests?: string[];
   lat?: number;
@@ -71,18 +82,21 @@ export type Message = {
 export type TimetableEntry = {
   id: Id;
   subject: string;
-  room: string;
+  room?: string;
   lecturer?: string;
-  day: number;
+  days: number[];
   startTime: string;
   endTime: string;
-  color: string;
+  color?: string;
+  repeat?: string;
 };
 
 export type EventItem = {
   id: Id;
   title: string;
-  date: string;
+  date: string; // Used for UI display, backend gives startsAt/endsAt
+  startsAt?: string; // from backend Date
+  endsAt?: string;   // from backend Date
   time: string;
   location: string;
   coordinates?: { lat: number; lng: number };
@@ -101,24 +115,52 @@ export type Listing = {
   title: string;
   price: number;
   category: string;
-  image?: ImageSource;
-  images?: ImageSource[];
+  images: string[];
   seller: User;
   status: "active" | "sold" | "draft";
   description?: string;
+  condition?: string;
+  location?: string;
+  negotiable?: boolean;
   createdAt: string;
   views: number;
 };
 
 export type Trip = {
-  id: Id;
+  _id: string;
+  id?: string;
   title: string;
+  description?: string;
   destination: string;
+  destinationName?: string;
+  destinationAddress?: string;
+  destinationLat?: number;
+  destinationLng?: number;
+  placeId?: string;
   startDate: string;
-  endDate: string;
-  budget: number;
+  endDate?: string;
+  meetingPoint?: string;
+  departureTime?: string;
+  tripType?: "Day Trip" | "Overnight" | "Multi-day";
+  budgetPerPerson?: number;
+  transport?: string;
+  stay?: string;
+  status: "draft" | "upcoming" | "active" | "completed" | "cancelled";
+  createdBy: any;
+  imageUrl?: string;
+  
+  // Legacy / UI mapping fields
   image?: ImageSource;
-  members: User[];
+  members?: User[];
+  myStatus?: "invited" | "accepted" | "declined" | "organizer";
+};
+
+export type TripMember = {
+  _id: string;
+  trip: string;
+  user: User;
+  role: "organizer" | "member";
+  status: "invited" | "accepted" | "declined";
 };
 
 export type StudyGroup = {
@@ -133,3 +175,31 @@ export type StudyGroup = {
   creatorId?: Id;
 };
 
+export type CalendarItem = {
+  id: Id;
+  title: string;
+  type: "exam" | "assignment" | "reminder" | "personal";
+  date: string; // YYYY-MM-DD
+  allDay: boolean;
+  startTime?: string; // HH:MM
+  endTime?: string; // HH:MM
+  notes?: string;
+  location?: string;
+  color?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CalendarAgendaItem = {
+  source: "class" | "event" | "personal";
+  sourceId: Id;
+  title: string;
+  date: string; // YYYY-MM-DD local
+  allDay: boolean;
+  startTime?: string; // HH:MM
+  endTime?: string; // HH:MM
+  subtitle?: string;
+  color?: string;
+  location?: string;
+  itemType?: "exam" | "assignment" | "reminder" | "personal"; // only for personal
+};

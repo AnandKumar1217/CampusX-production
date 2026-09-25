@@ -58,4 +58,14 @@ export const errorHandler: ErrorRequestHandler = (
       ? { stack: error.stack }
       : {}),
   });
+
+  if (env.NODE_ENV === "development") {
+    console.error("[AI CHAT ERROR / UNEXPECTED SERVER ERROR]", {
+      name: error instanceof Error ? error.name : "Unknown",
+      message: error instanceof Error ? error.message : "Unknown error",
+      status: (error as any)?.status || (error as any)?.response?.status,
+      code: (error as any)?.code,
+      stack: error instanceof Error ? error.stack : undefined
+    });
+  }
 };

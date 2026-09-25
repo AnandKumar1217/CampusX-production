@@ -27,7 +27,7 @@ type Props = Omit<PressableProps, "style"> & {
   iconRight?: IconName;
   loading?: boolean;
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: import("react-native").StyleProp<import("react-native").ViewStyle>;
 };
 
 const heights = { sm: 38, md: 48, lg: 56 } as const;

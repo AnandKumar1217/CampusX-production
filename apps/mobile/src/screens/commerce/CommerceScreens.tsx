@@ -1,16 +1,20 @@
+import { useOpenChat } from "@/hooks/useOpenChat";
 import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, StyleSheet, Switch, View, Alert, Share, Platform } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { CXEventCard, CXListingCard } from "@/components/cards";
 import {
   CXAvatar,
+  CXBottomActionArea,
   CXButton,
   CXCard,
   CXChip,
@@ -27,10 +31,12 @@ import {
 } from "@/components/ui";
 
 import { api, getApiErrorMessage } from "@/services/api";
-import { mapWeatherCode, useAppStore } from "@/store/appStore";
+import { eventService } from "@/services/eventService";
+import { useAppStore } from "@/store/appStore";
 import { colors, gradients, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { searchLocation, getDistance, type Coordinates } from "@/utils/location";
+import { fetchWeatherForLocation, searchCities, mapWeatherCode } from "@/services/weatherService";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
@@ -38,8 +44,9 @@ type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
 >;
 
 export function EventsScreen({ navigation }: StackProps<"Events">) {
-  const events = useAppStore((state) => state.events);
-  const user = useAppStore((state) => state.user);
+  const userStore = useAppStore((state: any) => state.user);
+  const { data: events = [] } = useQuery({ queryKey: ["events", userStore?.id], queryFn: async () => (await eventService.listEvents()).items });
+  const user = useAppStore((state: any) => state.user);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
@@ -149,7 +156,7 @@ export function EventsScreen({ navigation }: StackProps<"Events">) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filters}
         >
-          {categories.map((item) => (
+          {categories.map((item: any) => (
             <CXChip 
               key={item} 
               label={item} 
@@ -170,7 +177,7 @@ export function EventsScreen({ navigation }: StackProps<"Events">) {
                 })
               }
             />
-            {filtered.slice(1).map((event) => (
+            {filtered.slice(1).map((event: any) => (
               <CXEventCard
                 key={event.id}
                 event={event}
@@ -200,14 +207,41 @@ export function EventDetailsScreen({
   navigation,
   route,
 }: StackProps<"EventDetails">) {
-  const user = useAppStore((state) => state.user);
-  const events = useAppStore((state) => state.events);
+  const user = useAppStore((state: any) => state.user);
+  const { data: events = [] } = useQuery({ queryKey: ["events", user?.id], queryFn: async () => (await eventService.listEvents()).items });
   const updateEvent = useAppStore((state) => state.updateEvent);
   const event =
-    events.find((item) => item.id === route.params.eventId) ?? events[0]!;
-  
-  const isSaved = useAppStore((state) => state.savedEvents.includes(event.id));
-  const toggleSavedEvent = useAppStore((state) => state.toggleSavedEvent);
+    events.find((item: any) => item.id === route.params.eventId) ?? events[0];
+    
+  if (!event) {
+    return (
+      <CXScreen>
+        <CXHeader title="Event Details" onBack={navigation.goBack} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <CXText>Loading...</CXText>
+        </View>
+      </CXScreen>
+    );
+  }
+
+  const queryClient = useQueryClient();
+  const { data: savedEvents = [] } = useQuery({
+    queryKey: ["savedEvents"],
+    queryFn: async () => await import("@/services/eventService").then(m => m.eventService.getSavedEvents())
+  });
+
+  const isSaved = savedEvents.some((e: any) => e.id === event.id);
+
+  const toggleMutation = useMutation({
+    mutationFn: async () => {
+      const eventService = (await import("@/services/eventService")).eventService;
+      await eventService.setSaved(event.id, !isSaved);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savedEvents"] });
+    }
+  });
+
   const [isFollowing, setIsFollowing] = useState(false);
   
   const respond = async (next: "none" | "maybe" | "going") => {
@@ -230,6 +264,7 @@ export function EventDetailsScreen({
   return (
     <CXScreen edges={[]}>
       <ScrollView
+        style={{ flex: 1 }}
         contentContainerStyle={styles.detailPage}
         showsVerticalScrollIndicator={false}
       >
@@ -254,16 +289,17 @@ export function EventDetailsScreen({
               color={colors.white}
               backgroundColor="rgba(0,0,0,.35)"
               onPress={() => {
-                toggleSavedEvent(event.id);
+                toggleMutation.mutate();
                 if (!isSaved) Alert.alert("Saved", "Event added to your saved events.");
               }}
+              disabled={toggleMutation.isPending}
             />
             <CXIconButton
               icon="share-social-outline"
               label="Share event"
               color={colors.white}
               backgroundColor="rgba(0,0,0,.35)"
-              onPress={() => Share.share({ message: `Check out this event: ${event.title}!` })}
+              onPress={() => Share.share({ message: `Check out this event: ${event.title}! campusx://event/${event.id}` })}
             />
           </View>
         </View>
@@ -310,14 +346,15 @@ export function EventDetailsScreen({
 
         </View>
       </ScrollView>
-      <View style={styles.sticky}>
+      <CXBottomActionArea>
         <CXButton
+          style={{ flex: 1 }}
           label={event.attendance === "going" ? "Registered" : "Register Now"}
           iconRight={event.attendance === "going" ? "checkmark" : "arrow-forward"}
           disabled={event.attendance === "going"}
           onPress={() => void respond("going")}
         />
-      </View>
+      </CXBottomActionArea>
     </CXScreen>
   );
 }
@@ -343,9 +380,10 @@ export function EditEventScreen({
   navigation,
   route,
 }: StackProps<"EditEvent">) {
-  const events = useAppStore((state) => state.events);
+  const user = useAppStore((state: any) => state.user);
+  const { data: events = [] } = useQuery({ queryKey: ["events", user?.id], queryFn: async () => (await eventService.listEvents()).items });
   const addEvent = useAppStore((state) => state.addEvent);
-  const existing = events.find((item) => item.id === route.params?.eventId);
+  const existing = events.find((item: any) => item.id === route.params?.eventId);
   const [form, setForm] = useState({
     title: existing?.title ?? "",
     date: existing?.date ?? "",
@@ -421,6 +459,16 @@ export function EditEventScreen({
     }
   };
 
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: eventService.createEvent,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["events"] }),
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string, payload: any }) => eventService.updateEvent(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["events"] }),
+  });
+
   const save = async (draft = false) => {
     if (!draft && !form.title.trim()) {
       setError("Event name is required");
@@ -428,22 +476,44 @@ export function EditEventScreen({
     }
     setSaving(true);
     try {
-      if (!existing) {
-        // Save the event to local state immediately
-        addEvent({
-          id: `event-${Date.now()}`,
-          title: form.title,
-          date: form.date,
-          time: form.time,
-          location: form.location,
-          coordinates: form.coordinates,
-          category: form.category,
-          image: imageUri as any,
-          interested: 1,
-          organizer: user,
-          description: form.description,
-          public: form.public,
-        });
+      let finalAvatarUrl = existing?.image;
+      if (imageUri && imageUri !== existing?.image) {
+        const formData = new FormData();
+        const filename = imageUri.split('/').pop() || 'image.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image";
+        formData.append('file', { uri: imageUri, name: filename, type } as any);
+        const uploadRes = await api.post('/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        finalAvatarUrl = uploadRes.data.data.url;
+      }
+      
+      const partsDate = form.date.split('/');
+      const partsTime = form.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      let dateObj = new Date();
+      if (partsDate.length === 3 && partsTime) {
+        let hrs = parseInt(partsTime[1], 10);
+        if (partsTime[3].toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+        if (partsTime[3].toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+        dateObj = new Date(parseInt(partsDate[2]), parseInt(partsDate[1]) - 1, parseInt(partsDate[0]), hrs, parseInt(partsTime[2]));
+      }
+
+      const payload = {
+        title: form.title,
+        date: form.date,
+        time: form.time,
+        startsAt: dateObj.toISOString(),
+        location: { name: form.location, coordinates: form.coordinates ? [form.coordinates.lng, form.coordinates.lat] : undefined },
+        category: form.category,
+        imageUrl: finalAvatarUrl,
+        description: form.description,
+        public: form.public,
+        draft: draft
+      };
+
+      if (existing) {
+        await updateMutation.mutateAsync({ id: existing.id, payload });
+      } else {
+        await createMutation.mutateAsync(payload);
       }
       navigation.goBack();
     } catch (caught) {
@@ -536,7 +606,7 @@ export function EditEventScreen({
         />
         {showLocResults && locResults.length > 0 && (
           <View style={styles.locResultsContainer}>
-            {locResults.map((res, i) => {
+            {locResults.map((res: any, i: number) => {
               const nameParts = res.name.split(",");
               const mainName = nameParts[0];
               const subName = nameParts.slice(1).join(",").trim();
@@ -577,7 +647,7 @@ export function EditEventScreen({
       </View>
       <CXSectionHeader title="Category" />
       <CXRow style={styles.filters}>
-        {["Tech", "Cultural", "Sports", "Music"].map((item) => (
+        {["Tech", "Cultural", "Sports", "Music"].map((item: any) => (
           <CXChip
             key={item}
             label={item}
@@ -626,7 +696,8 @@ export function EditEventScreen({
 }
 
 export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
-  const allListings = useAppStore((state) => state.listings);
+  const userStore = useAppStore((state: any) => state.user);
+  const { data: allListings = [] } = useQuery({ queryKey: ["listings", userStore?.id], queryFn: async () => (await import("@/services/marketplaceService").then(m => m.marketplaceService.listListings())).items });
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
 
@@ -667,7 +738,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
           </CXRow>
         }
       />
-      <ScrollView contentContainerStyle={styles.page}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.page, { paddingBottom: 40 }]}>
         <CXSearchBar 
           placeholder="Search for books, tools, electronics..." 
           value={query}
@@ -703,7 +774,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
           <View style={{ gap: spacing.md, paddingBottom: spacing.xxl }}>
             <CXSectionHeader title="Search Suggestions" action={`${filteredListings.length} found`} />
             {filteredListings.length > 0 ? (
-              filteredListings.map((listing) => (
+              filteredListings.map((listing: any) => (
                 <CXListingCard
                   key={listing.id}
                   listing={listing}
@@ -727,7 +798,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.featuredListings}
             >
-              {filteredListings.slice(0, 3).map((listing) => (
+              {filteredListings.slice(0, 3).map((listing: any) => (
                 <View key={listing.id} style={styles.featuredListing}>
                   <CXListingCard
                     listing={listing}
@@ -745,7 +816,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
             </ScrollView>
             
             <CXSectionHeader title="Recent Listings" action="See all" />
-            {filteredListings.slice(0, 10).map((listing) => (
+            {filteredListings.slice(0, 10).map((listing: any) => (
               <CXListingCard
                 key={listing.id}
                 listing={listing}
@@ -755,20 +826,23 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
                 }
               />
             ))}
-            
-            <CXButton
-              label="Sell an Item"
-              iconLeft="add"
-              onPress={() => navigation.navigate("CreateListing")}
-            />
-            <CXButton
-              label="Manage Listings"
-              variant="outline"
-              onPress={() => navigation.navigate("ManageListings")}
-            />
           </>
         )}
       </ScrollView>
+      <CXBottomActionArea style={{ backgroundColor: "rgba(255,255,255,0.9)" }}>
+        <CXButton
+          style={{ flex: 1 }}
+          label="Sell Item"
+          iconLeft="add"
+          onPress={() => navigation.navigate("CreateListing")}
+        />
+        <CXButton
+          style={{ flex: 1 }}
+          label="Manage"
+          variant="outline"
+          onPress={() => navigation.navigate("ManageListings")}
+        />
+      </CXBottomActionArea>
     </CXScreen>
   );
 }
@@ -789,21 +863,67 @@ function timeAgo(dateStr: string) {
   if (interval > 1) return Math.floor(interval) + " minutes ago";
   return "Just now";
 }
-
 export function ListingDetailsScreen({
   navigation,
   route,
 }: StackProps<"ListingDetails">) {
-  const allListings = useAppStore((state) => state.listings);
-  const savedListings = useAppStore((state) => state.savedListings);
-  const toggleSavedListing = useAppStore((state) => state.toggleSavedListing);
+  const { openChat } = useOpenChat();
+  const userStore = useAppStore((state: any) => state.user);
+  const friends = useAppStore((state: any) => state.friends);
+  const { data: allListings = [] } = useQuery({ queryKey: ["listings", userStore?.id], queryFn: async () => (await import("@/services/marketplaceService").then(m => m.marketplaceService.listListings())).items });
   
+  const queryClient = useQueryClient();
+  const { data: savedListings = [] } = useQuery({
+    queryKey: ["savedListings"],
+    queryFn: async () => await import("@/services/marketplaceService").then(m => m.marketplaceService.getSavedListings())
+  });
+
+  const { data: reqRes } = useQuery({ 
+    queryKey: ["friend-requests"], 
+    queryFn: async () => await api.get<{data: {sent: any[], received: any[]}}>("/friends/requests") 
+  });
+  
+  const { data: fetchedListing } = useQuery({
+    queryKey: ["listing", route.params.listingId],
+    queryFn: async () => await import("@/services/marketplaceService").then(m => m.marketplaceService.getListing(route.params.listingId))
+  });
+
   const listing =
-    allListings.find((item) => item.id === route.params.listingId) ?? allListings[0]!;
+    fetchedListing ?? allListings.find((item: any) => item.id === route.params.listingId) ?? allListings[0];
     
-  const isSaved = savedListings.includes(listing.id);
+  if (!listing) {
+    return (
+      <CXScreen>
+        <CXHeader title="Listing Details" onBack={navigation.goBack} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <CXText>Loading...</CXText>
+        </View>
+      </CXScreen>
+    );
+  }
+
+  const isSaved = savedListings.some((l: any) => l.id === listing.id);
+
+  const toggleMutation = useMutation({
+    mutationFn: async () => {
+      const ms = (await import("@/services/marketplaceService")).marketplaceService;
+      if (isSaved) {
+        await ms.unsaveListing(listing.id);
+      } else {
+        await ms.saveListing(listing.id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savedListings"] });
+    }
+  });
+
+  const toggleSavedListing = () => {
+    toggleMutation.mutate();
+  };
+
   const isSold = listing.status === "sold";
-  const incrementListingViews = useAppStore((state) => state.incrementListingViews);
+  const incrementListingViews = (id: string) => {};
   const sellerListingCount = allListings.filter(
     (l) => l.seller?.id === listing.seller?.id && l.status !== "draft"
   ).length;
@@ -814,21 +934,60 @@ export function ListingDetailsScreen({
     }
   }, [listing?.id, incrementListingViews]);
 
+  const relationshipState = useMemo(() => {
+    if (userStore?.id === listing.seller?.id) return "SELF";
+    if (friends.some((f: any) => f.id === listing.seller?.id)) return "FRIENDS";
+    const isSent = reqRes?.data?.data?.sent?.some((r: any) => r.recipient._id === listing.seller?.id || r.recipient.id === listing.seller?.id);
+    if (isSent) return "OUTGOING_PENDING";
+    const isReceived = reqRes?.data?.data?.received?.some((r: any) => r.requester._id === listing.seller?.id || r.requester.id === listing.seller?.id);
+    if (isReceived) return "INCOMING_PENDING";
+    return "NONE";
+  }, [userStore?.id, listing.seller?.id, friends, reqRes]);
+
+  const [isMessaging, setIsMessaging] = useState(false);
+  const handleAction = async () => {
+    if (relationshipState === "NONE") {
+      setIsMessaging(true);
+      try {
+        await api.post("/friends/requests", { recipientId: listing.seller?.id });
+        queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      } finally {
+        setIsMessaging(false);
+      }
+    } else if (relationshipState === "INCOMING_PENDING") {
+      setIsMessaging(true);
+      try {
+        await api.post(`/friends/requests/${listing.seller?.id}/accept`);
+        queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+        // Optionally update friends in useAppStore or let socket handle it
+      } finally {
+        setIsMessaging(false);
+      }
+    } else if (relationshipState === "FRIENDS") {
+      setIsMessaging(true);
+      try {
+        await openChat(listing.seller?.id, listing.seller?.name ?? "Guest User");
+      } finally {
+        setIsMessaging(false);
+      }
+    }
+  };
+
   const similarItems = useMemo(() => {
     if (!listing) return [];
     
     // 1. Try matching category
     let matches = allListings.filter(
-      (item) => item.id !== listing.id && item.status === "active" && item.category === listing.category
+      (item: any) => item.id !== listing.id && item.status === "active" && item.category === listing.category
     );
     
     // 2. Fallback to title keywords if not enough category matches
     if (matches.length < 3) {
       const words = listing.title.toLowerCase().split(" ").filter(w => w.length > 3);
-      const titleMatches = allListings.filter(item => {
+      const titleMatches = allListings.filter((item: any) => {
         if (item.id === listing.id || item.status !== "active") return false;
-        if (matches.some(m => m.id === item.id)) return false;
-        return words.some(w => item.title.toLowerCase().includes(w));
+        if (matches.some((m: any) => m.id === item.id)) return false;
+        return words.some((w: any) => item.title.toLowerCase().includes(w));
       });
       matches = [...matches, ...titleMatches];
     }
@@ -836,7 +995,7 @@ export function ListingDetailsScreen({
     // 3. Ultimate fallback to just any other recent items
     if (matches.length < 3) {
       const others = allListings.filter(item => 
-        item.id !== listing.id && item.status === "active" && !matches.some(m => m.id === item.id)
+        item.id !== listing.id && item.status === "active" && !matches.some((m: any) => m.id === item.id)
       );
       matches = [...matches, ...others];
     }
@@ -846,13 +1005,15 @@ export function ListingDetailsScreen({
 
   return (
     <CXScreen edges={[]}>
-      <ScrollView contentContainerStyle={styles.detailPage}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.detailPage}>
         <View style={styles.listingHero}>
-          <Image
-            source={listing.image}
-            contentFit="cover"
-            style={StyleSheet.absoluteFill}
-          />
+          {listing.images?.[0] ? (
+            <Image
+              source={{ uri: listing.images[0] }}
+              contentFit="cover"
+              style={StyleSheet.absoluteFill}
+            />
+          ) : null}
           <View style={styles.heroOverlay}>
             <CXIconButton
               icon="chevron-back"
@@ -865,7 +1026,8 @@ export function ListingDetailsScreen({
               icon={isSaved ? "bookmark" : "bookmark-outline"}
               label={isSaved ? "Saved" : "Save listing"}
               backgroundColor="rgba(255,255,255,.9)"
-              onPress={() => toggleSavedListing(listing.id)}
+              onPress={toggleSavedListing}
+              disabled={toggleMutation.isPending}
             />
             <CXIconButton
               icon="share-social-outline"
@@ -882,36 +1044,43 @@ export function ListingDetailsScreen({
           <CXText variant="h2">{listing.title}</CXText>
           <CXRow>
             <CXText variant="h2" color={colors.primary}>
-              ₹{listing.price.toLocaleString("en-IN")}
+              ?{listing.price.toLocaleString("en-IN")}
             </CXText>
-            <CXText color={colors.textMuted}> · Negotiable</CXText>
+            <CXText color={colors.textMuted}>  Negotiable</CXText>
           </CXRow>
           <CXText variant="caption" color={colors.textMuted}>
-            CMRIT Main Campus · {listing.createdAt ? timeAgo(listing.createdAt) : "Just now"}
+            CMRIT Main Campus  {listing.createdAt ? timeAgo(listing.createdAt) : "Just now"}
           </CXText>
           <CXCard style={styles.organizer}>
-            <CXAvatar
-              source={listing.seller?.avatar}
-              name={listing.seller?.name ?? "Guest User"}
-            />
+            <Pressable onPress={() => navigation.navigate("UserProfile", { userId: listing.seller?.id })}>
+              <CXAvatar
+                source={listing.seller?.avatar}
+                name={listing.seller?.name ?? "Guest User"}
+              />
+            </Pressable>
             <View style={styles.flex}>
-              <CXText variant="bodyStrong">{listing.seller?.name ?? "Guest User"}</CXText>
-              <CXText variant="caption" color={colors.textMuted}>
-                Verified seller · {sellerListingCount} listing{sellerListingCount !== 1 ? 's' : ''}
-              </CXText>
+              <Pressable onPress={() => navigation.navigate("UserProfile", { userId: listing.seller?.id })}>
+                <CXText variant="bodyStrong">{listing.seller?.name ?? "Guest User"}</CXText>
+                <CXText variant="caption" color={colors.textMuted}>
+                  Verified seller  {sellerListingCount} listing{sellerListingCount !== 1 ? 's' : ''}
+                </CXText>
+              </Pressable>
             </View>
-            <CXButton
-              label="Message"
-              size="sm"
-              variant="outline"
-              fullWidth={false}
-              onPress={() =>
-                navigation.navigate("Conversation", {
-                  conversationId: `conversation-${listing.seller?.id ?? "guest"}`,
-                  name: listing.seller?.name ?? "Guest User",
-                })
-              }
-            />
+            {relationshipState !== "SELF" && (
+              <CXButton
+                label={
+                  relationshipState === "NONE" ? "Add Friend" :
+                  relationshipState === "OUTGOING_PENDING" ? "Requested" :
+                  relationshipState === "INCOMING_PENDING" ? "Accept" :
+                  "Message"
+                }
+                size="sm"
+                variant="outline"
+                fullWidth={false}
+                disabled={relationshipState === "OUTGOING_PENDING" || isMessaging}
+                onPress={handleAction}
+              />
+            )}
           </CXCard>
           <CXSectionHeader title="Description" />
           <CXText color={colors.textMuted}>
@@ -935,7 +1104,7 @@ export function ListingDetailsScreen({
           </CXRow>
           <CXSectionHeader title="Similar Items" />
           {similarItems.length > 0 ? (
-            similarItems.map((item) => (
+            similarItems.map((item: any) => (
               <CXListingCard
                 key={item.id}
                 listing={item}
@@ -950,27 +1119,29 @@ export function ListingDetailsScreen({
           )}
         </View>
       </ScrollView>
-      <CXRow style={styles.sticky}>
-        <CXButton
-          style={{ flex: 1 }}
-          label="Message Seller"
-          iconLeft="chatbubble-outline"
-          variant="outline"
-          disabled={isSold}
-          onPress={() =>
-            navigation.navigate("Conversation", {
-              conversationId: `conversation-${listing.seller?.id ?? "guest"}`,
-              name: listing.seller?.name ?? "Guest User",
-            })
-          }
-        />
+      <CXBottomActionArea>
+        {relationshipState !== "SELF" && (
+          <CXButton
+            style={{ flex: 1 }}
+            label={
+              relationshipState === "NONE" ? "Add Friend" :
+              relationshipState === "OUTGOING_PENDING" ? "Requested" :
+              relationshipState === "INCOMING_PENDING" ? "Accept" :
+              "Message Seller"
+            }
+            iconLeft={relationshipState === "FRIENDS" ? "chatbubble-outline" : "person-add-outline"}
+            variant="outline"
+            disabled={isSold || relationshipState === "OUTGOING_PENDING" || isMessaging}
+            onPress={handleAction}
+          />
+        )}
         <CXButton 
           style={{ flex: 1 }}
           label={isSold ? "Sold Out" : "Buy / Contact"} 
           iconLeft={isSold ? undefined : "call-outline"}
           disabled={isSold}
         />
-      </CXRow>
+      </CXBottomActionArea>
     </CXScreen>
   );
 }
@@ -980,7 +1151,8 @@ export function CreateListingScreen({
   route,
 }: StackProps<"CreateListing">) {
   const { editId } = route.params ?? {};
-  const allListings = useAppStore((state) => state.listings);
+  const userStore = useAppStore((state: any) => state.user);
+  const { data: allListings = [] } = useQuery({ queryKey: ["listings", userStore?.id], queryFn: async () => (await import("@/services/marketplaceService").then(m => m.marketplaceService.listListings())).items });
   const existingListing = useMemo(() => allListings.find(l => l.id === editId), [editId, allListings]);
 
   const [form, setForm] = useState({
@@ -989,14 +1161,13 @@ export function CreateListingScreen({
     price: existingListing?.price?.toString() ?? "",
     description: existingListing?.description ?? "",
     location: "CMRIT Main Campus",
-    images: (existingListing?.images as string[]) ?? (existingListing?.image ? [existingListing.image as string] : []),
+    images: (existingListing?.images as string[]) ?? [],
   });
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const addListing = useAppStore((state) => state.addListing);
-  const updateListing = useAppStore((state) => state.updateListing);
-  const user = useAppStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const user = useAppStore((state: any) => state.user);
 
   const pickImages = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -1021,8 +1192,9 @@ export function CreateListingScreen({
     }
     setSaving(true);
     try {
+      const ms = (await import("@/services/marketplaceService")).marketplaceService;
       if (editId) {
-        updateListing(editId, {
+        await ms.updateListing(editId, {
           title: form.title || "Untitled Listing",
           price: Number(form.price) || 0,
           category: form.category,
@@ -1032,20 +1204,17 @@ export function CreateListingScreen({
           status: draft ? "draft" : "active",
         });
       } else {
-        addListing({
-          id: `listing-${Date.now()}`,
+        await ms.createListing({
           title: form.title || "Untitled Listing",
           price: Number(form.price) || 0,
           category: form.category,
           description: form.description,
           image: form.images.length > 0 ? form.images[0] : undefined,
           images: form.images,
-          seller: user ?? { id: "guest", name: "Guest User", username: "guest", college: "Unknown", department: "Unknown", year: "1" },
           status: draft ? "draft" : "active",
-          createdAt: new Date().toISOString(),
-          views: 0,
         });
       }
+      await queryClient.invalidateQueries({ queryKey: ["listings"] });
       navigation.goBack();
     } catch (caught) {
       setError(String(caught));
@@ -1102,7 +1271,7 @@ export function CreateListingScreen({
           />
           <CXSectionHeader title="Category" />
           <CXRow style={styles.filters}>
-            {["Books", "Electronics", "Furniture", "Stationery"].map((item) => (
+            {["Books", "Electronics", "Furniture", "Stationery"].map((item: any) => (
               <CXChip
                 key={item}
                 label={item}
@@ -1173,25 +1342,45 @@ export function CreateListingScreen({
 export function ManageListingsScreen({
   navigation,
 }: StackProps<"ManageListings">) {
-  const allListings = useAppStore((state) => state.listings);
-  const updateListing = useAppStore((state) => state.updateListing);
-  const deleteListing = useAppStore((state) => state.deleteListing);
-  const user = useAppStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const { data: myListings = [] } = useQuery({
+    queryKey: ["myListings"],
+    queryFn: async () => await import("@/services/marketplaceService").then(m => m.marketplaceService.getMyListings())
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string, payload: any }) => {
+      await import("@/services/marketplaceService").then(m => m.marketplaceService.updateListing(id, payload));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myListings"] });
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await import("@/services/marketplaceService").then(m => m.marketplaceService.deleteListing(id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myListings"] });
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
+    }
+  });
+
   const [filter, setFilter] = useState<"active" | "sold" | "draft">("active");
 
-  const currentUserId = user?.id ?? "guest";
-  const myListings = allListings.filter((l) => l.seller?.id === currentUserId);
-  const displayedListings = myListings.filter((l) => l.status === filter);
+  const displayedListings = myListings.filter((l: any) => l.status === filter);
   
-  const totalViews = myListings.reduce((sum, l) => sum + (l.views || 0), 0);
-  const soldListingsCount = myListings.filter(l => l.status === "sold").length;
+  const totalViews = myListings.reduce((sum: number, l: any) => sum + (l.views || 0), 0);
+  const soldListingsCount = myListings.filter((l: any) => l.status === "sold").length;
 
   const remove = (id: string) => {
-    deleteListing(id);
+    deleteMutation.mutate(id);
   };
   
   const markSold = (id: string) => {
-    updateListing(id, { status: "sold" });
+    updateMutation.mutate({ id, payload: { status: "sold" } });
   };
   return (
     <CXScreen>
@@ -1216,7 +1405,7 @@ export function ManageListingsScreen({
           <CXText variant="bodyStrong">Your Marketplace Overview</CXText>
           <CXRow style={styles.overview}>
             {[
-              [myListings.filter(l => l.status === "active").length.toString(), "Active Listings"],
+              [myListings.filter((l: any) => l.status === "active").length.toString(), "Active Listings"],
               [totalViews.toString(), "Total Views"],
               [soldListingsCount.toString(), "Sold Items"],
             ].map(([value, label]) => (
@@ -1236,13 +1425,17 @@ export function ManageListingsScreen({
           </CXRow>
         </CXCard>
         <CXSectionHeader title="Your Listings" action="See all" />
-        {displayedListings.map((listing) => (
+        {displayedListings.map((listing: any) => (
           <CXCard key={listing.id} style={styles.manageRow}>
-            <Image
-              source={listing.image}
-              contentFit="cover"
-              style={styles.manageImage}
-            />
+            {listing.images?.[0] ? (
+              <Image
+                source={{ uri: listing.images[0] }}
+                contentFit="cover"
+                style={styles.manageImage}
+              />
+            ) : (
+              <View style={[styles.manageImage, { backgroundColor: '#F0F0F0' }]} />
+            )}
             <View style={styles.flex}>
               <CXText variant="bodyStrong">{listing.title}</CXText>
               <CXText variant="title" color={colors.primary}>
@@ -1293,78 +1486,100 @@ const getWeatherDistance = (lat1: number, lon1: number, lat2: number, lon2: numb
 };
 
 export function WeatherScreen({ navigation }: StackProps<"Weather">) {
-  const weather = useAppStore((state) => state.weather);
-  const fetchWeather = useAppStore((state) => state.fetchWeather);
-  const fetchWeatherForCity = useAppStore((state) => state.fetchWeatherForCity);
-  const fetchWeatherForCoords = useAppStore((state) => state.fetchWeatherForCoords);
+  const [cachedWeather, setCachedWeather] = useState<any>(null);
+  
+  // App store states
   const locationCoords = useAppStore((state) => state.locationCoords);
+  const setLocationCoords = useAppStore((state) => state.setLocationCoords);
   const savedDestinations = useAppStore((state) => state.savedDestinations);
   const toggleSavedDestination = useAppStore((state) => state.toggleSavedDestination);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState<{lat: number, lon: number, name: string, region?: string, country?: string} | null>(null);
 
+  // Read cache on mount
   useEffect(() => {
-    if (searchQuery.length > 2) {
-      const delay = setTimeout(() => {
-        fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchQuery)}&count=5&language=en&format=json`)
-          .then((res) => res.json())
-          .then(async (data) => {
-            const results = data.results || [];
-            if (results.length === 0) {
-              setSuggestions([]);
-              return;
-            }
+    (async () => {
+      try {
+        const cache = await AsyncStorage.getItem("campusx.weather.cache");
+        if (cache) {
+          setCachedWeather(JSON.parse(cache));
+        }
+      } catch (e) {
+        console.warn("Failed to read weather cache", e);
+      }
+    })();
+  }, []);
 
-            if (locationCoords) {
-              results.forEach((r: any) => {
-                r.distance = getWeatherDistance(locationCoords.lat, locationCoords.lon, r.latitude, r.longitude);
-              });
-              results.sort((a: any, b: any) => a.distance - b.distance);
-            }
-
-            const lats = results.map((r: any) => r.latitude).join(",");
-            const lons = results.map((r: any) => r.longitude).join(",");
-            try {
-              const wRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,weather_code&timezone=auto`);
-              const wData = await wRes.json();
-              const wList = Array.isArray(wData) ? wData : [wData];
-              results.forEach((r: any, idx: number) => {
-                if (wList[idx]?.current) {
-                  r.temp = Math.round(wList[idx].current.temperature_2m);
-                  r.weatherCode = wList[idx].current.weather_code;
-                }
-              });
-            } catch (e) {
-              console.log("Batch weather fetch failed", e);
-            }
-            setSuggestions(results);
-          })
-          .catch(() => setSuggestions([]));
-      }, 500);
-      return () => clearTimeout(delay);
-    } else {
-      setSuggestions([]);
-    }
-  }, [searchQuery, locationCoords]);
-
+  // Fetch device location non-blocking
   useEffect(() => {
-    if (!weather) {
-      void fetchWeather();
+    if (!locationCoords) {
+      (async () => {
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') return;
+          const pos = await Location.getLastKnownPositionAsync();
+          if (pos) {
+            setLocationCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          }
+          const currentPos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          setLocationCoords({ lat: currentPos.coords.latitude, lon: currentPos.coords.longitude });
+        } catch (e) {
+          console.warn("Weather location fetch error:", e);
+        }
+      })();
     }
-  }, [weather, fetchWeather]);
+  }, [locationCoords, setLocationCoords]);
 
-  const temp = weather?.temp ?? "--";
-  const condition = weather?.condition ?? "Loading...";
-  const humidity = weather?.humidity ?? "--";
-  const wind = weather?.wind ?? "--";
-  const loading = !weather;
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch search suggestions
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["weatherSearch", debouncedQuery],
+    queryFn: async ({ signal }) => {
+      if (debouncedQuery.length < 2) return [];
+      return searchCities(debouncedQuery, locationCoords?.lat, locationCoords?.lon, signal);
+    },
+    enabled: debouncedQuery.length >= 2,
+    staleTime: 60000,
+  });
+
+  // Determine which location to show weather for
+  const activeLat = selectedCity?.lat ?? locationCoords?.lat;
+  const activeLon = selectedCity?.lon ?? locationCoords?.lon;
+  const activeCityName = selectedCity?.name ?? "Current Location";
+
+  // Fetch weather data
+  const { data: weather, isLoading: loading } = useQuery({
+    queryKey: ["weather", activeLat, activeLon],
+    queryFn: async () => {
+      if (!activeLat || !activeLon) throw new Error("No coords");
+      const data = await fetchWeatherForLocation(activeLat, activeLon, activeCityName, selectedCity?.region, selectedCity?.country);
+      // Save to cache on success
+      AsyncStorage.setItem("campusx.weather.cache", JSON.stringify(data)).catch(() => {});
+      return data;
+    },
+    enabled: !!activeLat && !!activeLon,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const displayWeather = weather ?? cachedWeather;
+
+  const temp = displayWeather?.temp ?? "--";
+  const condition = displayWeather?.condition ?? (loading ? "Loading..." : "--");
+  const humidity = displayWeather?.humidity ?? "--";
+  const wind = displayWeather?.wind ?? "--";
 
   return (
     <CXScrollScreen>
       <CXHeader
-        title="Weather"
-        subtitle={weather?.city ?? "Locating..."}
+        title={displayWeather?.city ?? (loading ? "Locating..." : "Weather")}
+        subtitle={displayWeather?.region && displayWeather?.country ? `${displayWeather.region}, ${displayWeather.country}` : "Live Weather"}
         onBack={navigation.goBack}
         right={
           <CXIconButton
@@ -1381,19 +1596,14 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
           onChangeText={setSearchQuery}
           onClear={() => {
             setSearchQuery("");
-            setSuggestions([]);
+            setSelectedCity(null);
           }}
-          onSubmitEditing={() => {
-            if (searchQuery.trim()) {
-              void fetchWeatherForCity(searchQuery.trim());
-              setSuggestions([]);
-            }
-          }}
+          onSubmitEditing={() => {}}
         />
-        {suggestions.length > 0 && (
+        {suggestions.length > 0 && searchQuery.length > 0 && (
           <View style={[styles.dropdownList, { maxHeight: 220, marginBottom: 12 }]}>
             <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled={true}>
-              {suggestions.map((item, idx) => (
+              {suggestions.map((item: any, idx: number) => (
                 <Pressable 
                   key={item.id} 
                   style={[
@@ -1401,26 +1611,18 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
                     idx !== suggestions.length - 1 && { borderBottomWidth: 1, borderBottomColor: "#F3F4F6" }
                   ]}
                   onPress={() => {
-                    const city = `${item.name}, ${item.country}`;
-                    setSearchQuery("");
-                    setSuggestions([]);
-                    void fetchWeatherForCoords(item.latitude, item.longitude, city);
+                    setSearchQuery(""); // Clear query to hide dropdown
+                    setSelectedCity({ lat: item.latitude, lon: item.longitude, name: item.name, region: item.region, country: item.country });
                   }}
                 >
                   <CXRow style={{ justifyContent: "space-between", alignItems: "center" }}>
                     <View style={{ flex: 1 }}>
                       <CXText variant="bodyStrong">{item.name}</CXText>
                       <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
-                        {item.admin1 ? `${item.admin1}, ` : ""}{item.country}
-                        {item.distance !== undefined ? ` · ${Math.round(item.distance)}km` : ""}
+                        {item.label}
+                        {item.distanceKm !== undefined ? ` • ${Math.round(item.distanceKm)}km` : ""}
                       </CXText>
                     </View>
-                    {item.temp !== undefined && item.weatherCode !== undefined && (
-                      <CXRow style={{ alignItems: "center", gap: 6, flexShrink: 0, paddingLeft: 8 }}>
-                        <Ionicons name={mapWeatherCode(item.weatherCode).iconOutline as any} size={20} color={colors.primary} />
-                        <CXText variant="bodyStrong">{item.temp}°C</CXText>
-                      </CXRow>
-                    )}
                   </CXRow>
                 </Pressable>
               ))}
@@ -1442,13 +1644,13 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
             </CXText>
           </View>
           <Ionicons 
-            name={(weather?.icon as any) ?? "sunny"} 
+            name={(displayWeather?.icon as any) ?? "sunny"} 
             size={80} 
-            color={weather?.icon.includes("sunny") ? "#FFE780" : "#FFFFFF"} 
+            color={displayWeather?.icon?.includes?.("sunny") ? "#FFE780" : "#FFFFFF"} 
           />
         </CXRow>
         <CXRow style={styles.hourly}>
-          {(weather?.hourly ?? []).map((item) => (
+          {(displayWeather?.hourly ?? []).map((item: any) => (
             <View key={item.time} style={styles.hour}>
               <Ionicons name={item.icon as any} size={18} color={colors.white} />
               <CXText variant="caption" color={colors.white} align="center">
@@ -1466,18 +1668,18 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
           {[
             ["Humidity", humidity, "water-outline"],
             ["Wind", wind, "speedometer-outline"],
-            ["UV Index", weather?.uvIndex ?? "6", "sunny-outline"],
-            ["Sunrise", weather?.sunrise ?? "05:58 AM", "partly-sunny-outline"],
+            ["UV Index", displayWeather?.uvIndex ?? "6", "sunny-outline"],
+            ["Sunrise", displayWeather?.sunrise ?? "05:58 AM", "partly-sunny-outline"],
           ].map(([label, value, icon]) => (
-            <CXCard key={label} style={styles.weatherFact}>
+            <CXCard key={label as string} style={styles.weatherFact}>
               <Ionicons
                 name={icon as keyof typeof Ionicons.glyphMap}
                 size={20}
                 color={colors.primary}
               />
-              <CXText variant="bodyStrong">{value}</CXText>
+              <CXText variant="bodyStrong">{value as string}</CXText>
               <CXText variant="caption" color={colors.textMuted}>
-                {label}
+                {label as string}
               </CXText>
             </CXCard>
           ))}
@@ -1486,9 +1688,9 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
       <CXSectionHeader
         title="7-Day Forecast"
         action="See all"
-        onAction={() => navigation.navigate("WeatherDetails")}
+        onAction={() => navigation.navigate("WeatherDetails", { lat: activeLat, lon: activeLon, name: activeCityName } as any)}
       />
-      {(weather?.daily?.slice(0, 4) ?? []).map((item) => (
+      {(displayWeather?.daily?.slice(0, 4) ?? []).map((item: any) => (
         <CXCard key={item.day} style={styles.forecast}>
           <CXText variant="bodyStrong" style={styles.flex}>
             {item.day}
@@ -1504,7 +1706,7 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
       ))}
       <CXSectionHeader title="Saved Destinations" />
       <View style={{ gap: spacing.sm, marginBottom: spacing.md }}>
-        {savedDestinations.map((dest) => (
+        {savedDestinations.map((dest: any) => (
           <CXListRow
             key={dest.city}
             icon="location-outline"
@@ -1528,22 +1730,37 @@ export function WeatherScreen({ navigation }: StackProps<"Weather">) {
 }
 
 export function WeatherDetailsScreen({
+  route,
   navigation,
 }: StackProps<"WeatherDetails">) {
   const { weather, savedDestinations, toggleSavedDestination } = useAppStore();
-  const isSaved = weather?.city ? savedDestinations.some(d => d.city === weather.city) : false;
+  const { lat, lon, name } = route.params || {};
+
+  const { data: cachedWeather } = useQuery({
+    queryKey: ["weather", lat, lon],
+    queryFn: async () => {
+      if (!lat || !lon) throw new Error("No coords");
+      return await fetchWeatherForLocation(lat, lon, name);
+    },
+    enabled: !!lat && !!lon,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const displayWeather = cachedWeather ?? weather;
+  const isSaved = displayWeather?.city ? savedDestinations.some(d => d.city === displayWeather.city) : false;
+
   return (
     <CXScrollScreen contentContainerStyle={{ gap: spacing.md }}>
       <CXHeader
-        title={weather?.city ?? "Loading..."}
+        title={displayWeather?.city ?? "Loading..."}
         subtitle="Live Weather"
         onBack={navigation.goBack}
         right={
           <CXIconButton
             icon={isSaved ? "heart" : "heart-outline"}
-            label={isSaved ? "Saved" : `Save ${weather?.city ?? "City"}`}
+            label={isSaved ? "Saved" : `Save ${displayWeather?.city ?? "City"}`}
             backgroundColor={colors.transparent}
-            onPress={() => weather?.city && toggleSavedDestination(weather.city, `${weather.temp}°C`)}
+            onPress={() => displayWeather?.city && toggleSavedDestination(displayWeather.city, `${displayWeather.temp}°C`)}
           />
         }
       />
@@ -1551,19 +1768,19 @@ export function WeatherDetailsScreen({
         colors={["#F5A84F", "#7257F5"]}
         style={styles.destinationWeather}
       >
-        <Ionicons name={(weather?.icon as any) ?? "sunny"} size={58} color="#FFE780" />
+        <Ionicons name={(displayWeather?.icon as any) ?? "sunny"} size={58} color="#FFE780" />
         <View style={styles.flex}>
           <CXText variant="hero" color={colors.white}>
-            {weather?.temp ?? "--"}°C
+            {displayWeather?.temp ?? "--"}°C
           </CXText>
           <CXText variant="bodyStrong" color={colors.white}>
-            {weather?.condition ?? "--"}
+            {displayWeather?.condition ?? "--"}
           </CXText>
         </View>
       </LinearGradient>
       <CXSectionHeader title="7-Day Forecast" />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dailyRow}>
-        {(weather?.daily ?? []).map((item) => (
+        {(displayWeather?.daily ?? []).map((item: any) => (
           <CXCard key={item.day} style={styles.daily}>
             <Ionicons
               name={item.icon as any}
@@ -1577,47 +1794,31 @@ export function WeatherDetailsScreen({
         ))}
       </ScrollView>
       <CXSectionHeader title="Hourly Forecast" />
-      {(weather?.hourly ?? []).map(
-        (item) => (
+      {(displayWeather?.hourly ?? []).map(
+        (item: any) => (
           <CXListRow
             key={item.time}
             icon={item.icon as any}
             title={`${item.time}  ${item.temp}`}
-            subtitle={weather?.condition ?? "Clear skies"}
+            subtitle={displayWeather?.condition ?? "Clear skies"}
           />
         ),
       )}
       <CXRow style={styles.weatherFacts}>
         {[
-          ["Humidity", weather?.humidity ?? "61%"],
-          ["Sunrise", weather?.sunrise ?? "6:00 AM"],
-          ["Wind", weather?.wind ?? "14 km/h"],
-          ["UV Index", weather?.uvIndex ?? "7"],
+          ["Humidity", displayWeather?.humidity ?? "61%"],
+          ["Wind", displayWeather?.wind ?? "12 km/h"],
+          ["UV Index", displayWeather?.uvIndex ?? "6"],
+          ["Sunrise", displayWeather?.sunrise ?? "05:58 AM"],
         ].map(([label, value]) => (
-          <CXCard key={label} style={styles.weatherFact}>
-            <CXText variant="title" color={colors.primary}>
-              {value}
-            </CXText>
+          <View key={label} style={styles.flex}>
             <CXText variant="caption" color={colors.textMuted}>
               {label}
             </CXText>
-          </CXCard>
+            <CXText variant="bodyStrong">{value}</CXText>
+          </View>
         ))}
       </CXRow>
-      <CXCard style={styles.travelTip}>
-        <Ionicons name={(weather?.travelTip?.icon as any) ?? "map-outline"} size={28} color={colors.primary} />
-        <View style={styles.flex}>
-          <CXText variant="bodyStrong">{weather?.travelTip?.title ?? "Travel tip"}</CXText>
-          <CXText variant="small" color={colors.textMuted}>
-            {weather?.travelTip?.desc ?? "Enjoy your day!"}
-          </CXText>
-        </View>
-      </CXCard>
-      <CXButton
-        label={`Plan Your Trip to ${weather?.city ?? "City"}`}
-        iconLeft="airplane-outline"
-        onPress={() => navigation.navigate("CreateTrip")}
-      />
     </CXScrollScreen>
   );
 }

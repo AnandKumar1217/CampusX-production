@@ -6,6 +6,7 @@ const groupSchema = new Schema(
     name: { type: String, required: true, trim: true, index: true },
     description: { type: String, maxlength: 1000 },
     avatarUrl: String,
+    avatarPublicId: String,
     category: String,
     privacy: { type: String, enum: ["public", "private"], default: "public" },
     owner: { type: objectId, ref: "User", required: true },
@@ -29,6 +30,7 @@ const membershipSchema = new Schema(
       enum: ["active", "invited", "requested"],
       default: "active",
     },
+    invitedBy: { type: objectId, ref: "User" },
   },
   { timestamps: true, versionKey: false },
 );
@@ -81,8 +83,22 @@ const studySessionSchema = new Schema(
   { timestamps: true, versionKey: false },
 );
 
+const groupMessageSchema = new Schema(
+  {
+    group: { type: objectId, ref: "Group", required: true, index: true },
+    sender: { type: objectId, ref: "User", required: true, index: true },
+    text: { type: String, maxlength: 4000, default: "" },
+    attachments: [{ url: String, name: String, mimeType: String, size: Number }],
+    nonce: { type: String, maxlength: 100 },
+    deletedAt: Date,
+  },
+  { timestamps: true, versionKey: false },
+);
+groupMessageSchema.index({ group: 1, createdAt: -1 });
+
 export const Group = model("Group", groupSchema);
 export const GroupMembership = model("GroupMembership", membershipSchema);
 export const Poll = model("Poll", pollSchema);
 export const GroupFile = model("GroupFile", groupFileSchema);
 export const StudySession = model("StudySession", studySessionSchema);
+export const GroupMessage = model("GroupMessage", groupMessageSchema);

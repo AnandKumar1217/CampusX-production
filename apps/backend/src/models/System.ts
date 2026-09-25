@@ -10,7 +10,7 @@ const locationSharingSchema = new Schema(
       unique: true,
       index: true,
     },
-    enabled: { type: Boolean, default: false },
+    enabled: { type: Boolean, default: true },
     ghostMode: { type: Boolean, default: false },
     friendsOnly: { type: Boolean, default: true },
     groupsAllowed: { type: Boolean, default: false },
@@ -20,6 +20,7 @@ const locationSharingSchema = new Schema(
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },
     },
+    positionUpdatedAt: Date,
     updatedAt: Date,
   },
   { timestamps: true, versionKey: false },
@@ -46,5 +47,20 @@ const aiConversationSchema = new Schema(
 );
 aiConversationSchema.index({ user: 1, updatedAt: -1 });
 
+const holidaySchema = new Schema(
+  {
+    name: { type: String, required: true },
+    date: { type: String, required: true, index: true },
+    type: { 
+      type: String, 
+      enum: ["national", "festival", "college", "optional"], 
+      required: true 
+    },
+    description: { type: String },
+  },
+  { timestamps: true, versionKey: false },
+);
+
 export const LocationSharing = model("LocationSharing", locationSharingSchema);
 export const AIConversation = model("AIConversation", aiConversationSchema);
+export const Holiday = model("Holiday", holidaySchema);

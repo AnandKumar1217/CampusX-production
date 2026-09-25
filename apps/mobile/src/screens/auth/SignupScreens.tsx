@@ -19,7 +19,7 @@ import { useAppStore } from "@/store/appStore";
 import { useSignupStore } from "@/store/signupStore";
 import { colors, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
-import { colleges, departments, years, graduations } from "@/constants/academic";
+import { colleges, departments, years } from "@/constants/academic";
 
 function StepHeader({
   step,
@@ -35,11 +35,11 @@ function StepHeader({
       <CXRow style={styles.stepTop}>
         <View />
         <CXText variant="smallStrong" color={colors.primary}>
-          Step {step} of 3
+          Step {step} of 2
         </CXText>
       </CXRow>
       <View style={styles.progressTrack}>
-        {[1, 2, 3].map((item) => (
+        {[1, 2].map((item) => (
           <View
             key={item}
             style={[
@@ -57,6 +57,7 @@ function StepHeader({
 
 const accountSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
+  username: z.string().min(3, "Use at least 3 characters").max(30, "Too long").regex(/^[a-z0-9_.]+$/, "Only lowercase letters, numbers, dots, and underscores"),
   email: z.string().min(5, "Enter a valid email or phone number"),
   password: z
     .string()
@@ -73,17 +74,31 @@ export function SignupAccountScreen({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       fullName: draft.fullName,
+      username: draft.username,
       email: draft.email,
       password: draft.password,
     },
   });
+  const [usernameSuggestions, setUsernameSuggestions] = React.useState<string[]>([]);
+
   const submit = handleSubmit(async (values) => {
     try {
-      await api.post("/auth/check-identity", { email: values.email });
+      setUsernameSuggestions([]);
+      await api.post("/auth/check-identity", { email: values.email, username: values.username });
       draft.patch(values);
       navigation.navigate("SignupProfile");
-    } catch (err) {
-      setError("email", { message: getApiErrorMessage(err) });
+    } catch (err: any) {
+      if (err.response?.data?.code === "USERNAME_TAKEN") {
+        const suggestions = err.response.data.details?.suggestions;
+        if (suggestions && suggestions.length > 0) {
+          setUsernameSuggestions(suggestions);
+        }
+        setError("username", { message: getApiErrorMessage(err) });
+      } else if (err.response?.data?.code === "EMAIL_EXISTS") {
+        setError("email", { message: getApiErrorMessage(err) });
+      } else {
+        setError("email", { message: getApiErrorMessage(err) });
+      }
     }
   });
   return (
@@ -114,12 +129,61 @@ export function SignupAccountScreen({
       />
       <Controller
         control={control}
+        name="username"
+        render={({ field, fieldState }) => (
+          <View>
+            <CXInput
+              label="Username"
+              icon="at-outline"
+              placeholder="Choose a username"
+              autoCapitalize="none"
+              value={field.value}
+              onBlur={field.onBlur}
+              onChangeText={(val) => {
+                setUsernameSuggestions([]);
+                field.onChange(val);
+              }}
+              error={fieldState.error?.message}
+            />
+            {usernameSuggestions.length > 0 && (
+              <View style={{ marginTop: -spacing.sm, marginBottom: spacing.md }}>
+                <CXText variant="small" color={colors.textMuted} style={{ marginBottom: spacing.xs }}>
+                  Suggestions:
+                </CXText>
+                <CXRow style={{ flexWrap: "wrap", gap: spacing.xs }}>
+                  {usernameSuggestions.map((suggestion) => (
+                    <Pressable
+                      key={suggestion}
+                      onPress={() => {
+                        field.onChange(suggestion);
+                        setUsernameSuggestions([]);
+                      }}
+                      style={{
+                        paddingHorizontal: spacing.sm,
+                        paddingVertical: spacing.xs,
+                        backgroundColor: colors.primaryTint,
+                        borderRadius: radius.pill,
+                      }}
+                    >
+                      <CXText variant="smallStrong" color={colors.primary}>
+                        {suggestion}
+                      </CXText>
+                    </Pressable>
+                  ))}
+                </CXRow>
+              </View>
+            )}
+          </View>
+        )}
+      />
+      <Controller
+        control={control}
         name="email"
         render={({ field, fieldState }) => (
           <CXInput
-            label="Email or Phone"
+            label="Email"
             icon="mail-outline"
-            placeholder="Enter email or phone number"
+            placeholder="Enter your email address"
             keyboardType="email-address"
             autoCapitalize="none"
             value={field.value}
@@ -166,11 +230,14 @@ export function SignupProfileScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "SignupProfile">) {
   const draft = useSignupStore();
+  const setSession = useAppStore((state) => state.setSession);
+  const [submitting, setSubmitting] = React.useState(false);
   const [values, setValues] = React.useState({
     college: draft.college || "",
+    otherCollege: "",
     department: draft.department || "",
+    otherDepartment: "",
     academicYear: draft.academicYear || "",
-    graduationYear: draft.graduationYear || "",
   });
   const [error, setError] = React.useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = React.useState<string | null>(null);
@@ -210,6 +277,14 @@ export function SignupProfileScreen({
         onSelect={(val) => selectValue("college", val)}
         onChangeText={(val) => updateValue("college", val)}
       />
+      {values.college === "Other" && (
+        <CXInput
+          label="Enter your College"
+          placeholder="e.g. My Custom College"
+          value={values.otherCollege}
+          onChangeText={(val) => updateValue("otherCollege", val)}
+        />
+      )}
       <CXDropdown
         zIndex={3}
         label="Department"
@@ -221,6 +296,14 @@ export function SignupProfileScreen({
         onSelect={(val) => selectValue("department", val)}
         onChangeText={(val) => updateValue("department", val)}
       />
+      {values.department === "Other" && (
+        <CXInput
+          label="Enter your Department"
+          placeholder="e.g. History"
+          value={values.otherDepartment}
+          onChangeText={(val) => updateValue("otherDepartment", val)}
+        />
+      )}
       <CXDropdown
         zIndex={2}
         label="Academic Year"
@@ -231,17 +314,6 @@ export function SignupProfileScreen({
         onToggle={() => toggleDropdown("academicYear")}
         onSelect={(val) => selectValue("academicYear", val)}
         onChangeText={(val) => updateValue("academicYear", val)}
-      />
-      <CXDropdown
-        zIndex={1}
-        label="Graduation Year"
-        placeholder="Expected Graduation"
-        value={values.graduationYear}
-        options={graduations}
-        isOpen={openDropdown === "graduationYear"}
-        onToggle={() => toggleDropdown("graduationYear")}
-        onSelect={(val) => selectValue("graduationYear", val)}
-        onChangeText={(val) => updateValue("graduationYear", val)}
       />
       <View style={styles.info}>
         <CXText variant="small" color={colors.inkSoft}>
@@ -256,127 +328,46 @@ export function SignupProfileScreen({
       <CXButton
         label="Continue"
         iconRight="arrow-forward"
-        onPress={() => {
-          if (!values.college || !values.department || !values.academicYear || !values.graduationYear) {
+        loading={submitting}
+        onPress={async () => {
+          const finalCollege = values.college === "Other" ? values.otherCollege.trim() : values.college;
+          const finalDepartment = values.department === "Other" ? values.otherDepartment.trim() : values.department;
+
+          if (!finalCollege || !finalDepartment || !values.academicYear) {
             setError("Please fill out all fields");
             return;
           }
           setError(null);
-          draft.patch(values);
-          navigation.navigate("SignupInterests");
+          setSubmitting(true);
+          try {
+            const response = await api.post<{
+              data: { accessToken: string; refreshToken: string; user: any };
+            }>("/auth/signup", {
+              fullName: draft.fullName,
+              username: draft.username,
+              email: draft.email,
+              password: draft.password,
+              college: finalCollege,
+              department: finalDepartment,
+              academicYear: values.academicYear,
+              interests: [],
+            });
+            await setSession(
+              response.data.data.accessToken,
+              response.data.data.refreshToken,
+              response.data.data.user
+            );
+            navigation.reset({ index: 0, routes: [{ name: "SignupSuccess" }] });
+          } catch (caught) {
+            setError(getApiErrorMessage(caught));
+          } finally {
+            setSubmitting(false);
+          }
         }}
       />
     </SignupShell>
   );
 }
-
-const interestOptions = [
-  ["Coding", "code-slash-outline"],
-  ["Design", "color-palette-outline"],
-  ["AI & ML", "hardware-chip-outline"],
-  ["Business", "briefcase-outline"],
-  ["Sports", "football-outline"],
-  ["Music", "musical-notes-outline"],
-  ["Photography", "camera-outline"],
-  ["Reading", "book-outline"],
-  ["Other", "ellipsis-horizontal"],
-] as const;
-
-export function SignupInterestsScreen({
-  navigation,
-}: NativeStackScreenProps<RootStackParamList, "SignupInterests">) {
-  const draft = useSignupStore();
-  const setSession = useAppStore((state) => state.setSession);
-  const [error, setError] = React.useState<string | null>(null);
-  const [submitting, setSubmitting] = React.useState(false);
-  const submit = async () => {
-    if (draft.interests.length < 2) {
-      setError("Choose at least two interests");
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const response = await api.post<{
-        data: { accessToken: string; refreshToken: string; user: any };
-      }>("/auth/signup", {
-        fullName: draft.fullName,
-        email: draft.email,
-        password: draft.password,
-        college: draft.college,
-        department: draft.department,
-        academicYear: draft.academicYear,
-        graduationYear: draft.graduationYear,
-        interests: draft.interests,
-      });
-      await setSession(
-        response.data.data.accessToken,
-        response.data.data.refreshToken,
-        response.data.data.user
-      );
-      navigation.reset({ index: 0, routes: [{ name: "SignupSuccess" }] });
-    } catch (caught) {
-      setError(getApiErrorMessage(caught));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-  return (
-    <SignupShell>
-      <CXHeader title="" onBack={navigation.goBack} />
-      <StepHeader
-        step={3}
-        title="What interests you?"
-        subtitle="Choose a few to get better suggestions"
-      />
-      <View style={styles.heroIcon}>
-        <Ionicons name="heart-outline" size={38} color={colors.primary} />
-      </View>
-      <View style={styles.interestGrid}>
-        {interestOptions.map(([label, icon]) => {
-          const selected = draft.interests.includes(label);
-          return (
-            <Pressable
-              key={label}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: selected }}
-              onPress={() => draft.toggleInterest(label)}
-              style={[styles.interest, selected && styles.interestSelected]}
-            >
-              <Ionicons
-                name={icon}
-                size={18}
-                color={selected ? colors.primary : colors.inkSoft}
-              />
-              <CXText variant="smallStrong">{label}</CXText>
-              {selected ? (
-                <Ionicons
-                  name="checkmark-circle"
-                  size={15}
-                  color={colors.primary}
-                />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-      <CXText variant="caption" color={colors.textMuted} align="center">
-        You can update these later in Profile.
-      </CXText>
-      {error ? (
-        <CXText variant="small" color={colors.danger} align="center">
-          {error}
-        </CXText>
-      ) : null}
-      <CXButton
-        label="Continue"
-        loading={submitting}
-        onPress={() => void submit()}
-      />
-    </SignupShell>
-  );
-}
-
 
 
 function SignupShell({ children }: React.PropsWithChildren) {

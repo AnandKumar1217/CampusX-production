@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import type { ComponentProps, PropsWithChildren, ReactNode } from "react";
+import { useState, useEffect } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -66,31 +67,25 @@ export function CXAvatar({
   size?: number;
   online?: boolean;
 }) {
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [source]);
+
+  const fallbackSource = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+
   return (
     <View style={{ width: size, height: size }}>
-      {source ? (
+      <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden", backgroundColor: colors.background }}>
         <Image
-          source={source}
+          source={!error && source ? source : fallbackSource}
           contentFit="cover"
           transition={160}
           style={{ width: size, height: size, borderRadius: size / 2 }}
+          onError={() => setError(true)}
         />
-      ) : (
-        <View
-          style={[
-            styles.avatarFallback,
-            { width: size, height: size, borderRadius: size / 2 },
-          ]}
-        >
-          <CXText variant="bodyStrong" color={colors.primary}>
-            {name
-              .split(" ")
-              .map((part) => part[0])
-              .join("")
-              .slice(0, 2)}
-          </CXText>
-        </View>
-      )}
+      </View>
       {online ? <View style={styles.onlineDot} /> : null}
     </View>
   );
@@ -161,14 +156,18 @@ export function CXSectionHeader({
 export function CXListRow({
   icon,
   iconColor = colors.primary,
+  iconBackgroundColor,
   title,
+  titleColor,
   subtitle,
   right,
   onPress,
 }: {
   icon?: IconName;
   iconColor?: string;
+  iconBackgroundColor?: string;
   title: string;
+  titleColor?: string;
   subtitle?: string;
   right?: ReactNode;
   onPress?: () => void;
@@ -176,12 +175,12 @@ export function CXListRow({
   const content = (
     <CXRow style={styles.listRow}>
       {icon ? (
-        <View style={styles.listIcon}>
+        <View style={[styles.listIcon, iconBackgroundColor ? { backgroundColor: iconBackgroundColor } : null]}>
           <Ionicons name={icon} size={19} color={iconColor} />
         </View>
       ) : null}
       <View style={styles.flex}>
-        <CXText variant="bodyStrong">{title}</CXText>
+        <CXText variant="bodyStrong" color={titleColor}>{title}</CXText>
         {subtitle ? (
           <CXText variant="small" color={colors.textMuted} numberOfLines={2}>
             {subtitle}

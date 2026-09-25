@@ -21,7 +21,7 @@ export const authenticate: RequestHandler = asyncHandler(
     }
     if (payload.type !== "access")
       throw new AppError(401, "Invalid access token", "INVALID_ACCESS_TOKEN");
-    const user = await User.findById(payload.sub).select("name username email");
+    const user = await User.findById(payload.sub).select("name username email avatarUrl");
     if (!user)
       throw new AppError(401, "Account no longer exists", "ACCOUNT_NOT_FOUND");
     request.user = user;

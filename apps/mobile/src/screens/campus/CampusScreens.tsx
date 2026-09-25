@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
@@ -34,6 +36,9 @@ import {
 
 import { useAppStore } from "@/store/appStore";
 import { api, getApiErrorMessage } from "@/services/api";
+import { timetableService } from "@/services/timetableService";
+import { processTimetableImageLocal } from "@/services/mlkitOcr";
+import { parseTimetableImage } from "@/services/timetableImageParser";
 import { colors, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 
@@ -74,191 +79,75 @@ const locationSettings = [
 export function LocationSettingsScreen({
   navigation,
 }: StackProps<"LocationSettings">) {
-  const [values, setValues] = useState([true, true, true, false, true]);
-  const [saving, setSaving] = useState(false);
-  const save = async () => {
-    setSaving(true);
+  const locationSharingEnabled = useAppStore((state) => state.locationSharingEnabled);
+  const setLocationSharingEnabled = useAppStore((state) => state.setLocationSharingEnabled);
+
+  const toggleSharing = async (value: boolean) => {
+    if (value) {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location permission is required to share your location with friends."
+        );
+        return;
+      }
+    }
+
+    // Optimistically update store
+    setLocationSharingEnabled(value);
+
     try {
-      await api.patch("/location/settings", {
-        enabled: values[0],
-        highAccuracy: values[1],
-        friendsOnly: values[2],
-        groups: values[3],
-        batterySaver: values[4],
-      });
-    } finally {
-      setSaving(false);
+      await api.patch("/location/settings", { enabled: value });
+    } catch (e) {
+      // Revert if failed
+      setLocationSharingEnabled(!value);
+      console.error("Failed to update location sharing", e);
     }
   };
+
   return (
-    <CXScrollScreen>
+    <CXScreen>
       <CXHeader title="Location Sharing" onBack={navigation.goBack} />
-      <CXCard style={styles.locationHero}>
-        <View style={styles.locationHeroIcon}>
-          <Ionicons name="location" size={28} color={colors.primary} />
-        </View>
-        <View style={styles.flex}>
-          <CXText variant="title">Who can see your location?</CXText>
-          <CXText variant="small" color={colors.textMuted}>
-            Your location helps friends find you on campus. You remain in
-            control.
-          </CXText>
-        </View>
-      </CXCard>
-      {locationSettings.map(([title, subtitle, icon], index) => (
-        <CXRow key={title} style={styles.settingRow}>
-          <View style={styles.settingIcon}>
-            <Ionicons name={icon} size={19} color={colors.primary} />
-          </View>
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong">{title}</CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              {subtitle}
-            </CXText>
-          </View>
+      <View style={{ padding: 16 }}>
+        <CXText variant="body" color={colors.textMuted} style={{ marginBottom: 24 }}>
+          Share your live location with your CampusX friends.
+        </CXText>
+        
+        <CXRow style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <CXText variant="bodyStrong">Share My Location</CXText>
           <Switch
-            accessibilityLabel={title}
-            value={values[index]}
-            onValueChange={(next) =>
-              setValues((items) =>
-                items.map((item, itemIndex) =>
-                  itemIndex === index ? next : item,
-                ),
-              )
-            }
-            trackColor={{ false: colors.border, true: colors.primaryLight }}
+            value={locationSharingEnabled}
+            onValueChange={toggleSharing}
+            trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={colors.white}
           />
         </CXRow>
-      ))}
-      <CXSectionHeader title="Update frequency" />
-      <CXRow style={styles.wrap}>
-        {["Every 5 min", "Every 15 min", "Real time"].map((item, index) => (
-          <CXChip key={item} label={item} active={index === 1} />
-        ))}
-      </CXRow>
-      <CXCard style={styles.privacy}>
-        <Ionicons
-          name="shield-checkmark-outline"
-          size={24}
-          color={colors.primary}
-        />
-        <View style={styles.flex}>
-          <CXText variant="bodyStrong">Your privacy matters</CXText>
-          <CXText variant="caption" color={colors.textMuted}>
-            Location sharing is encrypted and can be stopped at any time with
-            Ghost Mode.
+        
+        <CXText variant="caption" color={colors.textMuted} style={{ marginBottom: 24 }}>
+          Only your accepted CampusX friends can see your live location.
+        </CXText>
+
+        <CXRow style={{ alignItems: "center", marginTop: 12 }}>
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: locationSharingEnabled ? colors.success : colors.border,
+              marginRight: 8,
+            }}
+          />
+          <CXText variant="body" color={locationSharingEnabled ? colors.success : colors.textMuted}>
+            {locationSharingEnabled ? "Location sharing is active." : "Location sharing is off. Your location is hidden from friends."}
           </CXText>
-        </View>
-      </CXCard>
-      <CXButton
-        label="Save Settings"
-        loading={saving}
-        onPress={() => void save()}
-      />
-    </CXScrollScreen>
+        </CXRow>
+      </View>
+    </CXScreen>
   );
 }
 
-export function GhostModeScreen({ navigation }: StackProps<"GhostMode">) {
-  const [enabled, setEnabled] = useState(false);
-  const [duration, setDuration] = useState("Until I turn it off");
-  const [visible, setVisible] = useState("No one");
-  const toggle = async (value: boolean) => {
-    setEnabled(value);
-    try {
-      await api.patch("/location/ghost-mode", {
-        enabled: value,
-        duration,
-        visible,
-      });
-    } catch {
-      setEnabled(!value);
-    }
-  };
-  return (
-    <CXScrollScreen>
-      <CXHeader title="Ghost Mode" onBack={navigation.goBack} />
-      <CXCard style={styles.ghostHero}>
-        <View style={styles.ghostIcon}>
-          <Ionicons
-            name="shield-half-outline"
-            size={38}
-            color={colors.primary}
-          />
-        </View>
-        <View style={styles.flex}>
-          <CXText variant="title">Stay Private, Your Way</CXText>
-          <CXText variant="small" color={colors.textMuted}>
-            Ghost Mode hides your location and online status from others on
-            CampusX.
-          </CXText>
-        </View>
-        <Switch value={enabled} onValueChange={(value) => void toggle(value)} />
-      </CXCard>
-      <CXSectionHeader title="Set duration" />
-      <CXRow style={styles.durationRow}>
-        {(
-          [
-            ["1 hour", "time-outline"],
-            ["8 hours", "timer-outline"],
-            ["24 hours", "calendar-outline"],
-            ["Until I turn it off", "infinite-outline"],
-          ] as const
-        ).map(([label, icon]) => (
-          <Pressable
-            key={label}
-            onPress={() => setDuration(label)}
-            style={[
-              styles.duration,
-              duration === label && styles.durationActive,
-            ]}
-          >
-            <Ionicons
-              name={icon}
-              size={20}
-              color={duration === label ? colors.primary : colors.textMuted}
-            />
-            <CXText variant="caption" align="center">
-              {label}
-            </CXText>
-          </Pressable>
-        ))}
-      </CXRow>
-      <CXSectionHeader title="Who can see me" />
-      {["Visible to everyone", "Friends only", "No one"].map((label) => (
-        <Pressable
-          key={label}
-          onPress={() => setVisible(label)}
-          style={styles.radioRow}
-        >
-          <View style={[styles.radio, visible === label && styles.radioActive]}>
-            {visible === label ? <View style={styles.radioDot} /> : null}
-          </View>
-          <View>
-            <CXText variant="bodyStrong">{label}</CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              {label === "No one"
-                ? "Hide your location from everyone"
-                : `Allow ${label.toLowerCase()} to see your location`}
-            </CXText>
-          </View>
-        </Pressable>
-      ))}
-      <CXCard style={styles.privacy}>
-        <Ionicons
-          name="information-circle-outline"
-          size={22}
-          color={colors.primary}
-        />
-        <CXText variant="small" color={colors.inkSoft} style={styles.flex}>
-          When Ghost Mode is active, friends can’t see your live location and
-          presence.
-        </CXText>
-      </CXCard>
-    </CXScrollScreen>
-  );
-}
+
 
 const isHoliday = (day: number, month: number, year: number) => {
   const d = new Date(year, month, day);
@@ -366,8 +255,20 @@ const CalendarModal = ({ visible, onClose }: { visible: boolean; onClose: () => 
 };
 
 export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
-  const timetable = useAppStore((state) => state.timetable);
-  const gridTimeSlots = useAppStore((state) => state.gridTimeSlots);
+  const user = useAppStore((state: any) => state.user);
+  const { data: timetableData } = useQuery({ 
+    queryKey: ["timetable", user?.id], 
+    queryFn: () => timetableService.getTimetable(),
+    enabled: !!user?.id
+  });
+  const timetable = Array.isArray(timetableData) ? timetableData : [];
+  
+  const { data: settingsData } = useQuery({ 
+    queryKey: ["timetableSettings", user?.id], 
+    queryFn: () => timetableService.getSettings(),
+    enabled: !!user?.id
+  });
+  const gridTimeSlots = settingsData?.gridTimeSlots || [];
   const [currentTimeObj, setCurrentTimeObj] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -377,7 +278,7 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
   }, []);
 
   const currentDay = currentTimeObj.getDay() === 0 ? 7 : currentTimeObj.getDay();
-  const classesForToday = timetable.filter((c) => c.day === currentDay);
+  const classesForToday = timetable.filter((c) => c.days?.includes(currentDay));
 
   const isClassActive = (startTime: string, endTime: string) => {
     const currentHours = currentTimeObj.getHours();
@@ -451,7 +352,7 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
                 ))}
               </View>
               {gridWeekDays.map((dayName, dayIndex) => {
-                const dayClasses = timetable.filter(c => c.day === dayIndex + 1);
+                const dayClasses = timetable.filter(c => c.days?.includes(dayIndex + 1));
                 return (
                   <View key={dayName} style={{ flexDirection: "row", borderBottomWidth: 1, borderColor: colors.border }}>
                     <View style={{ width: 100, padding: spacing.sm, borderRightWidth: 1, borderColor: colors.border, justifyContent: 'center' }}>
@@ -597,10 +498,29 @@ export function EditClassScreen({
   navigation,
   route,
 }: StackProps<"EditClass">) {
-  const timetable = useAppStore((state) => state.timetable);
-  const addTimetableEntry = useAppStore((state) => state.addTimetableEntry);
-  const updateTimetableEntry = useAppStore((state) => state.updateTimetableEntry);
-  const deleteTimetableEntry = useAppStore((state) => state.deleteTimetableEntry);
+  const user = useAppStore((state: any) => state.user);
+  const queryClient = useQueryClient();
+  const { data: timetableData } = useQuery({ 
+    queryKey: ["timetable", user?.id], 
+    queryFn: () => timetableService.getTimetable(),
+    enabled: !!user?.id
+  });
+  const timetable = Array.isArray(timetableData) ? timetableData : [];
+
+  const createMutation = useMutation({
+    mutationFn: timetableService.createEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: any }) => timetableService.updateEntry(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: timetableService.deleteEntry,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] }),
+  });
   
   const existing = timetable.find((item) => item.id === route.params?.entryId);
   const defaultDay = route.params?.defaultDay ?? 1;
@@ -615,7 +535,7 @@ export function EditClassScreen({
     startTime: existing?.startTime ?? defaultStartTime,
     endTime: existing?.endTime ?? defaultEndTime,
     repeat: "Every week",
-    day: existing?.day ?? defaultDay,
+    day: (existing?.days && existing.days.length > 0) ? existing.days[0] : defaultDay,
     color: existing?.color ?? "#6338F2",
   });
   const [saving, setSaving] = useState(false);
@@ -628,12 +548,9 @@ export function EditClassScreen({
     setSaving(true);
     try {
       if (existing) {
-        updateTimetableEntry(existing.id, form);
+        await updateMutation.mutateAsync({ id: existing.id, payload: { ...form, days: [form.day], locationType: "physical" } });
       } else {
-        addTimetableEntry({ 
-          ...form, 
-          id: `tt-${Date.now()}`, 
-        } as any);
+        await createMutation.mutateAsync({ ...form, days: [form.day], locationType: "physical" } as any);
       }
       navigation.goBack();
     } catch (caught) {
@@ -754,7 +671,7 @@ export function EditClassScreen({
                   onPress: async () => {
                     setSaving(true);
                     try {
-                      deleteTimetableEntry(existing.id);
+                      await deleteMutation.mutateAsync(existing.id);
                       navigation.goBack();
                     } catch (e) {
                       setError("Failed to delete class");
@@ -773,10 +690,54 @@ export function EditClassScreen({
 }
 
 export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSettings">) {
-  const gridTimeSlots = useAppStore((state) => state.gridTimeSlots);
-  const addTimeSlot = useAppStore((state) => state.addTimeSlot);
-  const deleteTimeSlot = useAppStore((state) => state.deleteTimeSlot);
-  const scanTimetableImage = useAppStore((state) => state.scanTimetableImage);
+  const user = useAppStore((state: any) => state.user);
+  const queryClient = useQueryClient();
+  const { data: settingsData } = useQuery({ 
+    queryKey: ["timetableSettings", user?.id], 
+    queryFn: () => timetableService.getSettings(),
+    enabled: !!user?.id
+  });
+  const gridTimeSlots = settingsData?.gridTimeSlots || [];
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: timetableService.updateSettings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["timetableSettings", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] });
+    },
+  });
+
+  const addTimeSlot = async (slot: any) => {
+    await updateSettingsMutation.mutateAsync({
+      gridTimeSlots: [...gridTimeSlots, slot].sort((a, b) => a.start.localeCompare(b.start)),
+    });
+  };
+
+  const deleteTimeSlot = async (id: string) => {
+    await updateSettingsMutation.mutateAsync({
+      gridTimeSlots: gridTimeSlots.filter((s: any) => s.id !== id),
+    });
+  };
+  const scanTimetableImage = async (imageUri: string) => {
+    try {
+      const ocrResult = await processTimetableImageLocal(imageUri);
+      const parseResult = parseTimetableImage(ocrResult.words);
+      
+      if (parseResult.entries.length === 0) {
+        Alert.alert("Error", "Could not detect any timetable classes. Please try another image.");
+        return false;
+      }
+      
+      navigation.navigate("TimetableReview", {
+        entries: parseResult.entries,
+        gridTimeSlots: parseResult.gridTimeSlots.length > 0 ? parseResult.gridTimeSlots : gridTimeSlots
+      });
+      return true;
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
 
   const [form, setForm] = useState({ label: "", start: "", break: false });
   const [scanning, setScanning] = useState(false);
@@ -818,15 +779,10 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0].base64) {
+    if (!result.canceled && result.assets[0].uri) {
       setScanning(true);
       try {
-        await scanTimetableImage(result.assets[0].base64);
-        Alert.alert(
-          "Success", 
-          "Timetable structure and classes imported successfully using AI!",
-          [{ text: "OK", onPress: () => navigation.goBack() }]
-        );
+        await scanTimetableImage(result.assets[0].uri);
       } catch (e) {
         Alert.alert("Error", "Failed to parse timetable image");
       } finally {
@@ -907,6 +863,197 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
     </CXKeyboardScreen>
   );
 }
+
+
+export function TimetableReviewScreen({ navigation, route }: StackProps<"TimetableReview">) {
+  const { entries, gridTimeSlots } = route.params;
+  const queryClient = useQueryClient();
+  const user = useAppStore((state) => state.user);
+  const [isImporting, setIsImporting] = useState(false);
+  const [localEntries, setLocalEntries] = useState<any[]>(entries);
+  const [activeTab, setActiveTab] = useState<"ready" | "review">("ready");
+
+  const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  const ready = localEntries.filter((e) => !e.needsReview);
+  const needsFixing = localEntries.filter((e) => e.needsReview);
+
+  const handleImport = async () => {
+    try {
+      setIsImporting(true);
+      const mappedEntries = ready.map((e) => ({
+        subject: e.subject,
+        days: [e.day],
+        startTime: e.startTime,
+        endTime: e.endTime,
+        room: e.room,
+        lecturer: e.lecturer,
+        locationType: e.room ? "physical" : "tbd",
+        color: "#6C5CE7",
+      }));
+
+      await timetableService.bulkReplaceTimetable({
+        gridTimeSlots: gridTimeSlots || [],
+        entries: mappedEntries,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ["timetableSettings", user?.id] });
+      
+      setIsImporting(false);
+      Alert.alert("Success", "Timetable imported successfully", [
+        { text: "OK", onPress: () => {
+          navigation.reset({
+            index: 1,
+            routes: [
+              { name: "Main" } as any,
+              { name: "Timetable" } as any
+            ],
+          });
+        } }
+      ]);
+    } catch (err: any) {
+      setIsImporting(false);
+      Alert.alert("Error", getApiErrorMessage(err) || "Failed to import timetable");
+    }
+  };
+
+  const removeEntry = (index: number) => {
+    setLocalEntries((prev) => {
+       const copy = [...prev];
+       copy.splice(index, 1);
+       return copy;
+    });
+  };
+
+  const updateEntry = (index: number, key: string, value: string | number) => {
+    setLocalEntries((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [key]: value };
+      return copy;
+    });
+  };
+
+  const moveToReady = (index: number) => {
+    setLocalEntries((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], needsReview: false };
+      return copy;
+    });
+  };
+
+  const renderEntry = (item: any, index: number, isReviewTab: boolean) => (
+    <View key={index} style={{ marginBottom: spacing.sm, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radius.md }}>
+      <CXRow>
+        <View style={{ flex: 1 }}>
+          <CXText variant="bodyStrong">{item.subject || "Unknown Subject"}</CXText>
+          <CXText variant="caption" color={item.needsReview ? colors.warning : colors.textMuted}>
+            {WEEKDAYS[item.day - 1] || `Day ${item.day}`} • {item.startTime} - {item.endTime}
+          </CXText>
+        </View>
+        <CXIconButton icon="trash-outline" label="Delete" backgroundColor={colors.danger + "20"} onPress={() => removeEntry(index)} />
+      </CXRow>
+      
+      {isReviewTab && (
+        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+          <CXInput 
+            label="Subject" 
+            placeholder="e.g. Mathematics"
+            value={item.subject || ""} 
+            onChangeText={(val) => updateEntry(index, 'subject', val)} 
+          />
+          <CXRow style={{ gap: spacing.sm }}>
+            <View style={{ flex: 1 }}>
+              <CXInput 
+                label="Start Time" 
+                placeholder="09:00"
+                value={item.startTime || ""} 
+                onChangeText={(val) => updateEntry(index, 'startTime', val)} 
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CXInput 
+                label="End Time" 
+                placeholder="10:00"
+                value={item.endTime || ""} 
+                onChangeText={(val) => updateEntry(index, 'endTime', val)} 
+              />
+            </View>
+          </CXRow>
+          <View>
+             <CXText variant="caption" style={{ marginBottom: spacing.xs }}>Day</CXText>
+             <CXRow style={{ flexWrap: 'wrap', gap: spacing.xs }}>
+               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => (
+                 <CXChip 
+                   key={dayName}
+                   label={dayName}
+                   active={item.day === (dIdx + 1)}
+                   onPress={() => updateEntry(index, 'day', dIdx + 1)}
+                 />
+               ))}
+             </CXRow>
+          </View>
+          <View style={{ marginTop: spacing.sm }}>
+            <CXButton 
+              label="Move to Ready" 
+              variant="secondary"
+              onPress={() => moveToReady(index)} 
+            />
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  return (
+    <CXScreen edges={["top", "bottom"]}>
+      <CXHeader title="Review Timetable" subtitle="Verify parsed classes" onBack={navigation.goBack} />
+      
+      <View style={{ paddingHorizontal: spacing.screen, paddingTop: spacing.md }}>
+        <CXRow style={{ backgroundColor: colors.surface, borderRadius: radius.pill, padding: 4 }}>
+          <Pressable 
+            style={{ flex: 1, paddingVertical: spacing.sm, alignItems: 'center', backgroundColor: activeTab === 'ready' ? colors.primary : 'transparent', borderRadius: radius.pill }}
+            onPress={() => setActiveTab('ready')}
+          >
+            <CXText variant="bodyStrong" color={activeTab === 'ready' ? colors.white : colors.textMuted}>Ready ({ready.length})</CXText>
+          </Pressable>
+          <Pressable 
+            style={{ flex: 1, paddingVertical: spacing.sm, alignItems: 'center', backgroundColor: activeTab === 'review' ? colors.primary : 'transparent', borderRadius: radius.pill }}
+            onPress={() => setActiveTab('review')}
+          >
+            <CXText variant="bodyStrong" color={activeTab === 'review' ? colors.white : colors.textMuted}>Needs Review ({needsFixing.length})</CXText>
+          </Pressable>
+        </CXRow>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: spacing.screen, paddingBottom: 100 }}>
+        {activeTab === 'ready' ? (
+          <>
+             {ready.length === 0 && (
+               <CXText style={{ textAlign: 'center', marginTop: spacing.xl }} color={colors.textMuted}>No classes ready to import.</CXText>
+             )}
+             {localEntries.map((item, index) => !item.needsReview ? renderEntry(item, index, false) : null)}
+          </>
+        ) : (
+          <>
+             <View style={{ padding: spacing.md, backgroundColor: colors.warning + "20", borderRadius: radius.md, marginBottom: spacing.md }}>
+               <CXText variant="caption">These classes had low OCR confidence or uncertain grid alignment. You can edit them inline and move them to Ready, or delete them.</CXText>
+             </View>
+             {needsFixing.length === 0 && (
+               <CXText style={{ textAlign: 'center', marginTop: spacing.xl }} color={colors.textMuted}>No classes need review!</CXText>
+             )}
+             {localEntries.map((item, index) => item.needsReview ? renderEntry(item, index, true) : null)}
+          </>
+        )}
+      </ScrollView>
+
+      <View style={{ padding: spacing.md, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.borderSoft }}>
+        <CXButton label={`Confirm Import (${ready.length})`} onPress={() => void handleImport()} disabled={isImporting || ready.length === 0} />
+      </View>
+    </CXScreen>
+  );
+}
+
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

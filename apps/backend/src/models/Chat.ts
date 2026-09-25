@@ -18,6 +18,8 @@ const conversationSchema = new Schema(
         archived: { type: Boolean, default: false },
         unreadCount: { type: Number, default: 0 },
         lastReadAt: { type: Date },
+        clearedAt: { type: Date },
+        hidden: { type: Boolean, default: false },
       }
     ],
     title: String,

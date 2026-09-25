@@ -14,6 +14,7 @@ import {
 } from "react-native";
 
 import { CXPostCard, CXStoryAvatar, CXUserRow } from "@/components/cards";
+import { useOpenChat } from "@/hooks/useOpenChat";
 import {
   CXAvatar,
   CXButton,
@@ -270,6 +271,7 @@ export function UserProfileScreen({
   navigation,
   route,
 }: StackProps<"UserProfile">) {
+  const { openChat, isMessaging } = useOpenChat();
   const currentUser = useAppStore(state => state.user);
   const friends = useAppStore(state => state.friends);
   
@@ -371,10 +373,7 @@ export function UserProfileScreen({
               label="Message"
               backgroundColor={colors.transparent}
               onPress={() =>
-                navigation.navigate("Conversation", {
-                  conversationId: `conversation-${user.id}`,
-                  name: user.name,
-                })
+                openChat(user.id, user.name)
               }
             />
             <CXIconButton
@@ -447,10 +446,7 @@ export function UserProfileScreen({
           fullWidth={false}
           style={{ minWidth: 140 }}
           onPress={() =>
-            navigation.navigate("Conversation", {
-              conversationId: `conversation-${user.id}`,
-              name: user.name,
-            })
+            openChat(user.id, user.name)
           }
         />
       </CXRow>
@@ -489,6 +485,7 @@ function PeopleListPage({
   users: User[];
   onRemove?: (id: string) => void;
 }) {
+  const { openChat, isMessaging } = useOpenChat();
   const [query, setQuery] = useState("");
   const filtered = useMemo(
     () =>
@@ -518,10 +515,7 @@ function PeopleListPage({
             }
             onAction={() =>
               action === "Message"
-                ? navigation.navigate("Conversation", {
-                    conversationId: `conversation-${user.id}`,
-                    name: user.name,
-                  })
+                ? openChat(user.id, user.name)
                 : void api
                     .post("/friends/requests", { recipientId: user.id })
                     .catch(() => undefined)
@@ -1136,6 +1130,7 @@ export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
 }
 
 export function ReactionsScreen({ route, navigation }: StackProps<"Reactions">) {
+  const { openChat, isMessaging } = useOpenChat();
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
@@ -1169,10 +1164,7 @@ export function ReactionsScreen({ route, navigation }: StackProps<"Reactions">) 
               navigation.navigate("UserProfile", { userId: user.id })
             }
             onAction={() =>
-              navigation.navigate("Conversation", {
-                conversationId: `conversation-${user.id}`,
-                name: user.name,
-              })
+              openChat(user.id, user.name)
             }
           />
         ))}

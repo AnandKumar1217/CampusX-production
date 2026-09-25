@@ -8,6 +8,8 @@ import { env } from "./config/env.js";
 import { authenticate } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/errors.js";
 import { authRouter } from "./routes/authRoutes.js";
+import { calendarRouter } from "./routes/calendarRoutes.js";
+import { holidayRouter } from "./routes/holidayRoutes.js";
 import { chatRouter } from "./routes/chatRoutes.js";
 import {
   eventRouter,
@@ -27,6 +29,7 @@ import { tripRouter } from "./routes/tripRoutes.js";
 import { uploadRouter } from "./routes/uploadRoutes.js";
 import { pushRouter } from "./routes/pushRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
+import { mapRouter } from "./routes/mapRoutes.js";
 import { sendSuccess } from "./utils/http.js";
 
 export function createApp() {
@@ -63,6 +66,8 @@ export function createApp() {
   app.use("/api/events", authenticate, eventRouter);
   app.use("/api/marketplace", authenticate, marketplaceRouter);
   app.use("/api/timetable", authenticate, timetableRouter);
+  app.use("/api/calendar", authenticate, calendarRouter);
+  app.use("/api/holidays", authenticate, holidayRouter);
   app.use("/api/trips", authenticate, tripRouter);
   app.use("/api/notifications", authenticate, notificationRouter);
   app.use("/api/location", authenticate, locationRouter);
@@ -70,6 +75,7 @@ export function createApp() {
   app.use("/api/weather", authenticate, weatherRouter);
   app.use("/api/upload", authenticate, uploadRouter);
   app.use("/api/push", authenticate, pushRouter);
+  app.use("/api/maps", authenticate, mapRouter);
   app.use(notFound);
   app.use(errorHandler);
   return app;

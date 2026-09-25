@@ -58,8 +58,9 @@ uploadRouter.delete(
     }
 
     const isUsed = await Post.exists({ "media.publicId": publicId });
-    if (isUsed) {
-      throw new AppError(400, "Asset is attached to a post and cannot be deleted here", "IN_USE");
+    const isUsedInEvent = await import("../models/Commerce.js").then(m => m.Event.exists({ imagePublicId: publicId }));
+    if (isUsed || isUsedInEvent) {
+      throw new AppError(400, "Asset is attached to a post or event and cannot be deleted here", "IN_USE");
     }
 
     await cloudinaryService.deleteImage(publicId);

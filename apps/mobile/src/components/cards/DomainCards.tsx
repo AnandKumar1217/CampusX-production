@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { colors, radius, spacing } from "@/theme";
 import type { EventItem, Listing, Trip } from "@/types/domain";
-import { useAppStore } from "@/store/appStore";
 
 import { CXAvatar, CXCard, CXRow, CXText } from "../ui";
 
@@ -12,13 +11,15 @@ export function CXEventCard({
   event,
   onPress,
   featured,
+  saved = false,
+  onToggleSave,
 }: {
   event: EventItem;
   onPress?: () => void;
   featured?: boolean;
+  saved?: boolean;
+  onToggleSave?: () => void;
 }) {
-  const isSaved = useAppStore((state) => state.savedEvents.includes(event.id));
-  const toggleSaved = useAppStore((state) => state.toggleSavedEvent);
 
   return (
     <Pressable
@@ -55,11 +56,12 @@ export function CXEventCard({
         {!featured ? (
           <Pressable 
             onPress={(e) => {
-              toggleSaved(event.id);
+              e.stopPropagation();
+              onToggleSave?.();
             }}
             style={({ pressed }) => pressed && { opacity: 0.5 }}
           >
-            <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} size={18} color={colors.primary} />
+            <Ionicons name={saved ? "bookmark" : "bookmark-outline"} size={18} color={colors.primary} />
           </Pressable>
         ) : null}
       </CXCard>
@@ -85,9 +87,9 @@ export function CXListingCard({
         pressed && styles.pressed,
       ]}
     >
-      {listing.image ? (
+      {listing.images?.[0] ? (
         <Image
-          source={listing.image}
+          source={{ uri: listing.images[0] }}
           contentFit="cover"
           style={compact ? styles.listingCompactImage : styles.listingImage}
         />
@@ -123,9 +125,9 @@ export function CXTripCard({
       style={({ pressed }) => pressed && styles.pressed}
     >
       <CXCard style={[styles.tripCard, featured && styles.tripFeatured]}>
-        {trip.image ? (
+        {trip.imageUrl || trip.image ? (
           <Image
-            source={trip.image}
+            source={trip.imageUrl || trip.image}
             contentFit="cover"
             style={featured ? styles.tripHero : styles.tripImage}
           />
@@ -135,21 +137,19 @@ export function CXTripCard({
             {trip.title}
           </CXText>
           <CXText variant="caption" color={colors.textMuted}>
-            {trip.startDate} – {trip.endDate} · {trip.destination}
+            {new Date(trip.startDate).toLocaleDateString()} · {trip.destination}
           </CXText>
           <CXRow style={styles.tripMeta}>
             <CXRow style={styles.avatarStack}>
-              {trip.members.slice(0, 4).map((user, index) => (
-                <View
-                  key={user.id}
-                  style={{ marginLeft: index === 0 ? 0 : -9 }}
-                >
-                  <CXAvatar source={user.avatar} name={user.name} size={26} />
-                </View>
-              ))}
+              {trip.createdBy?.name ? (
+                <>
+                  <CXAvatar source={trip.createdBy.avatarUrl || trip.createdBy.avatar} name={trip.createdBy.name} size={26} />
+                  <CXText variant="caption" numberOfLines={1}>{trip.createdBy.name}</CXText>
+                </>
+              ) : null}
             </CXRow>
             <CXText variant="smallStrong" color={colors.primary}>
-              ₹{trip.budget.toLocaleString("en-IN")}
+              {trip.myStatus === "invited" ? "Invited" : `₹${(trip.budgetPerPerson || 0).toLocaleString("en-IN")}`}
             </CXText>
           </CXRow>
         </View>

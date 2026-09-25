@@ -21,6 +21,8 @@ export function CXDropdown({
   onToggle,
   onSelect,
   onChangeText,
+  editable,
+  containerStyle,
 }: {
   zIndex: number;
   label: string;
@@ -31,6 +33,8 @@ export function CXDropdown({
   onToggle: () => void;
   onSelect: (val: string) => void;
   onChangeText: (val: string) => void;
+  editable?: boolean;
+  containerStyle?: any;
 }) {
   const filteredOptions = React.useMemo(() => {
     if (!value || options.includes(value as any)) return options;
@@ -40,7 +44,7 @@ export function CXDropdown({
   return (
     <View style={[styles.choiceWrap, { zIndex }]}>
       <CXText variant="smallStrong">{label}</CXText>
-      <View style={[styles.choice, isOpen && styles.choiceOpen]}>
+      <View style={[styles.choice, isOpen && styles.choiceOpen, containerStyle]}>
         <TextInput
           style={[styles.flex, { color: colors.inkSoft, fontSize: 16 }]}
           value={value}
@@ -55,8 +59,9 @@ export function CXDropdown({
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
+          editable={editable !== false}
         />
-        <Pressable onPress={onToggle} style={{ padding: 4 }}>
+        <Pressable onPress={editable !== false ? onToggle : undefined} style={{ padding: 4 }}>
           <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.textMuted} />
         </Pressable>
       </View>
