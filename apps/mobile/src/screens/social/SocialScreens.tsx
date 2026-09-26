@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-import { CXPostCard, CXStoryAvatar, CXUserRow } from "@/components/cards";
+import { CXEventCard, CXPostCard, CXStoryAvatar, CXUserRow } from "@/components/cards";
 import { useOpenChat } from "@/hooks/useOpenChat";
 import {
   CXAvatar,
@@ -32,8 +32,9 @@ import {
 } from "@/components/ui";
 import { useAppStore } from "@/store/appStore";
 import { api, getApiErrorMessage } from "@/services/api";
+import { eventService } from "@/services/eventService";
 import { colors, gradients, radius, spacing, typography } from "@/theme";
-import type { Post, User } from "@/types/domain";
+import type { EventItem, Post, User } from "@/types/domain";
 import type { RootStackParamList } from "@/types/navigation";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
@@ -47,6 +48,7 @@ const productPhoto = require("../../../assets/marketplace/study-table.png");
 export function FeedScreen({ navigation }: StackProps<"Feed">) {
   const currentUser = useAppStore(state => state.user);
   const friends = useAppStore(state => state.friends);
+  const unreadNotifications = useAppStore(state => state.unreadNotifications);
   const [feed, setFeed] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -108,7 +110,11 @@ export function FeedScreen({ navigation }: StackProps<"Feed">) {
           {friends.slice(0, 7).map((user, index) => (
             <CXStoryAvatar
               key={user.id}
-              user={user}
+              user={{
+                ...user,
+                avatar: user.avatar ?? undefined,
+                avatarUrl: user.avatarUrl ?? undefined,
+              }}
               add={index === 0}
               onPress={() =>
                 index === 0
@@ -181,6 +187,7 @@ export function PostDetailsScreen({
   }, [route.params.postId]);
 
   const submit = () => {
+    if (!post) return;
     const value = comment.trim();
     if (!value) return;
     setComments((items) => [
@@ -348,7 +355,7 @@ export function UserProfileScreen({
     );
   }
 
-  const postsCount = events.filter(e => e?.author?.id === user?.id).length + listings.filter(l => l?.seller?.id === user?.id).length;
+  const postsCount = events.filter(e => e?.organizer?.id === user?.id).length + listings.filter(l => l?.seller?.id === user?.id).length;
   const connectionsCount = user.id === currentUser?.id ? friends.length : (user.id.length * 14 + 42);
   const groupsCount = user.id === currentUser?.id ? studyGroups.filter(g => g.joined).length : (user.id.length * 3 + 2);
 
@@ -417,7 +424,7 @@ export function UserProfileScreen({
           </CXText>
         ) : null}
         {user.bio ? (
-          <CXText variant="body" color={colors.text} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.lg }}>
+          <CXText variant="body" color={colors.ink} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.lg }}>
             {user.bio}
           </CXText>
         ) : null}
@@ -527,6 +534,62 @@ function PeopleListPage({
   );
 }
 
+function UsersDirectoryPage({
+  navigation,
+  title,
+}: {
+  navigation: StackProps<"Friends">["navigation"];
+  title: string;
+}) {
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    api
+      .get<{ data: { items: any[] } }>("/users/search", {
+        params: { limit: 100 },
+      })
+      .then((response) =>
+        setUsers(
+          response.data.data.items.map((user) => ({
+            ...user,
+            id: user.id ?? user._id,
+            avatar: user.avatar ?? user.avatarUrl ?? undefined,
+            avatarUrl: user.avatarUrl ?? undefined,
+          })),
+        ),
+      )
+      .catch((error) => console.log("Failed to fetch users", error));
+  }, []);
+
+  return (
+    <PeopleListPage
+      navigation={navigation}
+      title={title}
+      subtitle={`${users.length} people`}
+      action="Add Friend"
+      users={users}
+    />
+  );
+}
+
+export function PeopleScreen({ navigation }: StackProps<"People">) {
+  return (
+    <UsersDirectoryPage
+      navigation={navigation as StackProps<"Friends">["navigation"]}
+      title="People"
+    />
+  );
+}
+
+export function GlobalUsersScreen({ navigation }: StackProps<"GlobalUsers">) {
+  return (
+    <UsersDirectoryPage
+      navigation={navigation as StackProps<"Friends">["navigation"]}
+      title="Global Users"
+    />
+  );
+}
+
 export function FriendsScreen({ navigation }: StackProps<"Friends">) {
   const friends = useAppStore(state => state.friends);
   const removeFriend = useAppStore(state => state.removeFriend);
@@ -535,7 +598,11 @@ export function FriendsScreen({ navigation }: StackProps<"Friends">) {
       navigation={navigation}
       title="Friends"
       subtitle={`${friends.length} connections`}
-      users={friends}
+      users={friends.map((user) => ({
+        ...user,
+        avatar: user.avatar ?? undefined,
+        avatarUrl: user.avatarUrl ?? undefined,
+      }))}
       onRemove={removeFriend}
     />
   );
@@ -684,6 +751,7 @@ export function FriendRequestsScreen({
 }
 
 export function StoryViewerScreen({ navigation }: StackProps<"StoryViewer">) {
+  const currentUser = useAppStore(state => state.user);
   const [liked, setLiked] = useState(false);
   return (
     <CXScreen edges={[]} backgroundColor="#100C28">
@@ -814,7 +882,7 @@ export function CreateStoryScreen({ navigation }: StackProps<"CreateStory">) {
         </View>
         <CXSectionHeader title="Preview" />
         <Image
-          source={assets[selected]}
+          source={assets[selected]!}
           contentFit="cover"
           style={styles.storyPreview}
         />
@@ -953,6 +1021,44 @@ export function SavedScreen({ navigation }: StackProps<"Saved">) {
   );
 }
 
+export function MyEventsScreen({ navigation }: StackProps<"MyEvents">) {
+  const currentUser = useAppStore(state => state.user);
+  const [events, setEvents] = useState<EventItem[]>([]);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    eventService
+      .listEvents({ limit: 100 })
+      .then(({ items }) =>
+        setEvents(items.filter((event) => event.organizer?.id === currentUser.id)),
+      )
+      .catch((error) => console.log("Failed to fetch user events", error));
+  }, [currentUser?.id]);
+
+  return (
+    <CXScreen>
+      <CXHeader title="My Events" onBack={navigation.goBack} />
+      <ScrollView contentContainerStyle={styles.page}>
+        {events.length > 0 ? (
+          events.map((event) => (
+            <CXEventCard
+              key={event.id}
+              event={event}
+              onPress={() =>
+                navigation.navigate("EventDetails", { eventId: event.id })
+              }
+            />
+          ))
+        ) : (
+          <CXText color={colors.textMuted} align="center">
+            {"You haven't created any events yet."}
+          </CXText>
+        )}
+      </ScrollView>
+    </CXScreen>
+  );
+}
+
 export function MyPostsScreen({ navigation }: StackProps<"MyPosts">) { const currentUser = useAppStore(state => state.user); const [posts, setPosts] = useState<Post[]>([]); useEffect(() => { api.get<{ data: Post[] }>("/posts/my").then(res => setPosts(res.data.data)).catch(console.log); }, []); return (
     <CXScreen>
       <CXHeader
@@ -1000,9 +1106,10 @@ export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
       allowsEditing: true,
       quality: 0.8,
     });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
+    const selectedAsset = result.assets?.[0];
+    if (!result.canceled && selectedAsset) {
       if (mediaUris.length < 5) {
-        setMediaUris(prev => [...prev, result.assets[0].uri]);
+        setMediaUris(prev => [...prev, selectedAsset.uri]);
       }
     }
   };

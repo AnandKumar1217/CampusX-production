@@ -642,7 +642,7 @@ export function NewChatScreen({ navigation }: StackProps<"NewChat">) {
             <CXListRow
               icon="people-outline"
               title="New Group"
-              color={colors.primary}
+              iconColor={colors.primary}
             />
           </Pressable>
         </CXCard>

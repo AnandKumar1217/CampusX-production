@@ -2,17 +2,18 @@ import axios, { AxiosError, CanceledError, type InternalAxiosRequestConfig } fro
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { requireServiceUrl } from "@/config/runtimeEnvironment";
 
 const ACCESS_TOKEN_KEY = "campusx.auth.access-token";
 const REFRESH_TOKEN_KEY = "campusx.auth.refresh-token";
 
-const defaultApiUrl =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:5000/api"
-    : "http://localhost:5000/api";
+const configuredApiUrl = requireServiceUrl(
+  "EXPO_PUBLIC_API_URL",
+  process.env.EXPO_PUBLIC_API_URL,
+);
 
 export const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? defaultApiUrl,
+  baseURL: configuredApiUrl,
   timeout: 12_000,
   headers: { "Content-Type": "application/json" },
 });

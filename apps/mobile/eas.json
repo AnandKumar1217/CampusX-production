@@ -1,24 +1,38 @@
 {
   "cli": {
-    "version": ">= 12.0.0"
+    "version": ">= 12.0.0",
+    "appVersionSource": "local",
+    "requireCommit": true
   },
   "build": {
     "development": {
-      "developmentClient": true,
+      "developmentClient": false,
       "distribution": "internal",
+      "environment": "development",
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
       "android": {
         "buildType": "apk"
       }
     },
-    "production": {},
+    "production": {
+      "environment": "production"
+    },
     "production-apk": {
       "extends": "production",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "release-apk": {
+      "extends": "production",
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
       }

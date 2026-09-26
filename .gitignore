@@ -1,15 +1,40 @@
+# Dependencies
 node_modules/
-.expo/
-.expo-shared/
-dist/
-coverage/
-.DS_Store
-*.log
+
+# Environment files (examples remain trackable)
 .env
 .env.*
 !.env.example
+
+# JavaScript and test output
+dist/
+build/
+coverage/
+apps/backend/uploads/
 apps/mobile/web-build/
 apps/mobile/dist-check/
-apps/backend/uploads/
-apps/mobile/android/local.properties
+
+# Expo and native build output
+.expo/
+.expo-shared/
+.gradle/
+.cxx/
 apps/mobile/android/
+apps/mobile/ios/
+artifacts/android/
+*.apk
+*.aab
+
+# Local Android signing and SDK configuration
+local.properties
+*.jks
+*.keystore
+
+# Editors, operating systems, and diagnostics
+.vscode/
+.DS_Store
+*.log
+hs_err_pid*.log
+temp_*
+scratch_*
+docs/reports/

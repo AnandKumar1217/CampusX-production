@@ -16,13 +16,13 @@ export default function MapView(props: any) {
     <Map 
       style={style}
       mapStyle="https://tiles.openfreemap.org/styles/liberty"
-      logoEnabled={false}
-      attributionEnabled={false}
-      compassEnabled={props.showsCompass !== false}
-      pitchEnabled={props.pitchEnabled !== false}
-      rotateEnabled={props.rotateEnabled !== false}
-      scrollEnabled={props.scrollEnabled !== false}
-      zoomEnabled={props.zoomEnabled !== false}
+      logo={false}
+      attribution={false}
+      compass={props.showsCompass !== false}
+      touchPitch={props.pitchEnabled !== false}
+      touchRotate={props.rotateEnabled !== false}
+      dragPan={props.scrollEnabled !== false}
+      touchZoom={props.zoomEnabled !== false}
       onPress={(event) => {
         // Simple adaptation of onPress / onPoiClick
         if (onPress && event && event.nativeEvent && event.nativeEvent.lngLat) {
@@ -49,12 +49,10 @@ export default function MapView(props: any) {
             center: [region.longitude, region.latitude],
             zoom: props.zoomLevel || 16,
           }}
-          animationMode="flyTo"
-          animationDuration={500}
         />
       )}
       {showsUserLocation && (
-        <UserLocation visible={true} showsUserHeadingIndicator={true} />
+        <UserLocation heading />
       )}
       {children}
     </Map>

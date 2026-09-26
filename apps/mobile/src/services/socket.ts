@@ -1,12 +1,12 @@
 import { io, type Socket } from "socket.io-client";
-import { Platform } from "react-native";
+import { requireServiceUrl } from "@/config/runtimeEnvironment";
 
 let socket: Socket | null = null;
 
-const defaultSocketUrl =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:5000"
-    : "http://localhost:5000";
+const configuredSocketUrl = requireServiceUrl(
+  "EXPO_PUBLIC_SOCKET_URL",
+  process.env.EXPO_PUBLIC_SOCKET_URL,
+);
 
 export function connectSocket(token: string) {
   if (socket) {
@@ -14,7 +14,7 @@ export function connectSocket(token: string) {
     if (!socket.connected) socket.connect();
     return socket;
   }
-  socket = io(process.env.EXPO_PUBLIC_SOCKET_URL ?? defaultSocketUrl, {
+  socket = io(configuredSocketUrl, {
     transports: ["websocket"],
     auth: { token },
     reconnection: true,

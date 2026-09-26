@@ -156,7 +156,7 @@ export function NotificationsScreen({
         ) : Object.keys(groupedItems).map((category) => (
           <View key={category}>
             <CXSectionHeader title={category} />
-            {groupedItems[category].map((item) => {
+            {(groupedItems[category] ?? []).map((item) => {
               const isUnread = !item.readAt;
               const { name, color } = getIcon(item.type);
               return (

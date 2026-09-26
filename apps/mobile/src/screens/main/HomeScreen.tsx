@@ -393,7 +393,7 @@ export function HomeScreen() {
 
             {filteredClasses.length === 0 && filteredEvents.length === 0 && filteredFeatures.length === 0 && (
               <CXText color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>
-                No results found for "{searchQuery}"
+                {`No results found for "${searchQuery}"`}
               </CXText>
             )}
           </View>
@@ -521,7 +521,7 @@ export function HomeScreen() {
                 upcomingClass = dayClasses[0];
                 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                 const targetJsDay = checkDay === 7 ? 0 : checkDay;
-                timeText = offset === 1 ? "Tomorrow" : daysOfWeek[targetJsDay];
+                timeText = offset === 1 ? "Tomorrow" : (daysOfWeek[targetJsDay] ?? "Upcoming");
                 break;
               }
             }

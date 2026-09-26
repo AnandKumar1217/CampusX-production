@@ -41,6 +41,10 @@ import { processTimetableImageLocal } from "@/services/mlkitOcr";
 import { parseTimetableImage } from "@/services/timetableImageParser";
 import { colors, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
+import {
+  getImportPayloadAndEffects,
+  validateReviewEntry,
+} from "@/utils/timetableValidation";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
@@ -229,9 +233,9 @@ const CalendarModal = ({ visible, onClose }: { visible: boolean; onClose: () => 
           <CXRow style={{ justifyContent: 'space-between', marginBottom: spacing.xl }}>
             <CXText variant="h2">{monthNames[month]} {year}</CXText>
             <CXRow style={{ gap: spacing.md }}>
-              <CXIconButton icon="chevron-back" onPress={handlePrevMonth} backgroundColor={colors.backgroundHover} />
-              <CXIconButton icon="chevron-forward" onPress={handleNextMonth} backgroundColor={colors.backgroundHover} />
-              <CXIconButton icon="close" onPress={onClose} backgroundColor={colors.backgroundHover} />
+              <CXIconButton icon="chevron-back" label="Previous month" onPress={handlePrevMonth} backgroundColor={colors.backgroundLavender} />
+              <CXIconButton icon="chevron-forward" label="Next month" onPress={handleNextMonth} backgroundColor={colors.backgroundLavender} />
+              <CXIconButton icon="close" label="Close calendar" onPress={onClose} backgroundColor={colors.backgroundLavender} />
             </CXRow>
           </CXRow>
 
@@ -288,8 +292,8 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
     const parseTime = (timeStr: string) => {
       const match = timeStr.match(/(\d+):(\d+)/);
       if (!match) return 0;
-      let h = parseInt(match[1], 10);
-      const m = parseInt(match[2], 10);
+      let h = parseInt(match[1]!, 10);
+      const m = parseInt(match[2]!, 10);
       if (timeStr.toLowerCase().includes("pm") && h < 12) h += 12;
       if (timeStr.toLowerCase().includes("am") && h === 12) h = 0;
       return h * 60 + m;
@@ -305,8 +309,8 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
 
     const match = endTimeStr.match(/(\d+):(\d+)/);
     if (!match) return false;
-    let h = parseInt(match[1], 10);
-    const m = parseInt(match[2], 10);
+    let h = parseInt(match[1]!, 10);
+    const m = parseInt(match[2]!, 10);
     if (endTimeStr.toLowerCase().includes("pm") && h < 12) h += 12;
     if (endTimeStr.toLowerCase().includes("am") && h === 12) h = 0;
     
@@ -362,7 +366,7 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
                       const slotClass = dayClasses.find(c => c.startTime === slot.start || (c.startTime < slot.start && c.endTime > slot.start));
                       if (slot.break) {
                         return (
-                          <View key={slot.id} style={{ width: 110, padding: spacing.sm, borderRightWidth: 1, borderColor: colors.border, backgroundColor: colors.backgroundHover, justifyContent: 'center', alignItems: 'center' }}>
+                          <View key={slot.id} style={{ width: 110, padding: spacing.sm, borderRightWidth: 1, borderColor: colors.border, backgroundColor: colors.backgroundLavender, justifyContent: 'center', alignItems: 'center' }}>
                             <CXText variant="caption" color={colors.textMuted}>{slot.label.includes("Lunch") ? "LUNCH" : "BREAK"}</CXText>
                           </View>
                         );
@@ -390,7 +394,7 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
           </ScrollView>
           <View style={{ padding: spacing.xl, paddingBottom: spacing.xxl }}>
             <CXText variant="bodyStrong" style={{ marginBottom: spacing.md }}>
-              Today's Classes
+              {"Today's Classes"}
             </CXText>
             {classesForToday.length === 0 ? (
               <CXText variant="small" color={colors.textMuted}>
@@ -411,7 +415,7 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
                           <CXText variant="caption" color={colors.textMuted}>{endTimeStr}</CXText>
                         </View>
                         <View style={[styles.timelineDot, { backgroundColor: colors.border }]} />
-                        <View style={[styles.classBlock, { borderLeftColor: colors.border, backgroundColor: colors.backgroundHover }]}>
+                        <View style={[styles.classBlock, { borderLeftColor: colors.border, backgroundColor: colors.backgroundLavender }]}>
                           <CXText variant="bodyStrong" color={colors.textMuted}>{slot.label.includes("Lunch") ? "LUNCH BREAK" : "SHORT BREAK"}</CXText>
                           {active && (
                             <CXText variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
@@ -525,7 +529,7 @@ export function EditClassScreen({
   const existing = timetable.find((item) => item.id === route.params?.entryId);
   const defaultDay = route.params?.defaultDay ?? 1;
   const defaultStartTime = route.params?.defaultStartTime ?? "09:00";
-  const defaultEndHour = (parseInt(defaultStartTime.split(":")[0]) + 1).toString().padStart(2, "0");
+  const defaultEndHour = (parseInt(defaultStartTime.split(":")[0] ?? "09", 10) + 1).toString().padStart(2, "0");
   const defaultEndTime = `${defaultEndHour}:${defaultStartTime.split(":")[1] ?? "00"}`;
   
   const [form, setForm] = useState({
@@ -749,8 +753,8 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
     // Matches formats like "16-17", "9 - 10"
     const match = text.trim().match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
     if (match) {
-      const s = parseInt(match[1]);
-      const e = parseInt(match[2]);
+      const s = parseInt(match[1]!, 10);
+      const e = parseInt(match[2]!, 10);
       
       const sAmPm = (s >= 12 && s < 24) ? "PM" : "AM";
       const eAmPm = (e >= 12 && e < 24) ? "PM" : "AM";
@@ -779,10 +783,11 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0].uri) {
+    const selectedAsset = result.assets?.[0];
+    if (!result.canceled && selectedAsset?.uri) {
       setScanning(true);
       try {
-        await scanTimetableImage(result.assets[0].uri);
+        await scanTimetableImage(selectedAsset.uri);
       } catch (e) {
         Alert.alert("Error", "Failed to parse timetable image");
       } finally {
@@ -805,7 +810,7 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
         <CXText variant="caption" color={colors.textMuted} style={{ marginBottom: spacing.md }}>Upload a photo of your class schedule and let AI automatically build your grid structure and add your classes!</CXText>
         <CXButton 
           label={scanning ? "AI is analyzing your timetable..." : "Upload Timetable Image"} 
-          icon={scanning ? undefined : "scan-outline"}
+          iconLeft={scanning ? undefined : "scan-outline"}
           onPress={handleAIScan}
           disabled={scanning}
         />
@@ -875,34 +880,35 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
 
   const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-  const ready = localEntries.filter((e) => !e.needsReview);
-  const needsFixing = localEntries.filter((e) => e.needsReview);
+  const isReadyEntry = (entry: any) => validateReviewEntry(entry).valid;
+  const ready = localEntries.filter(isReadyEntry);
+  const needsFixing = localEntries.filter((entry) => !isReadyEntry(entry));
 
   const handleImport = async () => {
+    const importResult = getImportPayloadAndEffects(
+      localEntries,
+      gridTimeSlots ?? [],
+    );
+    if (importResult.error || !importResult.payload || !importResult.onSuccessEffects) {
+      Alert.alert("Nothing to import", importResult.error);
+      return;
+    }
+
     try {
       setIsImporting(true);
-      const mappedEntries = ready.map((e) => ({
-        subject: e.subject,
-        days: [e.day],
-        startTime: e.startTime,
-        endTime: e.endTime,
-        room: e.room,
-        lecturer: e.lecturer,
-        locationType: e.room ? "physical" : "tbd",
-        color: "#6C5CE7",
-      }));
+      await timetableService.bulkReplaceTimetable(importResult.payload);
 
-      await timetableService.bulkReplaceTimetable({
-        gridTimeSlots: gridTimeSlots || [],
-        entries: mappedEntries,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] });
-      await queryClient.invalidateQueries({ queryKey: ["timetableSettings", user?.id] });
+      if (importResult.onSuccessEffects.invalidateTimetable) {
+        await queryClient.invalidateQueries({ queryKey: ["timetable", user?.id] });
+      }
+      if (importResult.onSuccessEffects.invalidateSettings) {
+        await queryClient.invalidateQueries({ queryKey: ["timetableSettings", user?.id] });
+      }
       
       setIsImporting(false);
-      Alert.alert("Success", "Timetable imported successfully", [
+      Alert.alert("Success", importResult.onSuccessEffects.alertMessage, [
         { text: "OK", onPress: () => {
+          if (importResult.onSuccessEffects.stayOnReviewScreen) return;
           navigation.reset({
             index: 1,
             routes: [
@@ -937,7 +943,13 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
   const moveToReady = (index: number) => {
     setLocalEntries((prev) => {
       const copy = [...prev];
-      copy[index] = { ...copy[index], needsReview: false };
+      const candidate = { ...copy[index], needsReview: false };
+      const validation = validateReviewEntry(candidate);
+      if (!validation.valid) {
+        Alert.alert("Class needs fixing", validation.errors.join("\n"));
+        return prev;
+      }
+      copy[index] = candidate;
       return copy;
     });
   };
@@ -1032,7 +1044,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
              {ready.length === 0 && (
                <CXText style={{ textAlign: 'center', marginTop: spacing.xl }} color={colors.textMuted}>No classes ready to import.</CXText>
              )}
-             {localEntries.map((item, index) => !item.needsReview ? renderEntry(item, index, false) : null)}
+             {localEntries.map((item, index) => isReadyEntry(item) ? renderEntry(item, index, false) : null)}
           </>
         ) : (
           <>
@@ -1042,7 +1054,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
              {needsFixing.length === 0 && (
                <CXText style={{ textAlign: 'center', marginTop: spacing.xl }} color={colors.textMuted}>No classes need review!</CXText>
              )}
-             {localEntries.map((item, index) => item.needsReview ? renderEntry(item, index, true) : null)}
+             {localEntries.map((item, index) => !isReadyEntry(item) ? renderEntry(item, index, true) : null)}
           </>
         )}
       </ScrollView>

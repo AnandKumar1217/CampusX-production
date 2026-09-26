@@ -20,6 +20,7 @@ export type RootStackParamList = {
   UserProfile: { userId: string };
   EditProfile: undefined;
   Friends: undefined;
+  FriendRequests: undefined;
   People: undefined;
   PeopleSuggestions: undefined;
   GlobalUsers: undefined;
@@ -80,6 +81,13 @@ export type RootStackParamList = {
   QRScanner: undefined;
   Settings: undefined;
   GamesHub: undefined;
+  Game2048: undefined;
+  Sudoku: undefined;
+  TicTacToe: undefined;
+  Snake: undefined;
+  MemoryMatch: undefined;
+  WordGame: undefined;
+  ChessPuzzles: undefined;
   AirHockey: undefined;
   ReactionBattle: undefined;
   TicTacToeGlow: undefined;

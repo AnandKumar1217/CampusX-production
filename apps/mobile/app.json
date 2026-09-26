@@ -2,10 +2,10 @@
   "expo": {
     "name": "CampusX",
     "slug": "campusx",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "campusx",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
     "splash": {
@@ -25,6 +25,8 @@
     },
     "android": {
       "package": "com.campusx.mobile",
+      "versionCode": 1,
+      "icon": "./assets/branding/campusx-logo-new-transparent.png",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/campusx-logo-new-transparent.png",
@@ -43,6 +45,10 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "allowBackup": false,
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
@@ -70,7 +76,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/icon.png",
+          "icon": "./assets/branding/campusx-logo-new-transparent.png",
           "color": "#8066FF"
         }
       ],

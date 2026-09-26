@@ -41,6 +41,15 @@ import {
   TicTacToeGlowScreen,
 } from "@/screens/games";
 import {
+  ChessPuzzlesScreen,
+  Game2048Screen,
+  MemoryMatchScreen,
+  SnakeScreen,
+  SudokuScreen,
+  TicTacToeScreen,
+  WordGameScreen,
+} from "@/screens/games/GameScreens";
+import {
   GroupDetailsScreen,
   GroupFilesScreen,
   GroupMembersScreen,
@@ -63,6 +72,7 @@ import {
   PeopleScreen,
   GlobalUsersScreen,
   FriendsScreen,
+  FriendRequestsScreen,
   CreatePostScreen,
   MutualFriendsScreen,
   MyPostsScreen,
@@ -230,6 +240,7 @@ export function AppNavigator() {
         <Stack.Screen name="UserProfile" component={UserProfileScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Friends" component={FriendsScreen} />
+        <Stack.Screen name="FriendRequests" component={FriendRequestsScreen} />
         <Stack.Screen name="People" component={PeopleScreen} />
         <Stack.Screen
           name="PeopleSuggestions"
@@ -298,6 +309,13 @@ export function AppNavigator() {
         />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="GamesHub" component={GamesHubScreen} />
+        <Stack.Screen name="Game2048" component={Game2048Screen} />
+        <Stack.Screen name="Sudoku" component={SudokuScreen} />
+        <Stack.Screen name="TicTacToe" component={TicTacToeScreen} />
+        <Stack.Screen name="Snake" component={SnakeScreen} />
+        <Stack.Screen name="MemoryMatch" component={MemoryMatchScreen} />
+        <Stack.Screen name="WordGame" component={WordGameScreen} />
+        <Stack.Screen name="ChessPuzzles" component={ChessPuzzlesScreen} />
         <Stack.Screen name="AirHockey" component={AirHockeyScreen} />
         <Stack.Screen name="ReactionBattle" component={ReactionBattleScreen} />
         <Stack.Screen name="TicTacToeGlow" component={TicTacToeGlowScreen} />

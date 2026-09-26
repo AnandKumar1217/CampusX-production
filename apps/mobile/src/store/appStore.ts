@@ -35,9 +35,10 @@ const DEFAULT_GRID_TIME_SLOTS: TimeSlot[] = [
   { id: "slot-1400", label: "14:00 - 15:00", start: "14:00" },
 ];
 
-type PersonalState = Pick<AppState, "gridTimeSlots" | "savedPosts" | "savedEvents" | "aiConversations">;
+type PersonalState = Pick<AppState, "gridTimeSlots" | "savedListings" | "savedPosts" | "savedEvents" | "aiConversations">;
 export const emptyPersonalState = (): PersonalState => ({
   gridTimeSlots: DEFAULT_GRID_TIME_SLOTS,
+  savedListings: [],
   savedPosts: [],
   savedEvents: [],
   aiConversations: [],
@@ -52,6 +53,7 @@ async function loadPersonalState(userId: string): Promise<PersonalState> {
     const saved = JSON.parse(raw) as Partial<PersonalState>;
     return {
       gridTimeSlots: saved.gridTimeSlots ?? DEFAULT_GRID_TIME_SLOTS,
+      savedListings: saved.savedListings ?? [],
       savedPosts: saved.savedPosts ?? [],
       savedEvents: saved.savedEvents ?? [],
       aiConversations: saved.aiConversations ?? [],
@@ -66,6 +68,7 @@ function savePersonalState(state: AppState) {
   if (!state.user?.id || !state.accessToken) return;
   const personal: PersonalState = {
     gridTimeSlots: state.gridTimeSlots,
+    savedListings: state.savedListings,
     savedPosts: state.savedPosts,
     savedEvents: state.savedEvents,
     aiConversations: state.aiConversations,
@@ -141,6 +144,8 @@ type AppState = {
 
   savedPosts: string[];
   toggleSavedPost: (id: string) => void;
+  savedListings: string[];
+  toggleSavedListing: (id: string) => void;
   savedEvents: string[];
   toggleSavedEvent: (id: string) => void;
 
@@ -363,6 +368,18 @@ export const useAppStore = create<AppState>()(
     },
     clearAIConversations: () => { set({ aiConversations: [] }); savePersonalState(get()); },
 
+  savedListings: [],
+  toggleSavedListing: (id) => {
+    set((state) => {
+      const isSaved = state.savedListings.includes(id);
+      return {
+        savedListings: isSaved
+          ? state.savedListings.filter((savedId) => savedId !== id)
+          : [...state.savedListings, id],
+      };
+    });
+    savePersonalState(get());
+  },
   savedPosts: [],
   toggleSavedPost: (id) => {
     set((state) => {

@@ -397,6 +397,45 @@ export function GroupDetailsScreen({
       Alert.alert("Error", error.response?.data?.message || "Failed to remove member");
     }
   };
+
+  const groupActions: CXAction[] = isAdmin
+    ? [
+        {
+          label: "Edit Group",
+          icon: "pencil-outline",
+          onPress: () => navigation.navigate("EditGroup", { groupId: group._id }),
+        },
+        ...(isOwner
+          ? [
+              {
+                label: "Delete Group",
+                icon: "trash-outline" as const,
+                destructive: true,
+                confirmationTitle: "Delete Group",
+                confirmationMessage: "Are you sure you want to delete this group?",
+                confirmationButtonText: "Delete",
+                onPress: handleDelete,
+              },
+            ]
+          : []),
+      ]
+    : [
+        {
+          label: hasAccess
+            ? "Leave Group"
+            : membership?.status === "requested"
+              ? "Requested"
+              : "Join Group",
+          icon: hasAccess ? "exit-outline" : "enter-outline",
+          destructive: hasAccess,
+          confirmationTitle: hasAccess ? "Leave Group" : undefined,
+          confirmationMessage: hasAccess ? "Are you sure?" : undefined,
+          confirmationButtonText: hasAccess ? "Leave" : undefined,
+          disabled: !hasAccess && membership?.status === "requested",
+          onPress: hasAccess ? handleLeave : handleJoin,
+        },
+      ];
+
   return (
     <CXScrollScreen contentContainerStyle={styles.page}>
       <CXHeader
@@ -416,37 +455,7 @@ export function GroupDetailsScreen({
       <CXActionSheet
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
-        actions={
-          isAdmin
-            ? [
-              {
-                label: "Edit Group",
-                icon: "pencil-outline",
-                onPress: () => navigation.navigate("EditGroup", { groupId: group._id }),
-              },
-              ...(isOwner ? [{
-                label: "Delete Group",
-                icon: "trash-outline",
-                destructive: true,
-                confirmationTitle: "Delete Group",
-                confirmationMessage: "Are you sure you want to delete this group?",
-                confirmationButtonText: "Delete",
-                onPress: handleDelete,
-              }] : []),
-            ]
-            : [
-              {
-                label: hasAccess ? "Leave Group" : (membership?.status === "requested" ? "Requested" : "Join Group"),
-                icon: hasAccess ? "exit-outline" : "enter-outline",
-                destructive: hasAccess,
-                confirmationTitle: hasAccess ? "Leave Group" : undefined,
-                confirmationMessage: hasAccess ? "Are you sure?" : undefined,
-                confirmationButtonText: hasAccess ? "Leave" : undefined,
-                disabled: !hasAccess && membership?.status === "requested",
-                onPress: hasAccess ? handleLeave : handleJoin,
-              },
-            ]
-        }
+        actions={groupActions}
       />
       <CXCard style={styles.groupHero}>
         {group.avatarUrl ? (

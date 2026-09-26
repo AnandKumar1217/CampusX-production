@@ -86,7 +86,7 @@ export function EventsScreen({ navigation }: StackProps<"Events">) {
         if (timeStr) {
           const [time, modifier] = timeStr.split(" ");
           if (time) {
-            let [hours, minutes] = time.split(":").map(Number);
+            let [hours = 0, minutes = 0] = time.split(":").map(Number);
             if (hours === 12) hours = 0;
             if (modifier && modifier.toLowerCase() === "pm") hours += 12;
             totalMinutes = (hours || 0) * 60 + (minutes || 0);
@@ -212,7 +212,30 @@ export function EventDetailsScreen({
   const updateEvent = useAppStore((state) => state.updateEvent);
   const event =
     events.find((item: any) => item.id === route.params.eventId) ?? events[0];
-    
+
+  const queryClient = useQueryClient();
+  const { data: savedEvents = [] } = useQuery({
+    queryKey: ["savedEvents"],
+    queryFn: async () => await import("@/services/eventService").then(m => m.eventService.getSavedEvents())
+  });
+
+  const isSaved = event
+    ? savedEvents.some((savedEvent: any) => savedEvent.id === event.id)
+    : false;
+
+  const toggleMutation = useMutation({
+    mutationFn: async () => {
+      if (!event) return;
+      const eventService = (await import("@/services/eventService")).eventService;
+      await eventService.setSaved(event.id, !isSaved);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["savedEvents"] });
+    }
+  });
+
+  const [isFollowing, setIsFollowing] = useState(false);
+
   if (!event) {
     return (
       <CXScreen>
@@ -223,26 +246,6 @@ export function EventDetailsScreen({
       </CXScreen>
     );
   }
-
-  const queryClient = useQueryClient();
-  const { data: savedEvents = [] } = useQuery({
-    queryKey: ["savedEvents"],
-    queryFn: async () => await import("@/services/eventService").then(m => m.eventService.getSavedEvents())
-  });
-
-  const isSaved = savedEvents.some((e: any) => e.id === event.id);
-
-  const toggleMutation = useMutation({
-    mutationFn: async () => {
-      const eventService = (await import("@/services/eventService")).eventService;
-      await eventService.setSaved(event.id, !isSaved);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["savedEvents"] });
-    }
-  });
-
-  const [isFollowing, setIsFollowing] = useState(false);
   
   const respond = async (next: "none" | "maybe" | "going") => {
     const previous = event.attendance;
@@ -491,10 +494,10 @@ export function EditEventScreen({
       const partsTime = form.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
       let dateObj = new Date();
       if (partsDate.length === 3 && partsTime) {
-        let hrs = parseInt(partsTime[1], 10);
-        if (partsTime[3].toUpperCase() === 'PM' && hrs < 12) hrs += 12;
-        if (partsTime[3].toUpperCase() === 'AM' && hrs === 12) hrs = 0;
-        dateObj = new Date(parseInt(partsDate[2]), parseInt(partsDate[1]) - 1, parseInt(partsDate[0]), hrs, parseInt(partsTime[2]));
+        let hrs = parseInt(partsTime[1]!, 10);
+        if (partsTime[3]!.toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+        if (partsTime[3]!.toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+        dateObj = new Date(parseInt(partsDate[2]!, 10), parseInt(partsDate[1]!, 10) - 1, parseInt(partsDate[0]!, 10), hrs, parseInt(partsTime[2]!, 10));
       }
 
       const payload = {
@@ -786,7 +789,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
               ))
             ) : (
               <CXText color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>
-                No listings found for "{query}"
+                {`No listings found for "${query}"`}
               </CXText>
             )}
           </View>
@@ -890,22 +893,14 @@ export function ListingDetailsScreen({
 
   const listing =
     fetchedListing ?? allListings.find((item: any) => item.id === route.params.listingId) ?? allListings[0];
-    
-  if (!listing) {
-    return (
-      <CXScreen>
-        <CXHeader title="Listing Details" onBack={navigation.goBack} />
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <CXText>Loading...</CXText>
-        </View>
-      </CXScreen>
-    );
-  }
 
-  const isSaved = savedListings.some((l: any) => l.id === listing.id);
+  const isSaved = listing
+    ? savedListings.some((savedListing: any) => savedListing.id === listing.id)
+    : false;
 
   const toggleMutation = useMutation({
     mutationFn: async () => {
+      if (!listing) return;
       const ms = (await import("@/services/marketplaceService")).marketplaceService;
       if (isSaved) {
         await ms.unsaveListing(listing.id);
@@ -922,19 +917,13 @@ export function ListingDetailsScreen({
     toggleMutation.mutate();
   };
 
-  const isSold = listing.status === "sold";
-  const incrementListingViews = (id: string) => {};
+  const isSold = listing?.status === "sold";
   const sellerListingCount = allListings.filter(
-    (l) => l.seller?.id === listing.seller?.id && l.status !== "draft"
+    (candidate) => candidate.seller?.id === listing?.seller?.id && candidate.status !== "draft"
   ).length;
 
-  useEffect(() => {
-    if (listing?.id) {
-      incrementListingViews(listing.id);
-    }
-  }, [listing?.id, incrementListingViews]);
-
   const relationshipState = useMemo(() => {
+    if (!listing) return "NONE";
     if (userStore?.id === listing.seller?.id) return "SELF";
     if (friends.some((f: any) => f.id === listing.seller?.id)) return "FRIENDS";
     const isSent = reqRes?.data?.data?.sent?.some((r: any) => r.recipient._id === listing.seller?.id || r.recipient.id === listing.seller?.id);
@@ -942,10 +931,11 @@ export function ListingDetailsScreen({
     const isReceived = reqRes?.data?.data?.received?.some((r: any) => r.requester._id === listing.seller?.id || r.requester.id === listing.seller?.id);
     if (isReceived) return "INCOMING_PENDING";
     return "NONE";
-  }, [userStore?.id, listing.seller?.id, friends, reqRes]);
+  }, [userStore?.id, listing, friends, reqRes]);
 
   const [isMessaging, setIsMessaging] = useState(false);
   const handleAction = async () => {
+    if (!listing) return;
     if (relationshipState === "NONE") {
       setIsMessaging(true);
       try {
@@ -1002,6 +992,17 @@ export function ListingDetailsScreen({
     
     return matches.slice(0, 3);
   }, [allListings, listing]);
+
+  if (!listing) {
+    return (
+      <CXScreen>
+        <CXHeader title="Listing Details" onBack={navigation.goBack} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <CXText>Loading...</CXText>
+        </View>
+      </CXScreen>
+    );
+  }
 
   return (
     <CXScreen edges={[]}>

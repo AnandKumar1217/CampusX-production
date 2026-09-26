@@ -1,0 +1,56 @@
+# Dependencies are installed on the EAS worker.
+node_modules/
+**/node_modules/
+
+# Local Expo and build output.
+.expo/
+.expo-shared/
+.eas-archive-inspect/
+.vscode/
+dist/
+coverage/
+web-build/
+
+# Continuous Native Generation: EAS must create a clean Android project.
+android/
+ios/
+apps/mobile/android/
+apps/mobile/ios/
+
+# Never upload local environments or signing material.
+.env
+.env.*
+**/.env
+**/.env.*
+*.jks
+*.keystore
+**/*.jks
+**/*.keystore
+
+# Local machine and generated diagnostics.
+android/local.properties
+**/android/local.properties
+adb*.txt
+logcat_output.txt
+cli_config_output.json
+config.json
+fixTS*.js
+refactor_*.js
+temp.ts
+*.log
+*.tmp
+*.bak
+*.old
+
+# Repository-only reports, scripts, and media are not build inputs.
+docs/
+scripts/
+tools/
+artifacts/
+assets-reference/
+*.mp4
+*.mov
+*.mkv
+
+# VCS internals.
+.git/

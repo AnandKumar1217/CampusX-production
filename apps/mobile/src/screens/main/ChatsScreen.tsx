@@ -97,7 +97,7 @@ export function ChatsScreen() {
   const groupCards = useMemo<GroupCard[]>(() => {
     if (dataOwnerId !== userId) return [];
     const cards: GroupCard[] = groups.filter((group) => group.name?.toLowerCase().includes(query)).map((group) => ({
-      id: group._id || group.id, name: group.name, avatarUrl: group.avatarUrl,
+      id: group._id || group.id, name: group.name, avatarUrl: group.avatarUrl ?? undefined,
       detail: group.category || `${group.memberCount || 0} members`,
       unread: 0, kind: "study" as const,
     }));
