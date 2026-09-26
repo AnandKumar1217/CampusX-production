@@ -2,7 +2,7 @@ import { Router } from "express";
 import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 import { User } from "../models/User.js";
-import { Friendship, FriendRequest, Post } from "../models/Social.js";
+import { Friendship, FriendRequest } from "../models/Social.js";
 import { Event } from "../models/Commerce.js";
 import { GroupMembership } from "../models/Group.js";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";

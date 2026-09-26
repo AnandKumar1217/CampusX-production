@@ -1,5 +1,5 @@
 import { Router } from "express";
-import mongoose, { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { z } from "zod";
 
 import { FriendRequest, Friendship, Notification } from "../models/Social.js";

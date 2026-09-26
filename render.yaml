@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: campusx-api
+    runtime: node
+    buildCommand: npm ci --workspace @campusx/backend --include-workspace-root=false --include=dev && npm run build --workspace @campusx/backend
+    startCommand: npm run start --workspace @campusx/backend
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - apps/backend/**
+        - package.json
+        - package-lock.json
+        - tsconfig.base.json
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

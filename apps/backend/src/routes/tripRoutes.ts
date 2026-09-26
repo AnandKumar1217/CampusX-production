@@ -501,7 +501,7 @@ tripRouter.post(
 );
 tripRouter.post(
   "/:id/expenses/settle",
-  asyncHandler(async (request, response) => {
+  asyncHandler(async (request, _response) => {
     await requireTripAccess(String(request.params.id), request.user!._id.toString());
     throw new AppError(501, "Trip expense settlement is not available yet", "NOT_IMPLEMENTED");
   }),

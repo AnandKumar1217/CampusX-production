@@ -2,8 +2,10 @@ import compression from "compression";
 import cors from "cors";
 import express from "express";
 import helmet from "helmet";
+import mongoose from "mongoose";
 import morgan from "morgan";
 
+import { corsOptions } from "./config/cors.js";
 import { env } from "./config/env.js";
 import { authenticate } from "./middleware/auth.js";
 import { errorHandler, notFound } from "./middleware/errors.js";
@@ -30,33 +32,30 @@ import { uploadRouter } from "./routes/uploadRoutes.js";
 import { pushRouter } from "./routes/pushRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
 import { mapRouter } from "./routes/mapRoutes.js";
-import { sendSuccess } from "./utils/http.js";
 
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin || env.corsOrigins.includes(origin)) callback(null, true);
-        else callback(new Error("Origin not allowed by CORS"));
-      },
-      credentials: true,
-    }),
-  );
+  app.use(cors(corsOptions));
   app.use(compression());
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ extended: false, limit: "2mb" }));
   if (env.NODE_ENV !== "test")
     app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
-  app.get("/api/health", (_request, response) =>
-    sendSuccess(response, {
-      status: "ok",
-      service: "campusx-api",
-      timestamp: new Date().toISOString(),
-    }),
-  );
+  app.get("/api/health", (_request, response) => {
+    const databaseReady = mongoose.connection.readyState === 1;
+    return response.status(databaseReady ? 200 : 503).json({
+      success: databaseReady,
+      data: {
+        status: databaseReady ? "ok" : "degraded",
+        service: "campusx-api",
+        database: databaseReady ? "connected" : "disconnected",
+        timestamp: new Date().toISOString(),
+      },
+      message: databaseReady ? "Service is healthy" : "Service is not ready",
+    });
+  });
   app.use("/api/auth", authRouter);
   app.use("/api/users", authenticate, userRouter);
   app.use("/api/friends", authenticate, friendRouter);

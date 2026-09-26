@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 
 import mongoose from "mongoose";
 
-import { env } from "../config/env.js";
+import { corsOptions } from "../config/cors.js";
 import { Conversation } from "../models/Chat.js";
 import { User } from "../models/User.js";
 import { Friendship } from "../models/Social.js";
@@ -15,7 +15,7 @@ import { verifyAccessToken } from "../services/tokenService.js";
 
 export function createSocketServer(httpServer: HttpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: env.corsOrigins, credentials: true },
+    cors: corsOptions,
   });
   io.use(async (socket, next) => {
     try {

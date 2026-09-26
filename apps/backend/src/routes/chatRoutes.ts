@@ -33,14 +33,6 @@ chatRouter.post(
     if (!isValidObjectId(participantId) || participantId === request.user!._id.toString()) {
       throw new AppError(400, "Choose another user", "BAD_REQUEST");
     }
-    const isFriend = await Friendship.exists({
-      users: { $all: [request.user!._id, participantId] }
-    });
-    // Removed strict friend check to allow marketplace and general messaging
-    // if (!isFriend) {
-    //   throw new AppError(403, "You can only chat with friends", "FORBIDDEN");
-    // }
-
     let conversation = await Conversation.findOne({
       type: "direct",
       participants: { $all: [request.user!._id, participantId], $size: 2 },

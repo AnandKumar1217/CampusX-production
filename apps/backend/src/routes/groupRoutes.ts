@@ -207,7 +207,9 @@ groupRouter.patch(
     });
 
     const isOwner = group.owner.toString() === request.user!._id.toString();
-    const isAdmin = isOwner || membership?.role === "admin";
+    const isAdmin =
+      isOwner ||
+      (membership?.status === "active" && membership.role === "admin");
 
     if (!isAdmin) {
       throw new AppError(403, "You do not have permission to edit this group", "FORBIDDEN");
@@ -917,8 +919,14 @@ groupRouter.post(
       })
       .parse(request.body);
 
+    const groupIdParam = request.params.groupId;
+    const groupId = Array.isArray(groupIdParam) ? groupIdParam[0] : groupIdParam;
+    if (!groupId) {
+      throw new AppError(400, "Group id is required", "INVALID_GROUP_ID");
+    }
+
     const membership = await GroupMembership.exists({
-      group: request.params.groupId,
+      group: groupId,
       user: request.user!._id,
       status: "active",
     });
@@ -927,7 +935,7 @@ groupRouter.post(
     }
 
     const message = await GroupMessage.create({
-      group: request.params.groupId,
+      group: groupId,
       sender: request.user!._id,
       text: input.text || "",
       nonce: input.nonce,
@@ -936,24 +944,24 @@ groupRouter.post(
 
     const populatedMessage = await message.populate("sender", "name username avatarUrl");
 
-    await emitToActiveGroupMembers(request, String(request.params.groupId), "group:message:new", populatedMessage);
+    await emitToActiveGroupMembers(request, groupId, "group:message:new", populatedMessage);
 
-    const group = await Group.findById(request.params.groupId).select("name");
-    const members = await GroupMembership.find({ group: request.params.groupId, status: "active" }).select("user");
+    const group = await Group.findById(groupId).select("name");
+    const members = await GroupMembership.find({ group: groupId, status: "active" }).select("user");
     
     for (const member of members) {
       if (member.user.toString() !== request.user!._id.toString()) {
         const notification = await Notification.findOneAndUpdate(
-          { user: member.user, type: "message", "target.params.groupId": request.params.groupId.toString() },
+          { user: member.user, type: "message", "target.params.groupId": groupId },
           {
             $set: {
               actor: request.user!._id,
               title: group?.name || "Group Chat",
               body: message.text || "Sent an attachment",
-              target: { 
-                route: "GroupConversation", 
-                params: { groupId: request.params.groupId.toString() } 
-              }
+              target: {
+                route: "GroupConversation",
+                params: { groupId },
+              },
             },
             $unset: { readAt: "" }
           },
@@ -963,7 +971,7 @@ groupRouter.post(
         const io = request.app.get("io");
         io?.to(`user:${member.user.toString()}`).emit("notification:new", notification);
         
-        void pushService.sendPushNotification(member.user.toString(), {
+        void pushService.sendPushNotification(member.user, {
           title: notification.title,
           body: notification.body || "New Message",
           data: {

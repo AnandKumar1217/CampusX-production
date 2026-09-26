@@ -28,7 +28,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 export const authRouter = Router();
-// authRouter.use(authLimiter);
+authRouter.use(authLimiter);
 authRouter.post(
   "/signup",
   validate(signupSchema),

@@ -1,12 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { env } from "../config/env.js";
-
 import { AIConversation, LocationSharing } from "../models/System.js";
 import { Notification, Friendship } from "../models/Social.js";
 import { Message } from "../models/Chat.js";
 import { aiProviderRouter } from "../services/ai/aiProviderRouter.js";
-import { AIMessage } from "../services/ai/types.js";
 import rateLimit from "express-rate-limit";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 import { pagination } from "../utils/pagination.js";
@@ -233,19 +230,14 @@ locationRouter.get(
     const STALE_THRESHOLD = new Date(Date.now() - LIVE_LOCATION_MAX_AGE_MS);
     const items = await LocationSharing.find({
       user: { $in: acceptedFriendIds },
+      enabled: true,
+      ghostMode: { $ne: true },
+      positionUpdatedAt: { $gte: STALE_THRESHOLD },
+      "point.coordinates.1": { $exists: true },
     }).populate("user", "name username avatarUrl");
 
     const formatted = items.map((item) => {
       const u = item.user as any;
-      
-      let status = "active";
-      if (!item.enabled) {
-        status = "disabled";
-      } else if (item.ghostMode) {
-        status = "ghost";
-      } else if (!item.positionUpdatedAt || item.positionUpdatedAt < STALE_THRESHOLD || !item.point?.coordinates) {
-        status = "stale";
-      }
 
       return {
         user: {
@@ -256,7 +248,7 @@ locationRouter.get(
         latitude: item.point?.coordinates?.[1],
         longitude: item.point?.coordinates?.[0],
         updatedAt: item.positionUpdatedAt,
-        status,
+        status: "active",
       };
     });
     return sendSuccess(response, formatted);
@@ -305,7 +297,7 @@ aiRouter.post(
       })
       .parse(request.body);
 
-    const actualMessage = message || (frontendMessages?.length ? frontendMessages[frontendMessages.length - 1].text : "");
+    const actualMessage = message || frontendMessages?.at(-1)?.text || "";
 
     console.log("[AI] request validated", { hasMessage: !!message, messageLength: message?.length, hasConversationId: !!conversationId });
     // Only use conversationId if it is a valid MongoDB ObjectId (24 hex characters)
@@ -383,7 +375,7 @@ aiRouter.post(
 export const weatherRouter = Router();
 weatherRouter.get(
   "/",
-  asyncHandler(async (request, response) => {
+  asyncHandler(async (request, _response) => {
     const latitude = Number(request.query.latitude);
     const longitude = Number(request.query.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
