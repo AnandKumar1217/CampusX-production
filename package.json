@@ -7,6 +7,7 @@
     "apps/backend"
   ],
   "scripts": {
+    "postinstall": "node apps/mobile/scripts/patch-datetimepicker.js",
     "mobile": "npm run start --workspace @campusx/mobile",
     "mobile:android": "npm run android --workspace @campusx/mobile",
     "mobile:web": "npm run web --workspace @campusx/mobile",
