@@ -9,6 +9,13 @@ const packagePath = path.join(
   'datetimepicker'
 );
 
+// Render installs only the backend workspace. Absence of the mobile dependency
+// is intentional there; a present-but-incompatible dependency must still fail.
+if (!fs.existsSync(packagePath)) {
+  console.log('datetimepicker patch skipped: mobile dependency not installed');
+  process.exit(0);
+}
+
 // 1. Patch Java file to force legacy NativeModule
 const targetJavaFile = path.join(
   packagePath,
