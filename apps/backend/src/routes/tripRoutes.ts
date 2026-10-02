@@ -13,6 +13,7 @@ import {
 } from "../models/Trip.js";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 import { emitNotificationChanged } from "../utils/notificationEvents.js";
+import { pushService } from "../services/pushService.js";
 
 export const tripRouter = Router();
 
@@ -352,7 +353,7 @@ tripRouter.post(
     if (status === "declined") evictTripSockets(request, trip._id.toString(), request.user!._id.toString());
 
     if (status === "accepted" && previousStatus !== "accepted") {
-      await Notification.create({
+      const notification = await Notification.create({
         user: trip.createdBy,
         actor: request.user!._id,
         type: "trip_joined",
@@ -360,6 +361,11 @@ tripRouter.post(
         target: { route: "TripDetails", params: { tripId: trip._id.toString() } },
       });
       emitNotificationChanged(request, [trip.createdBy.toString()]);
+      void pushService.sendPushNotification(trip.createdBy as any, {
+        title: notification.title,
+        body: "Tap to see who joined",
+        data: { route: "TripDetails", params: { tripId: trip._id.toString() } }
+      });
     }
 
     await emitTripEvent(request, trip._id.toString(), "trip:rsvp", { tripId: trip._id, userId: request.user!._id, status });

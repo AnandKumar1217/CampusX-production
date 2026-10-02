@@ -6,6 +6,7 @@ import {
   MarketplaceListing,
   TimetableEntry,
   TimetableSettings,
+  ScheduleOverride,
 } from "../models/Commerce.js";
 import { Notification, SavedItem } from "../models/Social.js";
 import { pushService } from "../services/pushService.js";
@@ -635,6 +636,7 @@ timetableRouter.post(
       const input = z
         .object({
           subject: z.string().min(1).max(160),
+          subjectCode: z.string().max(40).optional(),
           room: z.string().max(100).optional(),
           lecturer: z.string().max(120).optional(),
           day: z.number().int().min(0).max(6).optional(),
@@ -643,6 +645,8 @@ timetableRouter.post(
           endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid HH:MM format"),
           color: z.string().max(20).optional(),
           repeat: z.string().optional(),
+          conflictAction: z.enum(["reject", "replace"]).optional().default("reject"),
+          conflictClassId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
         })
         .parse(request.body);
       const days = input.days ?? [input.day ?? 1];
@@ -670,20 +674,46 @@ timetableRouter.post(
       const overlap = await TimetableEntry.findOne(overlapQuery);
 
       if (overlap) {
-        throw new AppError(409, "This class overlaps with another class.", "OVERLAPPING_CLASS");
+        if (input.conflictAction !== "replace" || input.conflictClassId !== overlap._id.toString()) {
+          throw new AppError(409, `${input.subject} overlaps with ${overlap.subject}`, "OVERLAPPING_CLASS", {
+            conflict: {
+              id: overlap._id.toString(),
+              subject: overlap.subject,
+              startTime: overlap.startTime,
+              endTime: overlap.endTime,
+            },
+            actions: ["move_existing", "replace", "choose_another_time"],
+          });
+        }
       }
 
-      const item = await TimetableEntry.create({
-        ...input,
+      const entryDocument = {
+        subject: input.subject,
+        subjectCode: input.subjectCode,
+        room: input.room,
+        lecturer: input.lecturer,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        color: input.color,
         days,
         user: request.user!._id,
-        repeat: input.repeat === "Every week" ? "weekly" : "none",
+        repeat: input.repeat === "Every week" || input.repeat === "weekly" ? "weekly" : "none",
         importBatchId: activeBatchId, // Tie manual insert to active batch
-      });
+      };
+      const item = overlap
+        ? await TimetableEntry.findOneAndUpdate(
+            { _id: overlap._id, user: request.user!._id },
+            { $set: entryDocument },
+            { new: true, runValidators: true },
+          )
+        : await TimetableEntry.create(entryDocument);
+      if (!item) throw new AppError(409, "The conflicting class changed. Please try again.", "STALE_CONFLICT");
+      if (overlap) await ScheduleOverride.deleteMany({ timetableClass: overlap._id, user: request.user!._id });
       const doc: any = item.toObject();
       doc.id = doc._id;
       delete doc._id;
       delete doc.__v;
+      request.app.get("io")?.to(`user:${request.user!._id}`).emit("schedule:updated", { reason: "class_added" });
       return sendSuccess(response, doc, "Class added", 201);
     }),
 );
@@ -696,6 +726,7 @@ timetableRouter.patch(
       const input = z
         .object({
           subject: z.string().min(1).max(160).optional(),
+          subjectCode: z.string().max(40).optional(),
           room: z.string().max(100).optional(),
           lecturer: z.string().max(120).optional(),
           day: z.number().int().min(0).max(6).optional(),
@@ -738,12 +769,20 @@ timetableRouter.patch(
       const overlap = await TimetableEntry.findOne(overlapQuery);
 
       if (overlap) {
-        throw new AppError(409, "This class overlaps with another class.", "OVERLAPPING_CLASS");
+        throw new AppError(409, `${currentEntry.subject} overlaps with ${overlap.subject}`, "OVERLAPPING_CLASS", {
+          conflict: {
+            id: overlap._id.toString(),
+            subject: overlap.subject,
+            startTime: overlap.startTime,
+            endTime: overlap.endTime,
+          },
+          actions: ["reschedule", "choose_another_time"],
+        });
       }
 
     const updatedFields: any = { ...input, days };
     if (input.repeat !== undefined) {
-      updatedFields.repeat = input.repeat === "Every week" ? "weekly" : "none";
+      updatedFields.repeat = input.repeat === "Every week" || input.repeat === "weekly" ? "weekly" : "none";
     }
 
       const item = await TimetableEntry.findOneAndUpdate(
@@ -757,6 +796,7 @@ timetableRouter.patch(
       doc.id = doc._id;
       delete doc._id;
       delete doc.__v;
+      request.app.get("io")?.to(`user:${request.user!._id}`).emit("schedule:updated", { reason: "class_updated" });
       return sendSuccess(response, doc, "Class updated");
     }),
 );
@@ -786,6 +826,8 @@ timetableRouter.patch(
         if (result.deletedCount === 0) {
            throw new AppError(404, "Class not found", "CLASS_NOT_FOUND");
         }
+        await ScheduleOverride.deleteMany({ timetableClass: request.params.id, user: request.user!._id });
+        request.app.get("io")?.to(`user:${request.user!._id}`).emit("schedule:updated", { reason: "class_deleted" });
         return sendSuccess(response, null, "Class deleted");
       }),
   );
@@ -804,6 +846,7 @@ timetableRouter.post(
       })),
       entries: z.array(z.object({
         subject: z.string().min(1).max(160),
+        subjectCode: z.string().max(40).optional().nullable(),
         room: z.string().max(100).optional().nullable(),
         lecturer: z.string().max(120).optional().nullable(),
         day: z.number().int().min(0).max(6).optional(),
@@ -835,13 +878,14 @@ timetableRouter.post(
       const documents = input.entries.flatMap((e: any) => (e.days ?? [e.day ?? 1]).map((d: number) => ({
         user: request.user!._id,
         subject: e.subject,
+        subjectCode: e.subjectCode,
         room: e.room,
         lecturer: e.lecturer,
         days: [d],
         startTime: e.startTime,
         endTime: e.endTime,
         color: e.color,
-        repeat: e.repeat === "Every week" ? "weekly" : "none",
+        repeat: e.repeat === "Every week" || e.repeat === "weekly" ? "weekly" : "none",
         importBatchId
       })));
       
@@ -915,6 +959,7 @@ timetableRouter.post(
         importBatchId: { $ne: importBatchId },
         $or: cleanupConditions
       });
+      await ScheduleOverride.deleteMany({ user: request.user!._id });
     } catch (cleanupError) {
       console.error("Failed to cleanup stale batches", cleanupError);
     }
@@ -933,6 +978,7 @@ timetableRouter.post(
       return doc;
     });
 
+    request.app.get("io")?.to(`user:${request.user!._id}`).emit("schedule:updated", { reason: "timetable_imported" });
     return sendSuccess(response, docs, "Timetable imported successfully", 201);
   })
 );

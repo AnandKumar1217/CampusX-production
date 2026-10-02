@@ -1,7 +1,15 @@
 import mongoose from "mongoose";
 import { User } from "../models/User.js";
 import { LocationSharing, AIConversation } from "../models/System.js";
-import { TimetableEntry, TimetableSettings, Event, MarketplaceListing } from "../models/Commerce.js";
+import {
+  CustomHoliday,
+  Event,
+  MarketplaceListing,
+  ScheduleOverride,
+  SpecialClass,
+  TimetableEntry,
+  TimetableSettings,
+} from "../models/Commerce.js";
 import { PushDevice } from "../models/PushDevice.js";
 import { RefreshToken } from "../models/RefreshToken.js";
 import { Post, Comment, Reaction, Story, SavedItem, Notification, Friendship, FriendRequest } from "../models/Social.js";
@@ -30,6 +38,9 @@ export const deleteUserAccount = async (userId: string) => {
     await AIConversation.deleteMany({ user: userId }, { session });
     await TimetableEntry.deleteMany({ user: userId }, { session });
     await TimetableSettings.deleteOne({ user: userId }, { session });
+    await ScheduleOverride.deleteMany({ user: userId }, { session });
+    await SpecialClass.deleteMany({ user: userId }, { session });
+    await CustomHoliday.deleteMany({ user: userId }, { session });
     await PushDevice.deleteMany({ user: userId }, { session });
     await RefreshToken.deleteMany({ user: userId }, { session });
 

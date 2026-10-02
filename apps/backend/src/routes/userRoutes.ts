@@ -33,6 +33,7 @@ userRouter.patch(
         department: z.string().max(100).optional(),
         academicYear: z.string().max(30).optional(),
         interests: z.array(z.string().max(50)).max(20).optional(),
+        sgpas: z.record(z.string(), z.number()).optional(),
       })
       .parse(request.body);
       

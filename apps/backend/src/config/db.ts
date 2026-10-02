@@ -5,6 +5,7 @@ import { env } from "./env.js";
 export async function connectDatabase() {
   mongoose.set("strictQuery", true);
   await mongoose.connect(env.MONGODB_URI, {
+    dbName: "campusx",
     autoIndex: env.NODE_ENV !== "production",
     serverSelectionTimeoutMS: 10_000,
   });

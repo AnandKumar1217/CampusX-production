@@ -37,6 +37,7 @@ const userSchema = new Schema(
     department: { type: String, required: true, trim: true },
     academicYear: { type: String, required: true },
     interests: [{ type: String, trim: true }],
+    sgpas: { type: Schema.Types.Mixed, default: {} },
     verified: { type: Boolean, default: false },
     online: { type: Boolean, default: false },
     lastSeenAt: { type: Date },

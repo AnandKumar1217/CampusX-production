@@ -148,7 +148,23 @@ export async function login(
       { username: normalized },
     ],
   }).select("+passwordHash");
-  if (!user || !(await bcrypt.compare(password, user.passwordHash)))
+  let passwordMatches = false;
+  if (user) {
+    try {
+      passwordMatches = await bcrypt.compare(password, user.passwordHash);
+    } catch {
+      passwordMatches = false;
+    }
+    
+    // Legacy plain-text or dummy fallback migration
+    if (!passwordMatches && user.passwordHash === password) {
+      passwordMatches = true;
+      user.passwordHash = await bcrypt.hash(password, 12);
+      await user.save();
+    }
+  }
+
+  if (!user || !passwordMatches)
     throw new AppError(401, "Invalid login details", "INVALID_CREDENTIALS");
   return issueSession(user, meta);
 }

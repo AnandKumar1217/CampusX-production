@@ -2,7 +2,7 @@ import { describe, expect, it, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { createApp } from "../src/app.js";
 import { User } from "../src/models/User.js";
-import { TimetableEntry } from "../src/models/Commerce.js";
+import { CustomHoliday, ScheduleOverride, SpecialClass, TimetableEntry } from "../src/models/Commerce.js";
 import { createAccessToken } from "../src/services/tokenService.js";
 import mongoose from "mongoose";
 import { connectToTestDatabase } from "./testDatabase.js";
@@ -15,6 +15,7 @@ describe("Timetable API", () => {
   let userBToken: string;
   let userBId: string;
   let entryAId: string;
+  let chemistryId: string;
 
   beforeAll(async () => {
     await connectToTestDatabase();
@@ -48,10 +49,16 @@ describe("Timetable API", () => {
 
     // Initial clear
     await TimetableEntry.deleteMany({ user: { $in: [userAId, userBId] } });
+    await ScheduleOverride.deleteMany({ user: { $in: [userAId, userBId] } });
+    await SpecialClass.deleteMany({ user: { $in: [userAId, userBId] } });
+    await CustomHoliday.deleteMany({ user: { $in: [userAId, userBId] } });
   });
 
   afterAll(async () => {
     await TimetableEntry.deleteMany({ user: { $in: [userAId, userBId] } });
+    await ScheduleOverride.deleteMany({ user: { $in: [userAId, userBId] } });
+    await SpecialClass.deleteMany({ user: { $in: [userAId, userBId] } });
+    await CustomHoliday.deleteMany({ user: { $in: [userAId, userBId] } });
     await User.deleteMany({ _id: { $in: [userAId, userBId] } });
     await mongoose.disconnect();
   });
@@ -169,6 +176,7 @@ describe("Timetable API", () => {
       .set("Authorization", `Bearer ${userAToken}`)
       .send({ subject: "Chemistry", days: [1], startTime: "10:00", endTime: "11:00" });
     expect(res.status).toBe(201);
+    chemistryId = res.body.data.id;
   });
 
   it("14. different-day same time allowed", async () => {
@@ -212,6 +220,80 @@ describe("Timetable API", () => {
       .set("Authorization", `Bearer ${userAToken}`)
       .send({ startTime: "09:00", endTime: "10:30" });
     expect(res.status).toBe(409);
+  });
+
+  it("18a. resolves date-only changes, conflicts, swap, restore and cancellation", async () => {
+    const date = "2026-09-28"; // Monday
+    const conflict = await request(app)
+      .post(`/api/timetable/${entryAId}/reschedule`)
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ scope: "one_date", date, newStartTime: "10:00", newEndTime: "11:00" });
+    expect(conflict.status).toBe(409);
+    expect(conflict.body.code).toBe("SCHEDULE_CONFLICT");
+    expect(conflict.body.details.actions).toContain("swap");
+
+    const swap = await request(app)
+      .post(`/api/timetable/${entryAId}/reschedule`)
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({
+        scope: "one_date", date, newStartTime: "10:00", newEndTime: "11:00",
+        conflictAction: "swap", conflictClassId: chemistryId,
+      });
+    expect(swap.status).toBe(200);
+
+    let schedule = await request(app)
+      .get(`/api/timetable/schedule?date=${date}`)
+      .set("Authorization", `Bearer ${userAToken}`);
+    expect(schedule.body.data.classes.find((item: any) => item.baseClassId === entryAId).startTime).toBe("10:00");
+    expect(schedule.body.data.classes.find((item: any) => item.baseClassId === chemistryId).startTime).toBe("08:00");
+
+    await request(app).post(`/api/timetable/${entryAId}/restore`).set("Authorization", `Bearer ${userAToken}`).send({ date });
+    await request(app).post(`/api/timetable/${chemistryId}/restore`).set("Authorization", `Bearer ${userAToken}`).send({ date });
+
+    const cancel = await request(app)
+      .post(`/api/timetable/${entryAId}/cancel`)
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ scope: "one_date", date });
+    expect(cancel.status).toBe(200);
+    schedule = await request(app).get(`/api/timetable/schedule?date=${date}`).set("Authorization", `Bearer ${userAToken}`);
+    expect(schedule.body.data.classes.some((item: any) => item.baseClassId === entryAId)).toBe(false);
+    await request(app).post(`/api/timetable/${entryAId}/restore`).set("Authorization", `Bearer ${userAToken}`).send({ date });
+  });
+
+  it("18b. resolves future changes and special classes", async () => {
+    const future = await request(app)
+      .post(`/api/timetable/${entryAId}/reschedule`)
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ scope: "future", date: "2026-09-28", newDay: 1, newStartTime: "07:00", newEndTime: "08:00" });
+    expect(future.status).toBe(200);
+    let schedule = await request(app)
+      .get("/api/timetable/schedule?date=2026-10-05")
+      .set("Authorization", `Bearer ${userAToken}`);
+    expect(schedule.body.data.classes.find((item: any) => item.baseClassId === entryAId).startTime).toBe("07:00");
+    await request(app).post(`/api/timetable/${entryAId}/restore`).set("Authorization", `Bearer ${userAToken}`).send({ date: "2026-09-28" });
+
+    const special = await request(app)
+      .post("/api/timetable/special")
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ date: "2026-09-28", subject: "Special Lab", startTime: "12:00", endTime: "13:00" });
+    expect(special.status).toBe(201);
+    schedule = await request(app).get("/api/timetable/schedule?date=2026-09-28").set("Authorization", `Bearer ${userAToken}`);
+    expect(schedule.body.data.classes.some((item: any) => item.source === "special" && item.subject === "Special Lab")).toBe(true);
+    await request(app).delete(`/api/timetable/special/${special.body.data._id}`).set("Authorization", `Bearer ${userAToken}`);
+  });
+
+  it("18c. custom no-class days suppress the actual schedule", async () => {
+    const holiday = await request(app)
+      .post("/api/holidays")
+      .set("Authorization", `Bearer ${userAToken}`)
+      .send({ date: "2026-09-28", name: "Campus Closed" });
+    expect(holiday.status).toBe(201);
+    const schedule = await request(app)
+      .get("/api/timetable/schedule?date=2026-09-28")
+      .set("Authorization", `Bearer ${userAToken}`);
+    expect(schedule.body.data.holiday.name).toBe("Campus Closed");
+    expect(schedule.body.data.classes).toHaveLength(0);
+    await request(app).delete(`/api/holidays/${holiday.body.data._id}`).set("Authorization", `Bearer ${userAToken}`);
   });
 
   it("19. other user update denied", async () => {
