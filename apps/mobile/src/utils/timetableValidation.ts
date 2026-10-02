@@ -55,9 +55,11 @@ export function validateReviewEntry(
     errors.push("End time must be after start time");
   }
 
-  if (entry.needsReview) {
+  if ((entry as any).needsReview) {
     errors.push("Class timing could not be determined");
   }
+
+
 
   return { valid: errors.length === 0, errors };
 }

@@ -20,7 +20,8 @@ import { useAppStore } from "@/store/appStore";
 import { eventService } from "@/services/eventService";
 import { EventItem } from "@/types/domain";
 import { timetableService } from "@/services/timetableService";
-import { getUpcomingClass, parseTimeToMins } from "@/utils/timetable";
+import { toLocalDateKey } from "@/services/scheduleService";
+import { useActualSchedule } from "@/hooks/useActualSchedule";
 import { fetchWeatherForLocation } from "@/services/weatherService";
 import * as Location from "expo-location";
 import { useQuery } from "@tanstack/react-query";
@@ -82,6 +83,11 @@ function getGreeting() {
   return "Good Night!";
 }
 
+function timeToMinutes(value: string) {
+  const [hours = 0, minutes = 0] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
 export function HomeScreen() {
   const navigation = useRootNavigation();
   const user = useAppStore(state => state.user);
@@ -141,6 +147,8 @@ export function HomeScreen() {
   );
 
   const [currentTimeObj, setCurrentTimeObj] = useState(new Date());
+
+  const todaySchedule = useActualSchedule(toLocalDateKey(currentTimeObj));
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTimeObj(new Date()), 60000); // 1 minute
@@ -208,18 +216,18 @@ export function HomeScreen() {
 
   const featured = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
 
-  const jsDay = currentTimeObj.getDay();
-  const currentDayOfWeek = jsDay === 0 ? 7 : jsDay;
-  const classesForToday = timetable
-    .filter((c) =>
-      c.days?.includes(currentDayOfWeek) &&
-      c.subject !== "BREAK" &&
-      c.subject !== "BLANK"
-    )
-    .sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-  const upcomingData = getUpcomingClass(timetable);
-  const nextClassTimeStr = upcomingData?.timeContext;
+  const classesForToday = todaySchedule.data?.classes ?? [];
+  const currentMinutes = currentTimeObj.getHours() * 60 + currentTimeObj.getMinutes();
+  const upcomingClass = classesForToday.find((item) => timeToMinutes(item.endTime) > currentMinutes);
+  const upcomingStarts = upcomingClass ? timeToMinutes(upcomingClass.startTime) : null;
+  const upcomingEnds = upcomingClass ? timeToMinutes(upcomingClass.endTime) : null;
+  const upcomingTimeText = upcomingClass && upcomingStarts !== null && upcomingEnds !== null
+    ? upcomingStarts <= currentMinutes && upcomingEnds > currentMinutes
+      ? "Happening Now"
+      : upcomingStarts - currentMinutes < 60
+        ? `Starts in ${upcomingStarts - currentMinutes} min`
+        : `Starts in ${Math.floor((upcomingStarts - currentMinutes) / 60)}h ${(upcomingStarts - currentMinutes) % 60}m`
+    : "";
 
   const shortDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -470,95 +478,37 @@ export function HomeScreen() {
           ))}
         </ScrollView>
 
-                  <CXSectionHeader
+          <CXSectionHeader
             title="Upcoming Classes"
             action="See all"
             onAction={() => navigation.navigate("Timetable")}
           />
-          {(() => {
-            const jsDay = currentTimeObj.getDay();
-            const currentDayOfWeek = jsDay === 0 ? 7 : jsDay;
-            const currentMins = currentTimeObj.getHours() * 60 + currentTimeObj.getMinutes();
-            
-            let upcomingClass: any = null;
-            let timeText = "";
-            let isCurrent = false;
-
-            for (let offset = 0; offset < 7; offset++) {
-              const checkDay = ((currentDayOfWeek - 1 + offset) % 7) + 1;
-              const dayClasses = timetable
-                .filter(c => c.days?.includes(checkDay) && c.subject !== "BREAK" && c.subject !== "BLANK")
-                .sort((a, b) => parseTimeToMins(a.startTime) - parseTimeToMins(b.startTime));
-
-              if (dayClasses.length === 0) continue;
-
-              if (offset === 0) {
-                // Today
-                const validClasses = dayClasses.filter(c => parseTimeToMins(c.endTime) > currentMins);
-                if (validClasses.length > 0) {
-                  upcomingClass = validClasses[0];
-                  
-                  const startMins = parseTimeToMins(upcomingClass.startTime);
-                  const endMins = parseTimeToMins(upcomingClass.endTime);
-                  isCurrent = startMins <= currentMins && endMins > currentMins;
-                  
-                  if (isCurrent) {
-                    timeText = "Happening Now";
-                  } else {
-                    const diffMin = startMins - currentMins;
-                    if (diffMin > 0 && diffMin < 60) {
-                      timeText = `In ${diffMin} min`;
-                    } else if (diffMin >= 60) {
-                      const h = Math.floor(diffMin / 60);
-                      const m = diffMin % 60;
-                      timeText = `In ${h}h ${m}m`;
-                    }
-                  }
-                  break;
-                }
-              } else {
-                // Future day
-                upcomingClass = dayClasses[0];
-                const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-                const targetJsDay = checkDay === 7 ? 0 : checkDay;
-                timeText = offset === 1 ? "Tomorrow" : (daysOfWeek[targetJsDay] ?? "Upcoming");
-                break;
-              }
-            }
-
-            if (!upcomingClass) {
-              return (
-                <CXText variant="body" color={colors.textMuted} align="center" style={{ marginVertical: spacing.md }}>
-                  You have no upcoming classes! 🎉
-                </CXText>
-              );
-            }
-
-            return (
-              <View style={{ gap: spacing.sm }}>
-                <Pressable onPress={() => navigation.navigate("Timetable")}>
-                  <CXCard style={styles.classCard}>
-                    <View style={styles.classIcon}>
-                      <Ionicons name="book-outline" size={23} color={colors.primary} />
-                    </View>
-                    <View style={styles.flex}>
-                      <CXText variant="bodyStrong">{upcomingClass.subject || ""}</CXText>
-                      <CXText variant="caption" color={colors.textMuted}>
-                        {`${upcomingClass.startTime || ""} - ${upcomingClass.endTime || ""} • ${upcomingClass.room || "No room"}`}
-                      </CXText>
-                    </View>
-                    {timeText ? (
-                      <View style={styles.timeBadge}>
-                        <CXText variant="caption" color={colors.primary}>
-                          {timeText}
-                        </CXText>
-                      </View>
-                    ) : null}
-                  </CXCard>
-                </Pressable>
+          {todaySchedule.data?.holiday ? (
+            <CXCard style={styles.classCard}>
+              <View style={styles.classIcon}><Ionicons name="sunny-outline" size={23} color={colors.warning} /></View>
+              <View style={styles.flex}>
+                <CXText variant="bodyStrong">No classes today</CXText>
+                <CXText variant="caption" color={colors.textMuted}>{todaySchedule.data.holiday.name} · Holiday</CXText>
               </View>
-            );
-          })()}
+            </CXCard>
+          ) : upcomingClass ? (
+            <View style={{ gap: spacing.sm }}>
+              <Pressable onPress={() => navigation.navigate("Timetable")}>
+                <CXCard style={styles.classCard}>
+                  <View style={styles.classIcon}><Ionicons name="book-outline" size={23} color={colors.primary} /></View>
+                  <View style={styles.flex}>
+                    <CXText variant="bodyStrong">{upcomingClass.subject}</CXText>
+                    <CXText variant="caption" color={colors.textMuted}>{`${upcomingClass.startTime} - ${upcomingClass.endTime} • ${upcomingClass.room || "No room"}`}</CXText>
+                  </View>
+                  {upcomingTimeText ? <View style={styles.timeBadge}><CXText variant="caption" color={colors.primary}>{upcomingTimeText}</CXText></View> : null}
+                </CXCard>
+              </Pressable>
+            </View>
+          ) : (
+            <CXText variant="body" color={colors.textMuted} align="center" style={{ marginVertical: spacing.md }}>
+              You&apos;re done for today
+            </CXText>
+          )}
 
         <CXSectionHeader
           title="Campus Events"

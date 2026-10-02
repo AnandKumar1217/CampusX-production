@@ -46,8 +46,22 @@ export type RootStackParamList = {
   Timetable: undefined;
   Calendar: undefined;
   TimetableSettings: undefined;
-  TimetableReview: { entries: any[]; gridTimeSlots?: any[] };
-  EditClass: { entryId?: string; defaultDay?: number; defaultStartTime?: string } | undefined;
+  TimetableReview: {
+    entries: any[];
+    gridTimeSlots?: any[];
+    imageUri: string;
+    missingCells?: any[];
+    warnings?: string[];
+  };
+  EditClass: {
+    entryId?: string;
+    defaultDay?: number;
+    defaultStartTime?: string;
+    defaultEndTime?: string;
+    mode?: "base" | "special";
+    date?: string;
+  } | undefined;
+  RescheduleClass: { classId: string; date: string };
   StudyGroups: { initialCategory?: "My Groups" | "Joined" } | undefined;
   GroupDetails: { groupId: string };
   GroupMembers: { groupId: string };

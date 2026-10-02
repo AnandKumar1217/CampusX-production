@@ -21,10 +21,11 @@ type Props = TextInputProps & {
   hint?: string;
   icon?: IconName;
   trailing?: ReactNode;
+  onPress?: () => void;
 };
 
 export const CXInput = forwardRef<TextInput, Props>(function CXInput(
-  { label, error, hint, icon, trailing, secureTextEntry, style, ...props },
+  { label, error, hint, icon, trailing, secureTextEntry, style, onPress, ...props },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
@@ -45,7 +46,13 @@ export const CXInput = forwardRef<TextInput, Props>(function CXInput(
     <View style={styles.wrapper}>
       {label ? <CXText variant="smallStrong">{label}</CXText> : null}
       <Pressable
-        onPress={() => internalRef.current?.focus()}
+        onPress={() => {
+          if (onPress) {
+            onPress();
+          } else {
+            internalRef.current?.focus();
+          }
+        }}
         style={[
           styles.field,
           focused && styles.focused,

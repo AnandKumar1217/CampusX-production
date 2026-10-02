@@ -191,7 +191,10 @@ export const useAppStore = create<AppState>()(
   sgpas: {},
   updateSgpa: async (semester, sgpa) => {
     set((state) => {
-      return { sgpas: { ...state.sgpas, [semester]: sgpa } };
+      const newSgpas = { ...state.sgpas, [semester]: sgpa };
+      const api = require("../services/api").api;
+      api.patch("/users/me", { sgpas: newSgpas }).catch(console.error);
+      return { sgpas: newSgpas };
     });
   },
   activeTab: "Home",
@@ -242,7 +245,7 @@ export const useAppStore = create<AppState>()(
         const canonicalUser = { ...res.data.data, id: String(res.data.data.id ?? res.data.data._id) } as User;
         const personal = await loadPersonalState(canonicalUser.id);
         if (generation !== sessionGeneration || !get().accessToken) return;
-        set({ user: canonicalUser, ...personal });
+        set({ user: canonicalUser, sgpas: (canonicalUser as any).sgpas || {}, ...personal });
         connectSocket(get().accessToken!);
         get().setupSocketListeners();
         get().fetchFriends().catch(console.error);

@@ -1,0 +1,717 @@
+--------- beginning of main
+09-27 17:37:55.262 18219 18219 I adbd    : adbd service requested 'shell,v2,raw:am force-stop com.campusx.mobile'
+09-27 17:37:55.371 16329 16329 E cmd     : BBinder_init Processname  cmd  
+09-27 17:37:55.371 16329 16329 E cmd     : BBinder_init hasGetProcessName  cmd
+09-27 17:37:55.948 18219 18219 I adbd    : adbd service requested 'shell,v2,raw:monkey -p com.campusx.mobile -c android.intent.category.LAUNCHER 1'
+09-27 17:37:56.106 16332 16332 E app_process: BBinder_init Processname  app_process  
+09-27 17:37:56.106 16332 16332 E app_process: BBinder_init hasGetProcessName  app_process
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath failed , error(No such file or directory)
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath2 failed , error(No such file or directory)
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath3 failed , error(No such file or directory)
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath4 failed , error(No such file or directory)
+09-27 17:37:56.143 16332 16332 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 17:37:56.152 16332 16332 I AndroidRuntime: Using default boot image
+09-27 17:37:56.152 16332 16332 I AndroidRuntime: Leaving lock profiling enabled
+09-27 17:37:56.166 16332 16332 I app_process: Using generational CollectorTypeCC GC.
+09-27 17:37:56.355 16332 16332 I app_process: Priority-to-niceness mapping: 19, 16, 13, 10, 0, -2, -4, -5, -6, -8
+09-27 17:37:56.371 16332 16332 I VivoSystemFrameworkFactory: Instance implClass com.vivo.VivoSystemFrameworkFactoryImpl
+--------- beginning of system
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: Failed to create UltraFrameworkComponentFactoryImpl
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	at java.lang.Class.classForName(Native Method)
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	at java.lang.Class.forName(Class.java:591)
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	at java.lang.Class.forName(Class.java:496)
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	at android.os.ufw.UltraFrameworkComponentFactory.getInstance(UltraFrameworkComponentFactory.java:78)
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	at android.view.SurfaceControl.<clinit>(SurfaceControl.java:614)
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: Caused by: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+09-27 17:37:56.375 16332 16332 E UltraFrameworkComponentFactory: 	... 5 more
+09-27 17:37:56.394 16332 16332 E VivoConfigStore: it is Zygote,don't need init
+09-27 17:37:56.394 16332 16332 E VivoConfigStore: the feature vivo.software.commonradius is used in zygote, but you did't add attribute is_support_zygote=1 in vivo_config.ini ,please play attention to check your vivo_config.ini for the feature!!!
+09-27 17:37:56.397 16332 16332 W libc    : Access denied finding property "ro.vendor.mtk.hbt_binfmt_misc_support"
+09-27 17:37:56.427 16332 16332 W Monkey  : args: [-p, com.campusx.mobile, -c, android.intent.category.LAUNCHER, 1]
+09-27 17:37:56.428 16332 16332 W Monkey  :  arg: "-p"
+09-27 17:37:56.428 16332 16332 W Monkey  :  arg: "com.campusx.mobile"
+09-27 17:37:56.428 16332 16332 W Monkey  :  arg: "-c"
+09-27 17:37:56.428 16332 16332 W Monkey  :  arg: "android.intent.category.LAUNCHER"
+09-27 17:37:56.428 16332 16332 W Monkey  :  arg: "1"
+09-27 17:37:56.428 16332 16332 W Monkey  : data="com.campusx.mobile"
+09-27 17:37:56.429 16332 16332 W Monkey  : data="android.intent.category.LAUNCHER"
+09-27 17:37:56.481 16332 16332 E VivoConfigStore: it is Zygote,don't need init
+09-27 17:37:56.481 16332 16332 E VivoConfigStore: it is Zygote,don't need init
+09-27 17:37:56.546 16332 16332 I Monkey  : Events injected: 1
+09-27 17:37:56.568 14040 14040 I .campusx.mobile: Using generational CollectorTypeCC GC.
+09-27 17:37:56.584 16332 16332 I Monkey  : ## Network stats: elapsed time=80ms (0ms mobile, 0ms wifi, 80ms not connected)
+09-27 17:37:56.587 16332 16332 I app_process: System.exit called, status: 0
+09-27 17:37:56.587 16332 16332 I AndroidRuntime: VM exiting with result code 0.
+09-27 17:37:56.590 16114 16127 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+09-27 17:37:56.633 14040 14040 E .campusx.mobile: BBinder_init Processname  <pre-initialized>  
+09-27 17:37:56.633 14040 14040 E .campusx.mobile: BBinder_init hasGetProcessName  <pre-initialized>
+09-27 17:37:56.864 11898 11966 W chromium: [WARNING:net/cert/ev_root_ca_metadata.cc:115] Not implemented
+09-27 17:37:56.906 11898 11970 W chromium: [WARNING:net/cert/ev_root_ca_metadata.cc:115] Not implemented
+09-27 17:37:56.912 14040 14040 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+09-27 17:37:56.927 14040 14040 I FirebaseInitProvider: FirebaseApp initialization successful
+09-27 17:37:56.958 14040 14040 W SoLoader: Initializing SoLoader: 0
+09-27 17:37:56.958 14040 14040 W SoLoader: Recording new base apk path: /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk
+09-27 17:37:56.958 14040 14040 W SoLoader: Previously recorded 0 base apk paths.
+09-27 17:37:56.960 14040 14040 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+09-27 17:37:56.960 14040 14040 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+09-27 17:37:56.960 14040 14040 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!/lib/arm64-v8a]]
+09-27 17:37:56.963 14040 14040 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/lib/arm64 flags = 0]]
+09-27 17:37:56.963 14040 14040 I SoLoader: init finish: 4 SO sources prepared
+09-27 17:37:56.963 14040 14040 W SoLoader: SoLoader initialized: 8
+09-27 17:37:57.072 14040 14040 I TaskService: Handling intent with action 'android.intent.action.BOOT_COMPLETED'.
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: QUALCOMM build                   : 923a446bf8, I23d7d7df15
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Build Date                       : 09/05/24
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: EV031.35.01.12
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Local Branch                     : 
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.UM.9.14.11.00.00.571.148
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Remote Branch                    : NONE
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Build Config                     : S P 10.0.7 AArch64
+09-27 17:37:57.083 14040 16378 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+09-27 17:37:57.094 14040 16378 I AdrenoGLES-0: PFP: 0x016ee201, ME: 0x00000000
+09-27 17:37:57.161 14040 14040 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+09-27 17:37:57.161 14040 14040 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+09-27 17:37:57.161 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+09-27 17:37:57.161 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+09-27 17:37:57.161 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+09-27 17:37:57.162 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactContext(): Creating BridgelessReactContext
+09-27 17:37:57.162 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating ReactInstance
+09-27 17:37:57.170 14040 14040 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+09-27 17:37:57.170 14040 14040 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 17:37:57.179 14040 14040 W libc    : Access denied finding property "persist.vivo.ltw.enabled"
+09-27 17:37:57.186 14040 14040 W HWUI    : Unknown dataspace 0
+09-27 17:37:57.242 14040 14040 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 17:37:57.256 14040 16378 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 17:37:57.431 16900 16900 I AppBase : AppBase.onConfigurationChanged():283 onConfigurationChanged() : NewConfig = {0.85 405mcc861mnc [en_US] ldltr sw393dp w393dp h873dp 440dpi nrml long port night finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 0 - 1080, 2400) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0 isEmbedding:false} s.48780 fontWeightAdjustment=0 themeId=2 themeParameter=0 nightModeLevel = -1 typefaceChanged=0.0 ?spacesystem eaMode=1}
+09-27 17:37:57.478 11898 11898 I cr_ChromeActivity: Picture in picture mode changed, inPicture: true
+09-27 17:37:57.478 11898 11898 I cr_VideoPersist: Entered Picture-in-picture.
+09-27 17:37:57.482 14040 16383 I ExpoModulesCore: ✅ AppContext was initialized
+09-27 17:37:57.486 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onConfigurationChanged():1207 onConfigurationChanged() : NewConfig = {0.85 405mcc861mnc [en_US] ldltr sw393dp w393dp h844dp 440dpi nrml long port night finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 80 - 1080, 2400) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0 isEmbedding:false} s.48766 fontWeightAdjustment=0 themeId=2 themeParameter=0 nightModeLevel = -1 typefaceChanged=0.0 ?spacesystem eaMode=1}
+09-27 17:37:57.486 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onConfigurationChanged():1208 device real metrics: DisplayMetrics{density=2.75, width=1080, height=2400, scaledDensity=2.75, xdpi=415.636, ydpi=411.891}
+09-27 17:37:57.487 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onConfigurationChanged():1232 Maybe update OEM conditional config because of configuration change
+09-27 17:37:57.487 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.notifyCurrentInputMethodEntryOnContextChanged():607 notifyCurrentInputMethodEntryOnContextChanged()
+09-27 17:37:57.487 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.notifyCurrentInputMethodEntryOnContextChanged():624 Notify current input method entry changed on context change
+09-27 17:37:57.488 16900 16900 I PkModeUpdater: PkModeUpdater.refreshDevices():206 refreshing devices
+09-27 17:37:57.489 16900 16900 I SystemSubtypesReportModule: SystemSubtypesReportModule$1.onCurrentInputMethodEntryChanged():115 entry: en-US, source: UNSPECIFIED
+09-27 17:37:57.490 16900 16900 I KeyboardContextProvider: KeyboardContextProvider$KeyboardContextCache.createKeyboardContext():173 createKeyboardContext(): en-US, nmm@d9bc1fb(com.android.inputmethod.latin.LatinIME@f7c1207), {0.85 405mcc861mnc [en_US] ldltr sw393dp w393dp h844dp 440dpi nrml long port night finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1080, 2400) mAppBounds=Rect(0, 80 - 1080, 2400) mMaxBounds=Rect(0, 0 - 1080, 2400) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=undefined mAlwaysOnTop=undefined mRotation=ROTATION_0 isEmbedding:false} s.41079 fontWeightAdjustment=0 themeId=2 themeParameter=0 nightModeLevel = -1 typefaceChanged=0.0 ?spacesystem eaMode=1}
+09-27 17:37:57.490 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2618 onCurrentInputMethodEntryChanged(): imeDefsChanged=false, entryLanguageVariantChanged=false, keyboardContextChanged=true
+09-27 17:37:57.492 16900 16900 I KeyboardContextProvider: KeyboardContextProvider.setBaseContextAndInvalidKeyboardContextCache():88 setBaseContextAndInvalidKeyboardContextCache(): com.android.inputmethod.latin.LatinIME@f7c1207
+09-27 17:37:57.493 16900 16900 I DeviceModeModule: DeviceModeModule.calculateAndNotify():242 Device mode 'phone' from display metrics 'DisplayMetrics{density=0.0, width=2400, height=1080, scaledDensity=0.0, xdpi=415.636, ydpi=411.891}' or smallestScreenWidthDp: 393
+09-27 17:37:57.494 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.resetLanguages():2905 resetLanguages() debounced: languages=null, conditionName=orientation
+09-27 17:37:57.494 16900 16900 I ImeDefCache: ImeDefCache.clearCacheForLanguages():340 clearCacheForLanguages: languagesToClear=null, conditionName=orientation
+09-27 17:37:57.495 16900 16900 I AdditionalImeDefCache: AdditionalImeDefCache.clearAdditionalImeDefsForCondition():303 clearAdditionalImeDefsForCondition() clear additional ImeDefs: []
+09-27 17:37:57.495 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.startLoadingInputMethodEntrySettings():814 Start loading input method entry settings: [LanguageTagVariantTuple{languageTag=en-US, variant=qwerty}]
+09-27 17:37:57.496 16107 16135 I NearbyUWB: (REDACTED) Client %s (%s) disconnecting %s
+09-27 17:37:57.497 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.updateInputMethodEntrySettingsLoadingTask():944 update loading task with resetImplicitlyEnabledEntries is false
+09-27 17:37:57.497 16900 16900 I InputMethodEntryManager: InputMethodEntryManager$4.onSuccess():966 Success load entries: [LanguageTagVariantTuple{languageTag=en-US, variant=qwerty}], resetImplicitlyEnabledEntries=false, initialized=true
+09-27 17:37:57.500 14040 16383 I org.webrtc.Logging: NativeLibrary: Loading native library: jingle_peerconnection_so
+09-27 17:37:57.500 14040 16383 I org.webrtc.Logging: LibraryLoader: Loading library: jingle_peerconnection_so
+09-27 17:37:57.501 16900 18098 I SP      : Registering emoticon_content_description.2022081613, url: https://www.gstatic.com/android/keyboard/emoticon_content_desc/202208161305/superpacks_manifest.json, constraints: W:*:*:*, flags: bg, requested: 2022081613, current: 2022081613
+09-27 17:37:57.501 16107 16135 I NearbyUWB: (REDACTED) Client %s (%s) disconnecting %s
+09-27 17:37:57.503 16900 15171 I PerLanguageDataDownloader: PerLanguageDataDownloader.downloadDataInternal():168 downloading Data for en
+09-27 17:37:57.504 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.changeCurrentInputMethodEntry():3177 Set current input method entry: source=UNSPECIFIED, entryChanged=false, enablePersist=true, ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=floating_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.504 16900 15171 I ManifestedDataDownloader: ManifestedDataDownloader.download():67 downloading manifest https://www.gstatic.com/android/keyboard/modelpack/proactiveek/embedding_gemma/2025120304/en_manifest.json
+09-27 17:37:57.504 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.loadAdditionalImeDefsForCurrentEntry():3210 loadAdditionalImeDefsForCurrentEntry(): ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=floating_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.507 16900 16900 I InputMethodEntryManager: InputMethodEntryManager$6.onSuccess():3257 Success load additional ImeDefs, entryChanged=false, additionalImeDefsChanged=false, [ImeDef{stringId=password, language=und-Latn-x-password, languageTag=und-Latn-x-password, processedConditions={language=en-US, variant=qwerty, enable_number_row=true, device=phone, enable_pk_simulator=false, true=true, writing_helper_enable_by_word_revert=false, enable_number_row_in_password=true}, className=com.google.android.libraries.inputmethod.ime.password.PasswordIme, label=2132019413, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=qwerty, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=2132083614, order=0, supportsSplitMode=true, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215151), Xml(resId=2132215814), Xml(resId=2132215343)], extraValues=ppy{}), digit=KeyboardDefInfo(kbType=digit, initialStates=0, keyboardSources=[Xml(resId=2132215775)], extraValues=ppy{}), symbol=KeyboardDefInfo(kbType=symbol, initialStates=0, keyboardSources=[Xml(resId=2132215955)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@22e58d1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=number, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019373, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215780)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=number_password, language=und-Latn-x-number-password, languageTag=und-Latn-x-number-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019374, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(res
+09-27 17:37:57.507 16900 16900 I InputMethodEntryManager: Id=2132215781)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=phone_number, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019445, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215806)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=date_time, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132017836, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215646)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}]
+09-27 17:37:57.508 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.onSuccessLoadingAdditionalImeDefs():3333 Additional ImeDefs have been loaded, maybe notify entry change: false
+09-27 17:37:57.508 16900 16900 I SystemSubtypesReportModule: SystemSubtypesReportModule$1.onCurrentInputMethodEntryChanged():115 entry: en-US, source: UNSPECIFIED
+09-27 17:37:57.511 16107 16160 I NearbyUWB: (REDACTED) User opted in for analytics reporting: %s.
+09-27 17:37:57.515 16107 16203 I NearbyUWB: (REDACTED) User opted in for analytics reporting: %s.
+09-27 17:37:57.517 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2618 onCurrentInputMethodEntryChanged(): imeDefsChanged=false, entryLanguageVariantChanged=false, keyboardContextChanged=false
+09-27 17:37:57.517 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2645 Skip the entry change as the input method entry is consider as not changed.
+09-27 17:37:57.519 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onConfigurationChanged():1250 changedMask : 20000480
+09-27 17:37:57.519 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.clearInputMethodServiceData():1193 clearInputMethodServiceData for configurationChange
+09-27 17:37:57.519 16900 18095 W ModuleManager: ModuleManager.loadModule():641 Module rru is not available
+09-27 17:37:57.519 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.discardAllKeyboardViewAndInputView():1447 discardAllKeyboardViewAndInputView()
+09-27 17:37:57.519 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():552 Destroy existing keyboard group manager in izi
+09-27 17:37:57.520 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():572 KeyboardGroupManager destroyed in izi.
+09-27 17:37:57.520 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():122 Create keyboard group manager listenable future in izi
+09-27 17:37:57.520 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():552 Destroy existing keyboard group manager in ghn
+09-27 17:37:57.520 16107 16160 I NearbyUWB: (REDACTED) User opted in for analytics reporting: %s.
+09-27 17:37:57.520 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():572 KeyboardGroupManager destroyed in ghn.
+09-27 17:37:57.520 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():122 Create keyboard group manager listenable future in ghn
+09-27 17:37:57.521 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():552 Destroy existing keyboard group manager in jcz
+09-27 17:37:57.521 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():572 KeyboardGroupManager destroyed in jcz.
+09-27 17:37:57.522 16900 16900 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():122 Create keyboard group manager listenable future in jcz
+09-27 17:37:57.522 16900 16900 I WindowMetricsHelper: WindowMetricsHelper.predictAndNotify():121 Window metrics predicted by cache.
+09-27 17:37:57.523 16900 16900 I DeviceModeModule: DeviceModeModule.calculateAndNotify():242 Device mode 'phone' from display metrics 'DisplayMetrics{density=0.0, width=1080, height=2400, scaledDensity=0.0, xdpi=415.636, ydpi=411.891}' or smallestScreenWidthDp: 393
+09-27 17:37:57.523 16900 16900 I GoogleInputMethodService: GoogleInputMethodService$8.onWindowMetricsChanged():859 windowMetrics: bounds() = Rect(0, 88 - 1080, 2400), insets() = Rect(0, 0 - 0, 0)
+09-27 17:37:57.523 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:37:57.526 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.resetLanguages():2905 resetLanguages() debounced: languages=null, conditionName=keyboard_mode
+09-27 17:37:57.527 16900 16900 I ImeDefCache: ImeDefCache.clearCacheForLanguages():340 clearCacheForLanguages: languagesToClear=null, conditionName=keyboard_mode
+09-27 17:37:57.527 16900 16900 I AdditionalImeDefCache: AdditionalImeDefCache.clearAdditionalImeDefsForCondition():303 clearAdditionalImeDefsForCondition() clear additional ImeDefs: []
+09-27 17:37:57.527 16900 18095 W LatinCommonMetricsProcessor: LatinCommonMetricsProcessor.processInputMethodEntryChanged():2602 The new entry is equal to the old entry
+09-27 17:37:57.527 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.startLoadingInputMethodEntrySettings():814 Start loading input method entry settings: [LanguageTagVariantTuple{languageTag=en-US, variant=qwerty}]
+09-27 17:37:57.528 16900 16402 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():72 parseKeyboardGroupDef() 2132213851 -> 0_resource_name_obfuscated : WaitTime = 0 ms : RunTime = 8 ms
+09-27 17:37:57.529 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.updateInputMethodEntrySettingsLoadingTask():944 update loading task with resetImplicitlyEnabledEntries is false
+09-27 17:37:57.529 16900 16900 I InputMethodEntryManager: InputMethodEntryManager$4.onSuccess():966 Success load entries: [LanguageTagVariantTuple{languageTag=en-US, variant=qwerty}], resetImplicitlyEnabledEntries=false, initialized=true
+09-27 17:37:57.530 16900 18098 I SuperpacksManagerImpl: SuperpacksManagerImpl$3$1.onSuccess():552 emoticon_content_description.registerManifest() succeeded
+09-27 17:37:57.531 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.changeCurrentInputMethodEntry():3177 Set current input method entry: source=UNSPECIFIED, entryChanged=false, enablePersist=true, ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.531 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.loadAdditionalImeDefsForCurrentEntry():3210 loadAdditionalImeDefsForCurrentEntry(): ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.532 16900 16900 I InputMethodEntryManager: InputMethodEntryManager$6.onSuccess():3257 Success load additional ImeDefs, entryChanged=false, additionalImeDefsChanged=false, [ImeDef{stringId=password, language=und-Latn-x-password, languageTag=und-Latn-x-password, processedConditions={language=en-US, variant=qwerty, enable_number_row=true, device=phone, enable_pk_simulator=false, true=true, writing_helper_enable_by_word_revert=false, enable_number_row_in_password=true}, className=com.google.android.libraries.inputmethod.ime.password.PasswordIme, label=2132019413, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=qwerty, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=2132083614, order=0, supportsSplitMode=true, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215151), Xml(resId=2132215814), Xml(resId=2132215343)], extraValues=ppy{}), digit=KeyboardDefInfo(kbType=digit, initialStates=0, keyboardSources=[Xml(resId=2132215775)], extraValues=ppy{}), symbol=KeyboardDefInfo(kbType=symbol, initialStates=0, keyboardSources=[Xml(resId=2132215955)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@22e58d1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=number, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019373, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215780)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=number_password, language=und-Latn-x-number-password, languageTag=und-Latn-x-number-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019374, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(res
+09-27 17:37:57.532 16900 16900 I InputMethodEntryManager: Id=2132215781)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=phone_number, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019445, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215806)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, ImeDef{stringId=date_time, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132017836, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=ppy{}, processors=com.google.android.libraries.inputmethod.metadata.ProcessorsDef@d7f257, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, keyboardGroupDef=KeyboardGroupDef(variant=, variantLabel=0, pkLanguageTag=, pkLayoutType=, dynamicLayout=null, layoutSpecificSettings=[], layoutSpecificTheme=0, order=0, supportsSplitMode=false, supportsOneHandedMode=true, isVariantNameMandatory=false, keyboardDefInfos={prime=KeyboardDefInfo(kbType=prime, initialStates=0, keyboardSources=[Xml(resId=2132215646)], extraValues=ppy{})}, overrideKeyboardXmlConditions=com.google.android.libraries.inputmethod.metadata.OverrideKeyboardXmlConditionsDef@1), phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}]
+09-27 17:37:57.532 16900 16408 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():72 parseKeyboardGroupDef() 2132213855 -> 0_resource_name_obfuscated : WaitTime = 1 ms : RunTime = 9 ms
+09-27 17:37:57.532 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.onSuccessLoadingAdditionalImeDefs():3333 Additional ImeDefs have been loaded, maybe notify entry change: false
+09-27 17:37:57.533 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2618 onCurrentInputMethodEntryChanged(): imeDefsChanged=false, entryLanguageVariantChanged=true, keyboardContextChanged=false
+09-27 17:37:57.533 16900 18098 I SP      : Registering emoticon_content_description.2022081613, url: https://www.gstatic.com/android/keyboard/emoticon_content_desc/202208161305/superpacks_manifest.json, constraints: W:*:*:*, flags: bg, requested: 2022081613, current: 2022081613
+09-27 17:37:57.533 16107 16135 I SharingClientImpl: client com.google.android.gms disconnecting
+09-27 17:37:57.534 16900 16900 I SystemSubtypesReportModule: SystemSubtypesReportModule$1.onCurrentInputMethodEntryChanged():115 entry: en-US, source: UNSPECIFIED
+09-27 17:37:57.535 16900 16401 I PerLanguageDataDownloader: PerLanguageDataDownloader.downloadDataInternal():168 downloading Data for en
+09-27 17:37:57.535 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.initializeInputMethodServiceData():914 initializeInputMethodServiceData for ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.536 16900 16900 I ThemeUtil: ThemeUtil.isDynamicColorHigherContrastMode():317 Detected higher contrast mode: 54.858658
+09-27 17:37:57.536 16900 16401 I ManifestedDataDownloader: ManifestedDataDownloader.download():67 downloading manifest https://www.gstatic.com/android/keyboard/modelpack/proactiveek/embedding_gemma/2025120304/en_manifest.json
+09-27 17:37:57.539 16107 16135 I NearbySharing: Package com.google.android.gms has requested to unsuspend Quick Share
+09-27 17:37:57.539 16107 16135 E SharingClientImpl: Unsuspend failed: null
+09-27 17:37:57.539 16107 16203 I NearbyUWB: (REDACTED) User opted in for analytics reporting: %s.
+09-27 17:37:57.540 16900 18105 I DownloadManager: DownloadManager.completeDownload():434 Download for __PEKB_manifest_pek_blocklist__en scheduled with params pob[allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0]
+09-27 17:37:57.540 16900 18105 I DownloadManager: DownloadManager.startDownload():518 start download of __PEKB_manifest_pek_blocklist__en
+09-27 17:37:57.542 16900 18095 W ModuleManager: ModuleManager.loadModule():641 Module rru is not available
+09-27 17:37:57.545 16900 16403 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():72 parseKeyboardGroupDef() 2132213854 -> 0_resource_name_obfuscated : WaitTime = 1 ms : RunTime = 24 ms
+09-27 17:37:57.546 16900 18098 I SP      : Syncing emoticon_content_description (2022081613) with slices: [7a635888cb828dfa2fc744b7b9b50f04], metadata: false
+09-27 17:37:57.547 16900 18098 I SuperpacksManagerImpl: SuperpacksManagerImpl$3$1.onSuccess():552 emoticon_content_description.registerManifest() succeeded
+09-27 17:37:57.548 16900 18095 W LatinCommonMetricsProcessor: LatinCommonMetricsProcessor.processInputMethodEntryChanged():2602 The new entry is equal to the old entry
+09-27 17:37:57.549 16900 16900 I KeyboardThemeProvider: KeyboardThemeProvider.applyKeyboardTheme():27 Apply keyboard theme: theme,!gsf,!pgsans,!pgsf,!use_system_font,BORDER,FLAVOR_DPI=XXHDPI,KEYBOARD_WIDTH_CATEGORY=NORMAL,KEY_BORDER_SHAPE=1,LIGHT_THEME=false,PHYSICAL_DIAGONAL=5.799573,POPUP,SCREEN_SHORTEST_WIDTH=393,SCREEN_SHORTEST_WIDTH_NO_SCALE=393,XXHDPI,bottom4dp,enable_popup_on_keypress=true,keyboard_redesign_google_sans=true,non_linear_scale,noshadow,overlay_builtin_dynamic_color_dark_base.binarypb:gm3-dark-ff121318-ffb7caff-03739404f1189b28aed05fb048a8b8af,silkpopup
+09-27 17:37:57.550 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.getAdditionalImeDefs():2571 getAdditionalImeDefs() called, flag enabled: false, isUserUnlocked: true
+09-27 17:37:57.550 16900 16900 I InputMethodEntryManager: InputMethodEntryManager.getAdditionalImeDefs():2579 OptimizeAdditionalImeDefLoadingFlag disabled, retrieving additional ImeDefs synchronously for entry: ouv{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_android_software_xr_api_spatial=false_device=phone_device_size=default_enable_free_cursor_by_long_press_space=true_enable_number_row=true_enable_number_row_in_password=true_enable_pk_simulator=false_enable_pk_simulator_setting=false_enable_scrub_move=true_enable_secondary_digits=true_enable_secondary_symbols=false_enable_simplified_expression_keyboard=false_expressions=normal_four_or_more_letter_rows=false_free_cursor=false_free_cursor_in_split_keyboard_gap=false_keyboard_font_size_setting=_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=nokeys_pk_simulator_vk_ready=false_pref_enable_flick_symbols=false_rtl_layout=false_show_comma_key=true_show_period_key=true_show_secondary_digits=false_show_suggestion_strip=true_show_suggestions=true_split_with_duplicate_keys=true_true=true_variant=qwerty_writing_helper_enable_by_word_revert=false, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, imeDef.languageTag=en-US}
+09-27 17:37:57.550 16900 16900 I InputBundle: InputBundle.prefetchKeyboard():679 prefetchKeyboard: prime
+09-27 17:37:57.551 16900 16900 I KeyboardDefManager: KeyboardDefManager.requestKeyboardDef():127 requestKeyboardDef(): type=prime, info=prm{defIds=[#0x7f17056f, #0x7f170806], defIdsCacheKey=2132215151,2132215814}
+09-27 17:37:57.551 16900 16900 I KeyboardDefManager: KeyboardDefManager.requestKeyboardDef():204 requestKeyboardDef(): getOrCreate from cache, info=prm{defIds=[#0x7f17056f, #0x7f170806], defIdsCacheKey=2132215151,2132215814}
+09-27 17:37:57.552 16900 16900 I KeyboardDefManager: KeyboardDefManager$Companion$addFutureCallbackForKeyboardDefReceiver$<anonymous>.onSuccess():467 requestKeyboardDef onSuccess(): info=prm{defIds=[#0x7f17056f, #0x7f170806], defIdsCacheKey=2132215151,2132215814}
+09-27 17:37:57.552 16107 16160 I NearbyUWB: clientSession Logged [CONTEXT service_id=49 ]
+09-27 17:37:57.553 16107 16160 I NearbyUWB: AnalyticsLogger is shutdown. [CONTEXT service_id=49 ]
+09-27 17:37:57.558 16900 16900 I KeyboardInterfacePrivate: IKeyboard.createKeyboard():71 Keyboard created from HiltKeyboardFactory: com.google.android.apps.inputmethod.latin.keyboard.LatinPrimeKeyboard
+09-27 17:37:57.558 16900 16900 I InputBundleManager: InputBundleManager.loadActiveInputBundleId():552 loadActiveInputBundleId: en-US, ime_english_united_states
+09-27 17:37:57.567 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.chrome, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=12000000, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, true)
+09-27 17:37:57.567 16900 16900 W SessionManager: SessionManager.beginSession():73 Try to begin an already begun session [INPUT_SESSION], end it first
+09-27 17:37:57.567 16107 16203 I NearbyUWB: clientSession Logged [CONTEXT service_id=49 ]
+09-27 17:37:57.568 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:37:57.568 16107 16203 I NearbyUWB: AnalyticsLogger is shutdown. [CONTEXT service_id=49 ]
+09-27 17:37:57.570 16900 16900 W PrimesLoggerHolder: FrameMetricServiceImpl.start():170 measurement already started: MeasurementKey{rawStringEventName=null, noPiiEventName=OnConfigurationChanged, isActivity=false}
+09-27 17:37:57.573 16900  7142 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false
+09-27 17:37:57.573 16900  9239 I DeviceStatusMonitor: DeviceStatusMonitor.onDisplayChanged():442 Display 0 rotation changed: 3 -> 0
+09-27 17:37:57.589 14040 16383 I org.webrtc.Logging: PeerConnectionFactory: PeerConnectionFactory was initialized without an injected Loggable. Any existing Loggable will be deleted.
+09-27 17:37:57.593 14040 16383 I org.webrtc.Logging: EglBase14Impl: Using OpenGL ES version 2
+09-27 17:37:57.597 14040 16390 W InteractionJankMonitor: Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.campusx.mobile
+09-27 17:37:57.609 14040 16383 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: JavaAudioDeviceModule: createAudioDeviceModule
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: JavaAudioDeviceModule: HW NS will be used.
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: JavaAudioDeviceModule: HW AEC will be used.
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: WebRtcAudioEffectsExternal: ctor@[name=pool-9-thread-1, id=75073]
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: WebRtcAudioRecordExternal: ctor@[name=pool-9-thread-1, id=75073]
+09-27 17:37:57.610 14040 16383 I org.webrtc.Logging: WebRtcAudioTrackExternal: ctor@[name=pool-9-thread-1, id=75073]
+09-27 17:37:57.616 16900 18105 I DownloadManager: DownloadManager$4.onSuccess():587 download for __PEKB_manifest_pek_blocklist__en is finished with files # tec@ea39bb37
+09-27 17:37:57.617 16900 18105 I DownloadManager: DownloadManager.completeDownload():434 Download for __PEKB_manifest_pek_blocklist__en scheduled with params pob[allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0]
+09-27 17:37:57.617 16900 18105 I DownloadManager: DownloadManager.startDownload():518 start download of __PEKB_manifest_pek_blocklist__en
+09-27 17:37:57.618 16900 18105 I DownloadManager: DownloadManager$4.onSuccess():587 download for __PEKB_manifest_pek_blocklist__en is finished with files # tec@ea39bb37
+09-27 17:37:57.628 16900 15171 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():98 filegroup __PEKB_pek_blocklist__en with version 2025120304 is already downloaded
+09-27 17:37:57.629 16900 15171 I PerLanguageDataDownloader: PerLanguageDataDownloader$2.onSuccess():188 Data en downloaded with version 2025120304
+09-27 17:37:57.655 16900 18095 E MDDMetricsProcessor: MDDMetricsProcessor.processDownloadSuccess():133 __PEKB_manifest_pek_blocklist__en is not requested/started
+09-27 17:37:57.667 16900 18089 I putmethod.latin: IncrementDisableThreadFlip blocked for 11.754ms
+09-27 17:37:57.771 16107 16310 I FontLog : (REDACTED) Received query %s, URI %s
+09-27 17:37:57.772 16107 16310 I FontLog : (REDACTED) Query [%s] resolved to %s
+09-27 17:37:57.783 14040 16383 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/ra
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/ra
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/alac
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/alac
+09-27 17:37:57.784 14040 16383 W AudioCapabilities: Unsupported mime audio/ape
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/ape
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/adpcm
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/x-ms-adpcm
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 17:37:57.785 14040 16383 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/rv
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/rv
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/divx3
+09-27 17:37:57.786 14040 16383 W VideoCapabilities: Unsupported mime video/divx3
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/flv1
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/flv1
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 17:37:57.787 14040 16383 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 17:37:57.801 16900 16401 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():98 filegroup __PEKB_pek_blocklist__en with version 2025120304 is already downloaded
+09-27 17:37:57.803 16900 16401 I PerLanguageDataDownloader: PerLanguageDataDownloader$2.onSuccess():188 Data en downloaded with version 2025120304
+09-27 17:37:57.814 14040 16383 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 17:37:57.814 14040 16383 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 17:37:57.836 14040 16413 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInAEC(true)
+09-27 17:37:57.836 14040 16413 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setAEC(true)
+09-27 17:37:57.837 14040 16413 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInNS(true)
+09-27 17:37:57.837 14040 16413 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setNS(true)
+09-27 17:37:57.839 14040 16415 I org.webrtc.Logging: PeerConnectionFactory: onSignalingThreadReady
+09-27 17:37:57.839 14040 16412 I org.webrtc.Logging: PeerConnectionFactory: onNetworkThreadReady
+09-27 17:37:57.840 14040 16413 I org.webrtc.Logging: PeerConnectionFactory: onWorkerThreadReady
+09-27 17:37:57.842 16107 16203 I FontLog : (REDACTED) Updating from directory version %d to %d from disk
+09-27 17:37:57.844 16107 16310 I FontLog : (REDACTED) Fetch %s end status %s
+09-27 17:37:57.847 16107 16310 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 17:37:57.851 16107 16310 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 17:37:57.861 16107 16160 I FontLog : (REDACTED) Using directory in FlatBuffer format
+09-27 17:37:57.886 16900 17968 I putmethod.latin: Background young concurrent copying GC freed 15MB AllocSpace bytes, 21(840KB) LOS objects, 43% free, 20MB/36MB, paused 14.034ms,143us total 265.805ms
+09-27 17:37:57.899 16900 18098 I SP      : Registering content_cache.2024032915, url: https://www.gstatic.com/android/keyboard/modelpack/contentcache/202403291544/superpacks_manifest.json, constraints: W:*:*:*, flags: bg, requested: 2024032915, current: 2024032915
+09-27 17:37:57.902 16900 18098 I SP      : Syncing emoticon_content_description (2022081613) with slices: [7a635888cb828dfa2fc744b7b9b50f04], metadata: false
+09-27 17:37:57.912 16900 17970 W SP      : File ref is being finalized but wasn't closed, file: en-US-small-rnnt[859]
+09-27 17:37:57.929 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Loading JS Bundle
+09-27 17:37:57.930 14040 16383 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Calling DevSupportManagerBase.onNewReactContextCreated(reactContext)
+09-27 17:37:57.930 14040 16383 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Execute
+09-27 17:37:57.936 16900 18098 I SuperpacksManagerImpl: SuperpacksManagerImpl$3$1.onSuccess():552 content_cache.registerManifest() succeeded
+09-27 17:37:57.937 16900 18098 I SP      : GC for 'emoticon_content_description' (10) with ttl of 0 ms took 1 ms (0/1/0)
+09-27 17:37:57.938 16900 18098 I AbstractSyncResultCallback: AbstractSyncResultCallback.onFailure():38 onFailure(): emoticon_content_description.sync cancelled; expected if new request supersedes pending one.
+09-27 17:37:57.938 14040 14040 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 17:37:57.939 14040 14040 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Executing ReactInstanceEventListeners
+09-27 17:37:57.940 16900 18098 I SP      : Syncing content_cache (2024032915) with slices: [74ed8b2e38ec1bc8af70aa63d8ec49de, 8722425f4121ffdea802b1066df73991, fa1da98da1212aad6fb9a8efaff48148], metadata: true
+09-27 17:37:57.982 16900 18098 I SP      : Sync for emoticon_content_description succeeded in 84 ms: no changes
+09-27 17:37:57.983 16900 18098 I SP      : GC for 'emoticon_content_description' (10) with ttl of 0 ms took 0 ms (0/0/0)
+09-27 17:37:57.983 16900 18098 I SuperpacksManagerImpl: SuperpacksManagerImpl$19.onSyncSuccess():947 emoticon_content_description.sync() succeeded
+09-27 17:37:58.001 16900 18098 I SP      : Sync for content_cache succeeded in 62 ms: no changes
+09-27 17:37:58.001 16900 18098 I SP      : GC for 'content_cache' (10) with ttl of 0 ms took 0 ms (0/0/0)
+09-27 17:37:58.002 16900 18098 I SuperpacksManagerImpl: SuperpacksManagerImpl$19.onSyncSuccess():947 content_cache.sync() succeeded
+09-27 17:37:58.056 10199 10239 I SharingClientImpl: client com.google.android.gms disconnecting
+09-27 17:37:58.058 16107 16310 I NearbySharing: Package com.google.android.gms has requested to unsuspend Quick Share
+09-27 17:37:58.059 10199 10258 E SharingClientImpl: Unsuspend failed: null
+09-27 17:37:58.065 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.OverKeyboardViewManager
+09-27 17:37:58.067 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.views.overlay.OverKeyboardHostShadowNode
+09-27 17:37:58.068 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenFooterManager
+09-27 17:37:58.069 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+09-27 17:37:58.069 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabScreenViewManager
+09-27 17:37:58.070 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.geojsonsource.MLRNGeoJSONSourceManager
+09-27 17:37:58.073 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+09-27 17:37:58.074 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.markerview.MLRNMarkerViewManager
+09-27 17:37:58.075 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.GroupViewManagerWrapper
+09-27 17:37:58.076 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabsHostViewManager
+09-27 17:37:58.077 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.imagesource.MLRNImageSourceManager
+09-27 17:37:58.077 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ModalScreenViewManager
+09-27 17:37:58.079 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardGestureAreaViewManager
+09-27 17:37:58.080 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.vectorsource.MLRNVectorSourceManager
+09-27 17:37:58.081 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.layer.MLRNLayerManager
+09-27 17:37:58.081 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+09-27 17:37:58.082 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+09-27 17:37:58.082 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+09-27 17:37:58.083 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.SimpleViewManagerWrapper
+09-27 17:37:58.084 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.location.MLRNNativeUserLocationManager
+09-27 17:37:58.085 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+09-27 17:37:58.086 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.images.MLRNImagesManager
+09-27 17:37:58.086 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.callout.MLRNCalloutManager
+09-27 17:37:58.086 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+09-27 17:37:58.087 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+09-27 17:37:58.089 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rastersource.MLRNRasterSourceManager
+09-27 17:37:58.090 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardControllerViewManager
+09-27 17:37:58.091 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+09-27 17:37:58.092 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.camera.MLRNCameraManager
+09-27 17:37:58.093 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.oney.WebRTCModule.RTCVideoViewManager
+09-27 17:37:58.093 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContentWrapperManager
+09-27 17:37:58.094 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager
+09-27 17:37:58.102 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager$MapShadowNode
+09-27 17:37:58.102 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNAndroidTextureMapViewManager
+09-27 17:37:58.103 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rasterdemsource.MLRNRasterDEMSourceManager
+09-27 17:37:58.104 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+09-27 17:37:58.106 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardBackgroundViewManager
+09-27 17:37:58.107 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.pointannotation.MLRNPointAnnotationManager
+09-27 17:37:58.139 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+09-27 17:37:58.140 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.VirtualViewManager$RenderableShadowNode
+09-27 17:37:58.142 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeMergeManager
+09-27 17:37:58.144 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewManager
+09-27 17:37:58.145 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewShadowNode
+09-27 17:37:58.146 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+09-27 17:37:58.148 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeGaussianBlurManager
+09-27 17:37:58.150 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+09-27 17:37:58.151 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+09-27 17:37:58.152 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+09-27 17:37:58.155 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+09-27 17:37:58.156 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+09-27 17:37:58.158 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeColorMatrixManager
+09-27 17:37:58.159 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+09-27 17:37:58.161 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+09-27 17:37:58.163 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+09-27 17:37:58.165 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+09-27 17:37:58.167 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeBlendManager
+09-27 17:37:58.169 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+09-27 17:37:58.170 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.SvgViewManager
+09-27 17:37:58.172 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+09-27 17:37:58.174 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchShadowNode
+09-27 17:37:58.175 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+09-27 17:37:58.177 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+09-27 17:37:58.179 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+09-27 17:37:58.181 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FilterManager
+09-27 17:37:58.183 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+09-27 17:37:58.185 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+09-27 17:37:58.187 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+09-27 17:37:58.189 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+09-27 17:37:58.191 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+09-27 17:37:58.193 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+09-27 17:37:58.195 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+09-27 17:37:58.195 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+09-27 17:37:58.196 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeFloodManager
+09-27 17:37:58.198 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+09-27 17:37:58.200 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+09-27 17:37:58.202 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+09-27 17:37:58.204 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeCompositeManager
+09-27 17:37:58.206 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+09-27 17:37:58.208 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+09-27 17:37:58.210 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+09-27 17:37:58.212 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+09-27 17:37:58.214 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+09-27 17:37:58.216 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+09-27 17:37:58.218 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+09-27 17:37:58.220 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeOffsetManager
+09-27 17:37:58.223 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+09-27 17:37:58.225 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+09-27 17:37:58.227 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+09-27 17:37:58.227 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+09-27 17:37:58.229 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+09-27 17:37:58.230 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+09-27 17:37:58.231 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+09-27 17:37:58.232 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+09-27 17:37:58.233 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+09-27 17:37:58.234 14040 16384 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+09-27 17:37:58.412 14040 16384 W BridgelessReactContext: [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+09-27 17:37:58.416 16107 16176 I ActivityScheduler: nextTriggerTime: 1211026884, in 239979ms, detectorType: 39, FULL_TYPE alarmWindowMillis: 30000
+09-27 17:37:58.418 14040 16384 I ExpoModulesCore: ✅ JSI interop was installed
+09-27 17:37:58.434 14040 16384 I ExpoModulesCore: ✅ Constants were exported
+09-27 17:37:58.694 14040 16384 E ReactNativeJS: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary.
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "[runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: invariant@1:139141
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: getEnforcing@1:148574
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2245048
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2243982
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2243668
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2242587
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2240692
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2240318
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:2200219
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:1477976
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:1282001
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:130350
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: anonymous@1:130305
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: guardedLoadModule@1:77272
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: global@1:76433
+09-27 17:37:58.698 14040 16384 W unknown:BridgelessReact: ")
+09-27 17:37:58.703 14040 16384 E libc++abi: terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 17:37:58.703 14040 16384 E libc++abi: invariant@1:139141
+09-27 17:37:58.703 14040 16384 E libc++abi: getEnforcing@1:148574
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2245048
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2243982
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2243668
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2242587
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2240692
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2240318
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadModule@1:77315
+09-27 17:37:58.703 14040 16384 E libc++abi: metroRequire@1:76911
+09-27 17:37:58.703 14040 16384 E libc++abi: anonymous@1:2200219
+09-27 17:37:58.703 14040 16384 E libc++abi: loadModuleImplementation@1:77785
+09-27 17:37:58.703 14040 16384 E libc++abi: guardedLoadM
+09-27 17:37:58.703 14040 16384 I libc    : debuggerd signal invoked signal:6
+09-27 17:37:58.703 14040 16384 I libc    : debuggerd requestDump:0 NO_NEW_PRIVS:0
+--------- beginning of crash
+09-27 17:37:58.703 14040 16384 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 16384 (mqt_v_js), pid 14040 (.campusx.mobile)
+09-27 17:37:58.704 14040 16384 I libc    : clone child process pid:16449
+09-27 17:37:58.704 14040 16384 I libc    : debuggerd pseudothread crash_process: 16384
+09-27 17:37:58.734 16451 16451 I crash_dump64: crash_dump invoked target_process:14040 current_process:16451: Success
+09-27 17:37:58.736 16452 16452 I crash_dump64: enter crash_dump child process: Success
+09-27 17:37:58.740 16452 16452 E crash_dump64: failed to get the guest state header for thread 14040: Bad address
+09-27 17:37:58.740 16452 16452 E crash_dump64: failed to get the guest state header for thread 16348: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16349: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16350: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16351: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16352: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16353: Bad address
+09-27 17:37:58.741 16452 16452 E crash_dump64: failed to get the guest state header for thread 16354: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16356: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16357: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16364: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16365: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16367: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16371: Bad address
+09-27 17:37:58.742 16452 16452 E crash_dump64: failed to get the guest state header for thread 16372: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16373: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16374: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16375: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16376: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16377: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16378: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16382: Bad address
+09-27 17:37:58.743 16452 16452 E crash_dump64: failed to get the guest state header for thread 16383: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16384: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16385: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16386: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16390: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16394: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16396: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16397: Bad address
+09-27 17:37:58.744 16452 16452 E crash_dump64: failed to get the guest state header for thread 16398: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16399: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16409: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16412: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16413: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16415: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16418: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16419: Bad address
+09-27 17:37:58.745 16452 16452 E crash_dump64: failed to get the guest state header for thread 16431: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16433: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16434: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16435: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16436: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16439: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16440: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16441: Bad address
+09-27 17:37:58.746 16452 16452 E crash_dump64: failed to get the guest state header for thread 16442: Bad address
+09-27 17:37:58.747 16452 16452 E crash_dump64: failed to get the guest state header for thread 16447: Bad address
+09-27 17:37:58.747 16452 16452 E crash_dump64: failed to get the guest state header for thread 16448: Bad address
+09-27 17:37:58.747 16452 16452 E crash_dump64: failed to get the guest state header for thread 16450: Bad address
+09-27 17:37:58.775 16452 16452 I crash_dump64: obtaining output fd from tombstoned, type: kDebuggerdTombstoneProto
+09-27 17:37:58.775 16451 16451 I crash_dump64: crash_dump process receive exit: Success
+09-27 17:37:58.785 16452 16452 I crash_dump64: performing dump of process 14040 (target tid = 16384)
+09-27 17:37:59.188 16452 16452 F DEBUG   : Softversion: PD2251KF_EX_A_15.2.18.1.W30.V000L1
+09-27 17:37:59.188 16452 16452 F DEBUG   : Time: 2026-09-27 17:37:59
+09-27 17:37:59.188 16452 16452 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+09-27 17:37:59.188 16452 16452 F DEBUG   : Build fingerprint: 'iQOO/I2223i/I2223:15/AP3A.240905.015.A2/compiler260422111411:user/release-keys'
+09-27 17:37:59.188 16452 16452 F DEBUG   : Revision: '0'
+09-27 17:37:59.188 16452 16452 F DEBUG   : ABI: 'arm64'
+09-27 17:37:59.188 16452 16452 F DEBUG   : Timestamp: 2026-09-27 17:37:58.792769484+0530
+09-27 17:37:59.188 16452 16452 F DEBUG   : Process uptime: 217s
+09-27 17:37:59.188 16452 16452 F DEBUG   : Cmdline: com.campusx.mobile
+09-27 17:37:59.188 16452 16452 F DEBUG   : pid: 14040, tid: 16384, name: mqt_v_js  >>> com.campusx.mobile <<<
+09-27 17:37:59.188 16452 16452 F DEBUG   : uid: 10822
+09-27 17:37:59.188 16452 16452 F DEBUG   : signal 6 (SIGABRT), code -1 (SI_QUEUE), fault addr --------
+09-27 17:37:59.188 16452 16452 F DEBUG   : Abort message: 'terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 17:37:59.188 16452 16452 F DEBUG   : invariant@1:139141
+09-27 17:37:59.188 16452 16452 F DEBUG   : getEnforcing@1:148574
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2245048
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2243982
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2243668
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2242587
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2240692
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2240318
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:2200219
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:1477976
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:1282001
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:130350
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77315
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : anonymous@1:130305
+09-27 17:37:59.188 16452 16452 F DEBUG   : loadModuleImplementation@1:77785
+09-27 17:37:59.188 16452 16452 F DEBUG   : guardedLoadModule@1:77272
+09-27 17:37:59.188 16452 16452 F DEBUG   : metroRequire@1:76911
+09-27 17:37:59.188 16452 16452 F DEBUG   : global@1:76433
+09-27 17:37:59.188 16452 16452 F DEBUG   : 
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(ExceptionsManagerModule.kt:52)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.runtime.ReactInstance$ReactJsExceptionHandlerImpl.reportJsException(ReactInstance.kt:281)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.jni.NativeRunnable.run(Native Method)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.kt:21)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at android.os.Looper.loop(Looper.java:340)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(MessageQueueThreadImpl.kt:175)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4(MessageQueueThreadImpl.kt:0)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+09-27 17:37:59.188 16452 16452 F DEBUG   : 	at java.lang.Thread.run(Thread.java:1572)'
+09-27 17:37:59.188 16452 16452 F DEBUG   :     x0  0000000000000000  x1  0000000000004000  x2  0000000000000006  x3  000000796769d870
+09-27 17:37:59.188 16452 16452 F DEBUG   :     x4  646277641f736766  x5  646277641f736766  x6  646277641f736766  x7  7f7f7f7f7f7f7f7f
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x8  00000000000000f0  x9  0000007ee6e4e878  x10 ffffff80fffffbdf  x11 0000007eed0d5020
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x12 0000000013e66018  x13 000015251fdd9c39  x14 0029b1f9a8faded9  x15 0000000034155555
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x16 0000007ee6f47d50  x17 0000007ee6f30140  x18 0000007967394000  x19 00000000000036d8
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x20 0000000000004000  x21 00000000ffffffff  x22 000000796769d9a0  x23 000000796769d9e0
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x24 000000796769da90  x25 000000000000002f  x26 0000007974b9bf0a  x27 0000007974b98d65
+09-27 17:37:59.189 16452 16452 F DEBUG   :     x28 0000007974b93461  x29 000000796769d8f0
+09-27 17:37:59.189 16452 16452 F DEBUG   :     lr  0000007ee6ecb82c  sp  000000796769d850  pc  0000007ee6ecb85c  pst 0000000000001000
+09-27 17:37:59.189 16452 16452 F DEBUG   : 46 total frames
+09-27 17:37:59.189 16452 16452 F DEBUG   : backtrace:
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #00 pc 00000000000a785c  /apex/com.android.runtime/lib64/bionic/libc.so (abort+172) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #01 pc 00000000000a0210  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #02 pc 000000000009eeb0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #03 pc 000000000009f374  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #04 pc 000000000009f314  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (std::terminate()+56) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #05 pc 000000000025d584  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #06 pc 0000000000489594  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #07 pc 00000000002b90c4  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::JsErrorHandler::handleErrorWithCppPipeline(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+7440) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #08 pc 00000000002b7068  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::JsErrorHandler::handleError(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+1680) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #09 pc 000000000026c630  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #10 pc 00000000000aaa24  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #11 pc 00000000000aa760  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #12 pc 00000000000b2cd8  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #13 pc 00000000000c50c8  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #14 pc 00000000000c4a28  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #15 pc 00000000000f4554  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #16 pc 00000000000a0260  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #17 pc 00000000000a5e40  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #18 pc 00000000000a0060  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #19 pc 0000000000268024  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #20 pc 000000000041d4c0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::Task::execute(facebook::jsi::Runtime&, bool)+312) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #21 pc 000000000041b654  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const+60) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #22 pc 000000000041bf64  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)+124) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #23 pc 000000000041bc74  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)+88) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #24 pc 0000000000265d80  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #25 pc 000000000045e930  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #26 pc 0000000000017dd0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libfbjni.so (offset 0x15c0000) (facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)+72) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #27 pc 0000000000017d10  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libfbjni.so (offset 0x15c0000) (facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))+60) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #28 pc 00000000018b3ba0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (art_jni_trampoline+112)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #29 pc 0000000000dbed9c  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Handler.dispatchMessage+76)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #30 pc 000000000072c8dc  /apex/com.android.art/lib64/libart.so (nterp_helper+2124) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #31 pc 0000000000aa86cc  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage+16)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #32 pc 0000000000dc36b0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loopOnce+1088)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #33 pc 0000000000dc31c8  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loop+712)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #34 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #35 pc 0000000000aa8a3c  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1+80)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #36 pc 0000000000728c6c  /apex/com.android.art/lib64/libart.so (nterp3_op_invoke_static+44) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #37 pc 0000000000aa896c  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4+0)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #38 pc 0000000000728c6c  /apex/com.android.art/lib64/libart.so (nterp3_op_invoke_static+44) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #39 pc 0000000000aa8794  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run+4)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #40 pc 000000000051e788  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (java.lang.Thread.run+72)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #41 pc 0000000000298f94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #42 pc 000000000029738c  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+148) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #43 pc 00000000004d5fd0  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1384) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #44 pc 00000000000b8bc8  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+216) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 17:37:59.189 16452 16452 F DEBUG   :       #45 pc 00000000000aaf48  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+68) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 17:37:59.279  3313  3313 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 17:37:59.281  3313 13010 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 17:37:59.370  3313  3313 I cjlg    : onStart
+09-27 17:37:59.373  3313  3313 I cjcw    : onStart
+09-27 17:37:59.378  3313  3313 I chay    : (REDACTED) [%s] onStart()
+09-27 17:37:59.378  3313  3313 I chdm    : Reloading theme data
+09-27 17:37:59.382  3313  3313 E NetworkErrorMessage: (REDACTED) Invalid connectivity state: %s
+09-27 17:37:59.382  3313  3313 I cjlg    : onResume
+09-27 17:37:59.383  3313  3313 W ebmr    : missing event name
+09-27 17:37:59.383  3313  3313 I cjcw    : onResume
+09-27 17:37:59.485 16900 16900 I SubtypeOperator: SubtypeOperator$1.onUnbindInput():43 
+09-27 17:37:59.488 16900 16900 I SubtypeOperator: SubtypeOperator$1.onBindInput():33 
+09-27 17:37:59.489 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2361 
+09-27 17:37:59.490 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.launcher3, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-27 17:37:59.490 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:37:59.491 16900 16406 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 0, locked = false
+09-27 17:37:59.492 16900 16406 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false
+09-27 17:38:00.230 18694 18705 W .iqoo.logsystem: Reducing the number of considered missed Gc histogram windows from 426 to 100
+09-27 17:38:00.375 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.380 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.383 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.387 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.390 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.393 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.395 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:00.579 16107 16492 I PlatformStatsUtil: (REDACTED) Uploading %d dropbox entries to Clearcut
+09-27 17:38:00.614 16107 16492 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 17:38:02.248 10199  8791 I AggregationService: (REDACTED) Starting finalization task for expired aggregation windows. Total number of expired files: %s
+09-27 17:38:06.598 16900 16900 I SubtypeOperator: SubtypeOperator$1.onUnbindInput():43 
+09-27 17:38:06.600 16900 16900 I SubtypeOperator: SubtypeOperator$1.onBindInput():33 
+09-27 17:38:06.602 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2361 
+09-27 17:38:06.604 16900 16403 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 0, locked = false
+09-27 17:38:06.606 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.systemui, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-27 17:38:06.607 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:38:06.612 16900  7142 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false
+09-27 17:38:07.399 16900 16900 I SubtypeOperator: SubtypeOperator$1.onUnbindInput():43 
+09-27 17:38:07.399 16900 16900 I SubtypeOperator: SubtypeOperator$1.onBindInput():33 
+09-27 17:38:07.400 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2361 
+09-27 17:38:07.401 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.launcher3, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-27 17:38:07.401 16900  9239 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 0, locked = false
+09-27 17:38:07.401 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:38:07.402 16900 16402 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false
+09-27 17:38:07.409 11898 11898 I cr_ChromeActivity: Picture in picture mode changed, inPicture: false
+09-27 17:38:07.409 11898 11898 I cr_VideoPersist: Framework exited picture in picture
+09-27 17:38:07.409 11898 11898 I cr_VideoPersist: Exited picture in picture with reason: 0
+09-27 17:38:07.409 11898 11898 I cr_VideoPersist: Running Picture-in-picture exit callbacks
+09-27 17:38:07.488  3313  3313 I cjeo    : (REDACTED) onApplyWindowInsets: systemWindowInsets=%s
+09-27 17:38:07.488  3313  3313 I cjeo    : (REDACTED) onApplyWindowInsets: systemWindowInsets=%s
+09-27 17:38:07.562 18219 18219 I adbd    : adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d''
+09-27 17:38:07.563 16900 16900 I SubtypeOperator: SubtypeOperator$1.onUnbindInput():43 
+09-27 17:38:07.565 16900 16900 I SubtypeOperator: SubtypeOperator$1.onBindInput():33 
+09-27 17:38:07.566 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2361 
+09-27 17:38:07.567 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.chrome, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=12000000, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-27 17:38:07.567 16900 16900 W LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():322 Null input view, cannot update padding!
+09-27 17:38:07.567 16900 16408 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 0, locked = false
+09-27 17:38:07.569 16900 16408 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false

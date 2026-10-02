@@ -29,6 +29,7 @@ import {
 } from "./routes/systemRoutes.js";
 import { tripRouter } from "./routes/tripRoutes.js";
 import { timetableScheduleRouter } from "./routes/timetableScheduleRoutes.js";
+import { timetableAnalysisRouter } from "./routes/timetableAnalysisRoutes.js";
 import { uploadRouter } from "./routes/uploadRoutes.js";
 import { pushRouter } from "./routes/pushRoutes.js";
 import { userRouter } from "./routes/userRoutes.js";
@@ -67,6 +68,7 @@ export function createApp() {
   app.use("/api/marketplace", authenticate, marketplaceRouter);
   app.use("/api/timetable", authenticate, timetableRouter);
   app.use("/api/timetable", authenticate, timetableScheduleRouter);
+  app.use("/api/timetable", authenticate, timetableAnalysisRouter);
   app.use("/api/calendar", authenticate, calendarRouter);
   app.use("/api/holidays", authenticate, holidayRouter);
   app.use("/api/trips", authenticate, tripRouter);

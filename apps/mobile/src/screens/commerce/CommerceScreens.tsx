@@ -7,7 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pressable, ScrollView, StyleSheet, Switch, View, Alert, Share, Platform } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -421,13 +421,25 @@ export function EditEventScreen({
     }, 600);
     return () => clearTimeout(timeout);
   }, [locQuery]);
+  const parseExistingDate = () => {
+    if (!existing || !existing.date || !existing.time) return new Date();
+    const partsDate = existing.date.split('/');
+    const partsTime = existing.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (partsDate.length === 3 && partsTime) {
+      let hrs = parseInt(partsTime[1]!, 10);
+      if (partsTime[3]!.toUpperCase() === 'PM' && hrs < 12) hrs += 12;
+      if (partsTime[3]!.toUpperCase() === 'AM' && hrs === 12) hrs = 0;
+      return new Date(parseInt(partsDate[2]!, 10), parseInt(partsDate[1]!, 10) - 1, parseInt(partsDate[0]!, 10), hrs, parseInt(partsTime[2]!, 10));
+    }
+    return new Date();
+  };
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [dateObj, setDateObj] = useState(new Date());
+  const [dateObj, setDateObj] = useState(parseExistingDate());
 
   const onDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (event.type === "set" && selectedDate) {
       setDateObj(selectedDate);
       const day = String(selectedDate.getDate()).padStart(2, "0");
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
@@ -437,14 +449,14 @@ export function EditEventScreen({
   };
 
   const onTimeChange = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(false);
-    if (selectedDate) {
+    if (Platform.OS === 'android') setShowTimePicker(false);
+    if (event.type === "set" && selectedDate) {
       setDateObj(selectedDate);
       let hours = selectedDate.getHours();
       const minutes = String(selectedDate.getMinutes()).padStart(2, "0");
       const ampm = hours >= 12 ? "PM" : "AM";
       hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
+      hours = hours ? hours : 12;
       setForm((v) => ({ ...v, time: `${String(hours).padStart(2, "0")}:${minutes} ${ampm}` }));
     }
   };
@@ -556,26 +568,47 @@ export function EditEventScreen({
         onChangeText={(title) => setForm((value) => ({ ...value, title }))}
       />
       <CXRow style={styles.twoCols}>
-        <Pressable onPress={() => setShowDatePicker(true)} style={styles.flex}>
-          <View pointerEvents="none">
-            <CXInput
-              label="Date"
-              placeholder="DD/MM/YYYY"
-              value={form.date}
-              editable={false}
-            />
-          </View>
-        </Pressable>
-        <Pressable onPress={() => setShowTimePicker(true)} style={styles.flex}>
-          <View pointerEvents="none">
-            <CXInput
-              label="Time"
-              placeholder="10:00 AM"
-              value={form.time}
-              editable={false}
-            />
-          </View>
-        </Pressable>
+        <View style={styles.flex}>
+          <CXInput
+            label="Date"
+            placeholder="DD/MM/YYYY"
+            value={form.date}
+            editable={false}
+            onPress={() => {
+              if (Platform.OS === 'android') {
+                DateTimePickerAndroid.open({
+                  value: dateObj,
+                  mode: "date",
+                  display: "default",
+                  minimumDate: new Date(),
+                  onChange: onDateChange,
+                });
+              } else {
+                setShowDatePicker(true);
+              }
+            }}
+          />
+        </View>
+        <View style={styles.flex}>
+          <CXInput
+            label="Time"
+            placeholder="10:00 AM"
+            value={form.time}
+            editable={false}
+            onPress={() => {
+              if (Platform.OS === 'android') {
+                DateTimePickerAndroid.open({
+                  value: dateObj,
+                  mode: "time",
+                  display: "default",
+                  onChange: onTimeChange,
+                });
+              } else {
+                setShowTimePicker(true);
+              }
+            }}
+          />
+        </View>
       </CXRow>
       
       {showDatePicker && (
@@ -1034,6 +1067,7 @@ export function ListingDetailsScreen({
               icon="share-social-outline"
               label="Share listing"
               backgroundColor="rgba(255,255,255,.9)"
+              onPress={() => Share.share({ message: `Check out this listing: ${listing.title}! campusx://listing/${listing.id}` })}
             />
           </View>
         </View>
@@ -1045,7 +1079,7 @@ export function ListingDetailsScreen({
           <CXText variant="h2">{listing.title}</CXText>
           <CXRow>
             <CXText variant="h2" color={colors.primary}>
-              ?{listing.price.toLocaleString("en-IN")}
+              ₹{listing.price.toLocaleString("en-IN")}
             </CXText>
             <CXText color={colors.textMuted}>  Negotiable</CXText>
           </CXRow>

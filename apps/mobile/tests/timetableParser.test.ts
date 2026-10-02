@@ -2,6 +2,42 @@ import { describe, it, expect } from "vitest";
 import { parseTimetableImage, OCRWord } from "../src/services/timetableImageParser";
 
 describe("Timetable Image Parser (Cell-First OCR Deterministic)", () => {
+  it("flags a suspicious empty cell between detected classes", () => {
+    const words: OCRWord[] = [
+      { text: "09:00 - 10:00", confidence: 99, bbox: { x0: 100, y0: 10, x1: 180, y1: 30 } },
+      { text: "10:00 - 11:00", confidence: 99, bbox: { x0: 220, y0: 10, x1: 300, y1: 30 } },
+      { text: "11:00 - 12:00", confidence: 99, bbox: { x0: 340, y0: 10, x1: 420, y1: 30 } },
+      { text: "MONDAY", confidence: 99, bbox: { x0: 10, y0: 100, x1: 75, y1: 125 } },
+      { text: "ML", confidence: 98, bbox: { x0: 120, y0: 100, x1: 150, y1: 125 } },
+      { text: "OS", confidence: 96, bbox: { x0: 365, y0: 100, x1: 390, y1: 125 } },
+    ];
+
+    const result = parseTimetableImage(words);
+    expect(result.missingCells).toEqual([
+      { day: 1, startTime: "10:00", endTime: "11:00", reason: "possible_missing_class" },
+    ]);
+    expect(result.entries[0]?.confidence).toBeCloseTo(0.98);
+    expect(result.entries[0]?.sourceBounds).toBeDefined();
+  });
+
+  it("normalizes compact 12-hour headers without inventing a duration", () => {
+    const words: OCRWord[] = [
+      { text: "9", confidence: 99, bbox: { x0: 100, y0: 10, x1: 110, y1: 30 } },
+      { text: "-", confidence: 99, bbox: { x0: 114, y0: 10, x1: 118, y1: 30 } },
+      { text: "10", confidence: 99, bbox: { x0: 122, y0: 10, x1: 138, y1: 30 } },
+      { text: "1 PM - 2 PM", confidence: 99, bbox: { x0: 220, y0: 10, x1: 300, y1: 30 } },
+      { text: "MON", confidence: 99, bbox: { x0: 10, y0: 100, x1: 60, y1: 125 } },
+      { text: "DBMS", confidence: 99, bbox: { x0: 108, y0: 100, x1: 155, y1: 125 } },
+      { text: "AI", confidence: 99, bbox: { x0: 245, y0: 100, x1: 265, y1: 125 } },
+    ];
+
+    const result = parseTimetableImage(words);
+    expect(result.gridTimeSlots.map((slot) => [slot.start, slot.end])).toEqual([
+      ["09:00", "10:00"],
+      ["13:00", "14:00"],
+    ]);
+  });
+
   it("Physical Fixture Regression (Real Timetable)", () => {
     // Exact columns from user request:
     // 08:00-09:00 (x: 100-180)

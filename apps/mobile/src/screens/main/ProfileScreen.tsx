@@ -167,9 +167,9 @@ export function ProfileScreen() {
         </CXRow>
         <CXCard style={styles.stats}>
           {[
-            [String(eventsCount), "Events", "MyEvents"],
-            [String(connectionsCount), "Connections", "Friends"],
-            [String(groupsCount), "Groups", "StudyGroups"],
+            [String(eventsCount), "EVENTS", "MyEvents"],
+            [String(connectionsCount), "CONNECTIONS", "Friends"],
+            [String(groupsCount), "GROUPS", "StudyGroups"],
           ].map(([value, label, target], index) => (
             <Pressable
               key={label}

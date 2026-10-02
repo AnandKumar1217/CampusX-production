@@ -166,4 +166,12 @@ export function setupSocketInvalidations(socket: Socket, deps: SocketEventDepend
   socket.on("trip:memberRemoved", invalidateTrips);
   socket.on("trip:cancelled", invalidateTrips);
   socket.on("trip:update", invalidateTrips);
+
+  // --- TIMETABLE / ACADEMIC CALENDAR ---
+  socket.on("schedule:updated", () => {
+    queryClient.invalidateQueries({ queryKey: ["timetable"] });
+    queryClient.invalidateQueries({ queryKey: ["actualSchedule"] });
+    queryClient.invalidateQueries({ queryKey: ["actualScheduleRange"] });
+    queryClient.invalidateQueries({ queryKey: ["holidays"] });
+  });
 }

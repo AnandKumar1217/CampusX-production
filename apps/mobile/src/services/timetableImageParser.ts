@@ -12,6 +12,17 @@ export type DraftTimetableEntry = {
   room: string | null;
   lecturer: string | null;
   needsReview: boolean;
+  confidence: number;
+  sourceBounds: { x0: number; y0: number; x1: number; y1: number };
+  columnStartIndex: number;
+  columnEndIndex: number;
+};
+
+export type MissingTimetableCell = {
+  day: number;
+  startTime: string;
+  endTime: string;
+  reason: "possible_missing_class";
 };
 
 export type TimetableParseResult = {
@@ -19,6 +30,7 @@ export type TimetableParseResult = {
   entries: DraftTimetableEntry[];
   gridTimeSlots: { id: string; label: string; start: string; end: string; break: boolean }[];
   warnings: string[];
+  missingCells: MissingTimetableCell[];
 };
 
 const DAY_MAPPING: Record<string, number> = {
@@ -79,6 +91,20 @@ function parseAllTimes(text: string): string[] {
     }
   }
 
+  // Compact timetable headers often omit minutes entirely ("9-10",
+  // "12–1"). Preserve the two boundaries without inventing minutes.
+  if (times.length === 0) {
+    const range = normalizedText.match(/\b(\d{1,2})\s*(?:-|–|—|to)\s*(\d{1,2})\b/i);
+    if (range) {
+      const normalizeBareHour = (raw: string) => {
+        let hour = Number(raw);
+        if (hour >= 1 && hour <= 7) hour += 12;
+        return `${String(hour).padStart(2, "0")}:00`;
+      };
+      times.push(normalizeBareHour(range[1]!), normalizeBareHour(range[2]!));
+    }
+  }
+
   return times;
 }
 
@@ -88,33 +114,21 @@ function getIntersectionWidth(r1: Rect, r2: Rect): number {
   return Math.max(0, Math.min(r1.right, r2.right) - Math.max(r1.left, r2.left));
 }
 
-function getWidth(r: Rect): number {
-  return Math.max(0, r.right - r.left);
-}
-
-function normalizeLetterSpacing(words: OCRWord[]): OCRWord[] {
-  return words.map(w => {
-    const text = w.text.trim();
-    if (text.length > 2 && text.includes(" ")) {
-      const parts = text.split(" ");
-      if (parts.every(p => p.length === 1)) {
-         return { ...w, text: parts.join("") };
-      }
-    }
-    return w;
-  });
-}
-
 export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
   const warnings: string[] = [];
   const words = rawWords; // Remove normalizeLetterSpacing up here, we do it in cells
 
   // 1. Find table boundaries to ignore metadata below
   const dayWords = words.filter(w => getDayValue(cleanText(w.text)) !== null);
-  const timeWords = words.filter(w => parseAllTimes(cleanText(w.text)).length > 0);
+  const firstDayTop = dayWords.length ? Math.min(...dayWords.map((word) => word.bbox.y0)) : Number.POSITIVE_INFINITY;
+  const timeWords = words.filter((word) => {
+    const text = cleanText(word.text);
+    return parseAllTimes(text).length > 0
+      || (/^\d{1,2}(?:\s*(?:am|pm))?$/i.test(text) && word.bbox.y0 < firstDayTop);
+  });
 
   if (dayWords.length === 0 && timeWords.length === 0) {
-    return { isTimetable: false, entries: [], gridTimeSlots: [], warnings: ["No text structure found."] };
+    return { isTimetable: false, entries: [], gridTimeSlots: [], warnings: ["No text structure found."], missingCells: [] };
   }
 
   dayWords.sort((a, b) => (a.bbox.y0 + a.bbox.y1) / 2 - (b.bbox.y0 + b.bbox.y1) / 2);
@@ -144,9 +158,9 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
 
   for (const hw of headerWords) {
     const hwTimes = parseAllTimes(cleanText(hw.text));
-    if (hwTimes.length === 0 && hw.text !== "-" && hw.text.toLowerCase() !== "to") continue;
+    const isBareHeaderPart = /^\d{1,2}(?:\s*(?:am|pm))?$/i.test(hw.text.trim());
+    if (hwTimes.length === 0 && hw.text !== "-" && hw.text !== "–" && hw.text !== "—" && hw.text.toLowerCase() !== "to" && !isBareHeaderPart) continue;
 
-    const hwCenter = (hw.bbox.x0 + hw.bbox.x1) / 2;
     const match = headerCandidates.find(c => {
        const overlap = getIntersectionWidth({ left: c.left, right: c.right, top: c.top, bottom: c.bottom }, { left: hw.bbox.x0, right: hw.bbox.x1, top: hw.bbox.y0, bottom: hw.bbox.y1 });
        const gap = Math.max(0, Math.max(c.left, hw.bbox.x0) - Math.min(c.right, hw.bbox.x1));
@@ -226,7 +240,7 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
   }
 
   if (columnRegions.length === 0) {
-      return { isTimetable: false, entries: [], gridTimeSlots: [], warnings: ["No valid headers detected."] };
+      return { isTimetable: false, entries: [], gridTimeSlots: [], warnings: ["No valid headers detected."], missingCells: [] };
   }
 
   // 4. Resolve row boundaries
@@ -406,7 +420,8 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
         const startCol = coveredColumns[0]!.cr;
         const endCol = coveredColumns[coveredColumns.length - 1]!.cr;
 
-        const needsReview = (cluster.words.reduce((a,b) => a+b.confidence, 0) / cluster.words.length < 85) || fullText.length < 2;
+        const averageConfidence = cluster.words.reduce((a,b) => a+b.confidence, 0) / cluster.words.length;
+        const needsReview = averageConfidence < 85 || fullText.length < 2;
 
         entries.push({
             day: row.day,
@@ -415,7 +430,11 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
             endTime: endCol.endTime, // Use the end of the last covered column!
             room,
             lecturer: null, // Left as null for now, hard to safely separate faculty without risking subject destruction
-            needsReview
+            needsReview,
+            confidence: Math.max(0, Math.min(1, averageConfidence / 100)),
+            sourceBounds: { x0: cluster.left, y0: cluster.top, x1: cluster.right, y1: cluster.bottom },
+            columnStartIndex: coveredColumns[0]!.index,
+            columnEndIndex: coveredColumns[coveredColumns.length - 1]!.index,
         });
 
         console.log(`[timetable-parser] cell: "${fullText}" -> Day ${row.day} -> ${startCol.startTime}-${endCol.endTime} [review=${needsReview}]`);
@@ -428,10 +447,37 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
     )
   );
 
+  // Empty slots between the first and last detected class are more likely OCR
+  // misses than genuine free periods. Edge slots remain unflagged to avoid
+  // treating a shorter college day as an error.
+  const missingCells: MissingTimetableCell[] = [];
+  for (const row of rowRegions) {
+    const rowEntries = uniqueEntries.filter((entry) => entry.day === row.day);
+    if (rowEntries.length < 2) continue;
+    const first = Math.min(...rowEntries.map((entry) => entry.columnStartIndex));
+    const last = Math.max(...rowEntries.map((entry) => entry.columnEndIndex));
+    for (let columnIndex = first; columnIndex <= last; columnIndex += 1) {
+      const column = columnRegions[columnIndex];
+      if (!column || column.break) continue;
+      const covered = rowEntries.some((entry) => columnIndex >= entry.columnStartIndex && columnIndex <= entry.columnEndIndex);
+      if (!covered) {
+        missingCells.push({
+          day: row.day,
+          startTime: column.startTime,
+          endTime: column.endTime,
+          reason: "possible_missing_class",
+        });
+      }
+    }
+  }
+
+  if (missingCells.length) warnings.push(`${missingCells.length} possible missing ${missingCells.length === 1 ? "class" : "classes"} detected.`);
+
   return {
     isTimetable: true,
     entries: uniqueEntries,
     gridTimeSlots,
-    warnings
+    warnings,
+    missingCells,
   };
 }

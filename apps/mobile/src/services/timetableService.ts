@@ -8,7 +8,10 @@ export const timetableService = {
   },
 
   createEntry: async (
-    payload: Omit<TimetableEntry, "id" | "createdAt" | "updatedAt">
+    payload: Omit<TimetableEntry, "id" | "createdAt" | "updatedAt"> & {
+      conflictAction?: "reject" | "replace";
+      conflictClassId?: string;
+    }
   ): Promise<TimetableEntry> => {
     const response = await api.post("/timetable", payload);
     return response.data.data;
@@ -44,4 +47,30 @@ export const timetableService = {
     const response = await api.post("/timetable/bulk-replace", payload);
     return response.data.data;
   },
+
+  analyzeTimetable: async (
+    fileUri: string,
+    mimeType: string,
+    sourceType: "image" | "camera",
+    localOcrJson?: string
+  ): Promise<any> => {
+    const formData = new FormData();
+    const filename = fileUri.split("/").pop() || "upload";
+    
+    formData.append("file", {
+      uri: fileUri,
+      name: filename,
+      type: mimeType
+    } as any);
+    
+    formData.append("sourceType", sourceType);
+    if (localOcrJson) formData.append("localOcrJson", localOcrJson);
+
+    const response = await api.post("/timetable/analyze", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 30000,
+    });
+    
+    return response.data.data;
+  }
 };

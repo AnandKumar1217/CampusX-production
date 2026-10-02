@@ -1,220 +1,364 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View, Alert } from "react-native";
+import { Pressable, FlatList, StyleSheet, View, Alert, RefreshControl, ActivityIndicator, BackHandler } from "react-native";
+import { useState, useEffect, useDeferredValue, useMemo, useCallback } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { CXAvatar, CXIconButton, CXRow, CXScreen, CXSearchBar, CXText, CXActionSheet } from "@/components/ui";
+import {
+  CXAvatar,
+  CXChip,
+  CXIconButton,
+  CXRow,
+  CXScreen,
+  CXSearchBar,
+  CXText,
+} from "@/components/ui";
+
 import { useRootNavigation } from "@/hooks/useRootNavigation";
-import { api, getApiErrorMessage } from "@/services/api";
-import { groupService, type Group } from "@/services/groupService";
-import { getSocket } from "@/services/socket";
+import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
-
-type Participant = { _id: string; name: string; avatarUrl?: string };
-type Conversation = {
-  _id: string;
-  type: "direct" | "group";
-  title?: string;
-  avatarUrl?: string;
-  participants: Participant[];
-  participantMetadata?: { user: string | { _id: string }; unreadCount?: number }[];
-  lastMessage?: { text?: string; attachments?: unknown[] };
-  lastMessageAt?: string;
-};
-type GroupCard = { id: string; name: string; avatarUrl?: string; detail?: string; unread: number; kind: "study" | "chat" };
-
-function unreadFor(conversation: Conversation, userId: string) {
-  return conversation.participantMetadata?.find((entry) =>
-    (typeof entry.user === "string" ? entry.user : entry.user?._id) === userId
-  )?.unreadCount ?? 0;
-}
-
-function chatTime(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toDateString() === new Date().toDateString()
-    ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
+import { api, getApiErrorMessage } from "@/services/api";
+import { getSocket } from "@/services/socket";
+import { groupService } from "@/services/groupService";
 
 export function ChatsScreen() {
   const navigation = useRootNavigation();
-  const userId = useAppStore((state) => state.user?.id);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [dataOwnerId, setDataOwnerId] = useState<string | null>(null);
+  const currentUser = useAppStore(state => state.user);
+
+  const [filter, setFilter] = useState<"All" | "Unread" | "Groups">("All");
   const [search, setSearch] = useState("");
-  const query = useDeferredValue(search.trim().toLowerCase());
+  const deferredSearch = useDeferredValue(search);
+  
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeSheet, setActiveSheet] = useState<{ id: string; name: string } | null>(null);
+  const globalFriends = useAppStore(state => state.friends);
 
-  useEffect(() => {
-    setConversations([]);
-    setGroups([]);
-    setDataOwnerId(null);
-    setLoading(!!userId);
-    setError(null);
-  }, [userId]);
-
-  const fetchChats = useCallback(async (refresh = false) => {
-    if (!userId) return;
-    if (refresh) setRefreshing(true);
+  const fetchChats = async () => {
     try {
-      const [chats, mine] = await Promise.allSettled([
-        api.get<{ data: Conversation[] }>("/chats"),
-        groupService.getMyGroups(),
+      const [chatsRes, groupsRes] = await Promise.all([
+        api.get<{ data: any[] }>("/chats"),
+        groupService.getMyGroups()
       ]);
-      if (useAppStore.getState().user?.id !== userId) return;
-      if (chats.status === "fulfilled") setConversations(chats.value.data.data ?? []);
-      if (mine.status === "fulfilled") setGroups(mine.value.data ?? []);
-      setDataOwnerId(userId);
-      const failure = chats.status === "rejected" ? chats.reason : mine.status === "rejected" ? mine.reason : null;
-      setError(failure ? getApiErrorMessage(failure) : null);
+      setConversations(chatsRes.data.data);
+      setGroups(groupsRes.data || []);
+    } catch (err) {
+      console.log("Failed to fetch chats:", getApiErrorMessage(err));
     } finally {
-      if (useAppStore.getState().user?.id === userId) {
-        setLoading(false);
-        setRefreshing(false);
-      }
+      setLoading(false);
+      setRefreshing(false);
     }
-  }, [userId]);
-
-  useFocusEffect(useCallback(() => {
-    if (!userId) return;
-    void fetchChats();
-    const socket = getSocket();
-    if (!socket) return;
-    const refetch = () => void fetchChats();
-    const events = ["connect", "message:new", "message:read", "chat:conversation:new", "chat:updated", "group:created",
-      "group:updated", "group:deleted", "group:membership:changed", "profile:updated"];
-    events.forEach((event) => socket.on(event, refetch));
-    return () => events.forEach((event) => socket.off(event, refetch));
-  }, [fetchChats, userId]));
-
-  const groupCards = useMemo<GroupCard[]>(() => {
-    if (dataOwnerId !== userId) return [];
-    const cards: GroupCard[] = groups.filter((group) => group.name?.toLowerCase().includes(query)).map((group) => ({
-      id: group._id || group.id, name: group.name, avatarUrl: group.avatarUrl ?? undefined,
-      detail: group.category || `${group.memberCount || 0} members`,
-      unread: 0, kind: "study" as const,
-    }));
-    conversations.filter((conversation) => conversation.type === "group").forEach((conversation) => {
-      const name = conversation.title || "Group chat";
-      if (!name.toLowerCase().includes(query)) return;
-      cards.push({
-        id: conversation._id, name, avatarUrl: conversation.avatarUrl,
-        detail: conversation.lastMessage?.text || `${conversation.participants.length} members`,
-        unread: userId ? unreadFor(conversation, userId) : 0, kind: "chat",
-      });
-    });
-    return cards;
-  }, [conversations, dataOwnerId, groups, query, userId]);
-
-  const directChats = useMemo(() => dataOwnerId !== userId ? [] : conversations.filter((conversation) => conversation.type === "direct")
-    .map((conversation) => ({ conversation, other: conversation.participants.find((p) => p._id !== userId) }))
-    .filter(({ other }) => other && other.name.toLowerCase().includes(query)),
-  [conversations, dataOwnerId, query, userId]);
-
-  const openGroup = (card: GroupCard) => {
-    if (card.kind === "study") navigation.navigate("GroupConversation", { groupId: card.id, name: card.name });
-    else navigation.navigate("Conversation", { conversationId: card.id, name: card.name });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchChats();
+      const socket = getSocket();
+      if (socket) {
+        let timeout: NodeJS.Timeout;
+        const handleNewMessage = (msg: any) => {
+          setConversations(prev => {
+            // Find the chat that matches the conversation ID (msg.conversation could be object or ID)
+            const convId = msg.conversation?._id || msg.conversation || msg.conversationId;
+            const idx = prev.findIndex(c => c._id === convId || c.id === convId);
+            
+            if (idx === -1) {
+              // If it's a completely new chat, debounce a fetch
+              clearTimeout(timeout);
+              timeout = setTimeout(fetchChats, 1000);
+              return prev;
+            }
+            
+            const newChats = [...prev];
+            const chat = newChats[idx];
+            const senderId = msg.sender?._id || msg.sender;
+            
+            const updated = {
+              ...chat,
+              lastMessage: msg,
+              lastMessageAt: msg.createdAt || new Date().toISOString()
+            };
+            
+            if (senderId !== currentUser?.id) {
+               const myMetaIdx = updated.participantMetadata?.findIndex((m: any) => m.user === currentUser?.id);
+               if (myMetaIdx !== undefined && myMetaIdx !== -1) {
+                 const newMeta = [...updated.participantMetadata];
+                 newMeta[myMetaIdx] = { ...newMeta[myMetaIdx], unreadCount: (newMeta[myMetaIdx].unreadCount || 0) + 1 };
+                 updated.participantMetadata = newMeta;
+               } else if (updated.participantMetadata) {
+                 updated.participantMetadata = [...updated.participantMetadata, { user: currentUser?.id, unreadCount: 1 }];
+               }
+            }
+            
+            newChats.splice(idx, 1);
+            newChats.unshift(updated);
+            return newChats;
+          });
+        };
+        
+        socket.on("message:new", handleNewMessage);
+        return () => {
+          socket.off("message:new", handleNewMessage);
+          clearTimeout(timeout);
+        };
+      }
+    }, [currentUser])
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchChats();
+  };
+
+  const handleLongPress = (chat: any) => {
+    Alert.alert(
+      "Chat Options",
+      "Choose an action",
+      [
+        { text: "Pin", onPress: () => console.log("Pin", chat.id) },
+        { text: "Mute", onPress: () => console.log("Mute", chat.id) },
+        { text: "Archive", onPress: () => console.log("Archive", chat.id) },
+        { text: "Cancel", style: "cancel" }
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const formattedConversations = useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set();
+
+    if (filter === "All" || filter === "Unread") {
+      conversations.forEach(c => {
+        const otherParticipant = c.participants.find((p: any) => p._id !== currentUser?.id) || c.participants[0];
+        const meta = c.participantMetadata?.find((m: any) => m.user === currentUser?.id);
+        const unreadCount = meta?.unreadCount || 0;
+        
+        if (filter === "Unread" && unreadCount === 0) return;
+        
+        const title = c.type === "group" ? c.title : (otherParticipant?.name || "Unknown");
+        if (deferredSearch && !title.toLowerCase().includes(deferredSearch.toLowerCase())) return;
+
+        if (!seen.has(c._id)) {
+          seen.add(c._id);
+          list.push({
+            id: c._id,
+            type: c.type,
+            title,
+            avatarUrl: c.type === "group" ? c.avatarUrl : otherParticipant?.avatarUrl,
+            online: otherParticipant?.online,
+            unread: unreadCount,
+            lastMessage: c.lastMessage?.text || (c.lastMessage?.attachments?.length ? "Sent an attachment" : "Started a conversation"),
+            updatedAt: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
+          });
+        }
+      });
+    }
+
+    if (filter === "All" || filter === "Groups") {
+      groups.forEach(g => {
+        if (deferredSearch && !g.name.toLowerCase().includes(deferredSearch.toLowerCase())) return;
+        
+        const groupId = g._id || g.id;
+        if (!seen.has(groupId)) {
+          seen.add(groupId);
+          list.push({
+            id: groupId,
+            type: "community_group",
+            name: g.name,
+            avatarUrl: g.avatarUrl,
+            subtitle: g.category || g.description,
+            updatedAt: ""
+          });
+        }
+      });
+    }
+
+    return list;
+  }, [conversations, groups, filter, deferredSearch, currentUser]);
+
+  const startChat = async (user: any) => {
+    try {
+      const res = await api.post<{ data: any }>("/chats", { participantId: user.id || user._id });
+      navigation.navigate("Conversation", {
+        conversationId: res.data.data._id,
+        name: user.name,
+      });
+    } catch (err) {
+      Alert.alert("Error", getApiErrorMessage(err));
+    }
+  };
+
+  const renderHeader = () => (
+    <View style={{ gap: spacing.sm, paddingBottom: spacing.sm }}>
+      <CXRow style={styles.header}>
+        <CXText variant="h2" style={styles.flex}>
+          Chats
+        </CXText>
+        <CXIconButton
+          icon="videocam-outline"
+          label="Start video call"
+          backgroundColor={colors.white}
+          onPress={() => navigation.navigate("VideoCall" as any)}
+        />
+        <CXIconButton
+          icon="create-outline"
+          label="New chat"
+          onPress={() => navigation.navigate("NewChat")}
+        />
+      </CXRow>
+      <CXSearchBar 
+        placeholder="Search chats, people, groups..." 
+        value={search}
+        onChangeText={setSearch}
+      />
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.stories}
+        data={[
+          { id: 'new', isNew: true }, 
+          ...globalFriends
+            .filter(f => f.online)
+            .filter((f, index, self) => self.findIndex(t => t.id === f.id) === index)
+        ]}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          if ((item as any).isNew) {
+            return (
+              <Pressable onPress={() => navigation.navigate("NewChat")} style={styles.story}>
+                <View style={styles.add}>
+                  <Ionicons name="add" size={22} color={colors.primary} />
+                </View>
+                <CXText variant="caption">New</CXText>
+              </Pressable>
+            );
+          }
+          return (
+            <Pressable
+              onPress={() => startChat(item)}
+              style={styles.story}
+            >
+              <View style={styles.storyRing}>
+                <CXAvatar name={(item as any).name} source={(item as any).avatar} size={48} online={(item as any).online} />
+              </View>
+              <CXText variant="caption" numberOfLines={1}>
+                {(item as any).name.split(" ")[0]}
+              </CXText>
+            </Pressable>
+          );
+        }}
+      />
+      <CXRow style={styles.filters}>
+        <CXChip label="All" active={filter === "All"} onPress={() => setFilter("All")} />
+        <CXChip label="Unread" active={filter === "Unread"} onPress={() => setFilter("Unread")} />
+        <CXChip label="Groups" active={filter === "Groups"} onPress={() => setFilter("Groups")} />
+      </CXRow>
+    </View>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIcon}>
+        <Ionicons name="chatbubbles-outline" size={48} color={colors.primary} />
+      </View>
+      <CXText variant="h3" style={{ marginTop: spacing.md }}>No conversations yet</CXText>
+      <CXText variant="body" color={colors.textMuted} style={{ textAlign: "center", marginTop: spacing.xs, marginBottom: spacing.xl }}>
+        Start chatting with your CampusX friends.
+      </CXText>
+      <Pressable style={styles.emptyButton} onPress={() => navigation.navigate("NewChat")}>
+        <CXText variant="bodyStrong" color={colors.white}>Start a chat</CXText>
+      </Pressable>
+    </View>
+  );
 
   return (
     <CXScreen>
       <FlatList
-        data={directChats}
-        keyExtractor={({ conversation }) => conversation._id}
+        data={formattedConversations}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void fetchChats(true)} tintColor={colors.primary} />}
-        ListHeaderComponent={
-          <View>
-            <CXRow style={styles.header}>
-              <CXText variant="h2" style={styles.flex}>Chats</CXText>
-              <CXIconButton icon="create-outline" label="New chat" onPress={() => navigation.navigate("NewChat")} />
-            </CXRow>
-            <CXSearchBar placeholder="Search chats and groups" value={search} onChangeText={setSearch} />
-            <CXRow style={styles.sectionHeading}><CXText variant="title">Groups</CXText></CXRow>
-            {groupCards.length ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupStrip}>
-                {groupCards.map((card) => (
-                  <Pressable key={`${card.kind}:${card.id}`} onPress={() => openGroup(card)} onLongPress={() => {
-                    if (card.kind !== 'chat') return;
-                    setActiveSheet({ id: card.id, name: card.name });
-                  }} style={styles.groupCard} accessibilityRole="button">
-                    {card.avatarUrl ? <CXAvatar name={card.name} source={card.avatarUrl} size={52} /> :
-                      <View style={styles.groupIcon}><Ionicons name="people" size={25} color={colors.primary} /></View>}
-                    <CXText variant="smallStrong" numberOfLines={1} style={styles.groupName}>{card.name}</CXText>
-                    <CXText variant="caption" color={colors.textMuted} numberOfLines={1} style={styles.groupName}>{card.detail}</CXText>
-                    {card.unread > 0 && <View style={styles.groupUnread}><CXText variant="caption" color={colors.white}>{card.unread}</CXText></View>}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : <CXText variant="small" color={colors.textMuted} style={styles.groupEmpty}>
-              {loading ? "Loading groups..." : query ? "No matching groups" : "Your group chats will appear here."}
-            </CXText>}
-            <CXRow style={styles.sectionHeading}><CXText variant="title">Messages</CXText></CXRow>
-            {error && <Pressable onPress={() => void fetchChats()} style={styles.error}>
-              <CXText variant="small" color={colors.danger}>{error} · Tap to retry</CXText>
-            </Pressable>}
-          </View>
-        }
-        ListEmptyComponent={loading ? <ActivityIndicator style={styles.loading} color={colors.primary} /> :
-          <View style={styles.empty}>
-            <Ionicons name="chatbubble-ellipses-outline" size={38} color={colors.primary} />
-            <CXText variant="bodyStrong">{query ? "No matching messages" : "No direct messages yet"}</CXText>
-            {!query && <CXText variant="small" color={colors.textMuted}>Start a conversation with a friend.</CXText>}
-          </View>}
-        renderItem={({ item: { conversation, other } }) => {
-          if (!other) return null;
-          const unread = userId ? unreadFor(conversation, userId) : 0;
-          const preview = conversation.lastMessage?.text ||
-            (conversation.lastMessage?.attachments?.length ? "Attachment" : "Start a conversation");
-          return <Pressable
-            onPress={() => navigation.navigate("Conversation", { conversationId: conversation._id, name: other.name })}
-            onLongPress={() => setActiveSheet({ id: conversation._id, name: other.name })}
-            style={({ pressed }) => [styles.chatRow, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <CXAvatar name={other.name} source={other.avatarUrl} size={52} />
-            <View style={styles.flex}>
-              <CXRow>
-                <CXText variant="bodyStrong" style={styles.flex} numberOfLines={1}>{other.name}</CXText>
-                <CXText variant="caption" color={colors.textMuted}>{chatTime(conversation.lastMessageAt)}</CXText>
-              </CXRow>
-              <CXRow>
-                <CXText variant="small" color={unread ? colors.ink : colors.textMuted} style={styles.flex} numberOfLines={1}>{preview}</CXText>
-                {unread > 0 && <View style={styles.unread}><CXText variant="caption" color={colors.white}>{unread > 99 ? "99+" : unread}</CXText></View>}
-              </CXRow>
-            </View>
-          </Pressable>;
-        }}
-      />
-      <CXActionSheet
-        visible={!!activeSheet}
-        onClose={() => setActiveSheet(null)}
-        actions={[
-          {
-            label: "Delete Chat",
-            icon: "trash-outline",
-            destructive: true,
-            confirmationTitle: "Delete Chat",
-            confirmationMessage: `Are you sure you want to delete your chat with ${activeSheet?.name}?`,
-            confirmationButtonText: "Delete",
-            onPress: () => {
-              if (activeSheet) {
-                api.delete(`/chats/${activeSheet.id}`)
-                  .then(() => void fetchChats())
-                  .catch((err) => console.log(getApiErrorMessage(err)));
-                setActiveSheet(null);
-              }
-            }
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} /> : renderEmpty}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+        renderItem={({ item }) => {
+          if (item.type === "group" || item.type === "community_group") {
+            return (
+              <Pressable
+                onLongPress={() => handleLongPress(item)}
+                onPress={() => {
+                  if (item.type === "community_group") {
+                    navigation.navigate("GroupConversation" as any, { groupId: item.id, name: item.name });
+                  } else {
+                    navigation.navigate("Conversation", { conversationId: item.id, name: item.name });
+                  }
+                }}
+                style={({ pressed }) => [styles.chat, pressed && styles.pressed]}
+              >
+                {item.avatarUrl ? (
+                  <CXAvatar source={item.avatarUrl} name={item.name} size={50} />
+                ) : (
+                  <View style={[styles.groupIcon, { backgroundColor: item.color || colors.primary }]}>
+                    <Ionicons name={(item.icon as any) || "people"} size={24} color={colors.white} />
+                  </View>
+                )}
+                <View style={styles.flex}>
+                  <CXRow>
+                    <CXText variant="bodyStrong" style={styles.flex}>{item.name || item.title}</CXText>
+                    <CXText variant="caption" color={colors.textMuted}>{item.updatedAt}</CXText>
+                  </CXRow>
+                  <CXRow>
+                    <CXText variant="small" color={colors.textMuted} numberOfLines={1} style={styles.flex}>
+                      {item.type === "community_group" ? (item.subtitle || "No description") : `You: ${item.subtitle || ""}`}
+                    </CXText>
+                  </CXRow>
+                </View>
+              </Pressable>
+            );
           }
-        ]}
+
+          return (
+            <Pressable
+              onLongPress={() => handleLongPress(item)}
+              onPress={() => navigation.navigate("Conversation", { conversationId: item.id, name: item.title })}
+              style={({ pressed }) => [styles.chat, pressed && styles.pressed]}
+            >
+              <CXAvatar name={item.title} source={item.avatarUrl} size={50} online={item.online} />
+              <View style={styles.flex}>
+                <CXRow>
+                  <CXText variant="bodyStrong" style={styles.flex}>{item.title}</CXText>
+                  <CXText variant="caption" color={colors.textMuted}>{item.updatedAt}</CXText>
+                </CXRow>
+                <CXRow>
+                  <CXText variant="small" color={item.unread ? colors.ink : colors.textMuted} numberOfLines={1} style={styles.flex}>
+                    {item.lastMessage}
+                  </CXText>
+                  {item.unread ? (
+                    <View style={styles.unread}>
+                      <CXText variant="caption" color={colors.white}>{item.unread}</CXText>
+                    </View>
+                  ) : (
+                    <Ionicons name="checkmark-done" size={16} color={colors.primary} />
+                  )}
+                </CXRow>
+              </View>
+            </Pressable>
+          );
+        }}
+        ListFooterComponent={
+          <Pressable onPress={() => navigation.navigate("AIChat" as any)} style={styles.aiRow}>
+            <View style={styles.aiIcon}>
+              <Ionicons name="sparkles" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.flex}>
+              <CXText variant="bodyStrong">CampusAI</CXText>
+              <CXText variant="caption" color={colors.textMuted}>Your personal campus and study assistant</CXText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
+          </Pressable>
+        }
       />
     </CXScreen>
   );
@@ -222,19 +366,97 @@ export function ChatsScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: spacing.screen, paddingBottom: spacing.xxxl },
-  header: { paddingTop: spacing.sm, paddingBottom: spacing.md },
-  sectionHeading: { marginTop: spacing.lg, marginBottom: spacing.sm },
-  groupStrip: { gap: spacing.sm, paddingBottom: spacing.xs },
-  groupCard: { width: 116, minHeight: 122, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", gap: 4 },
-  groupIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.backgroundLavender, alignItems: "center", justifyContent: "center" },
-  groupName: { width: "100%", textAlign: "center" },
-  groupUnread: { position: "absolute", right: 7, top: 7, minWidth: 18, height: 18, paddingHorizontal: 4, borderRadius: 9, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
-  groupEmpty: { paddingVertical: spacing.md },
-  chatRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  pressed: { opacity: 0.7 },
-  unread: { minWidth: 22, height: 22, paddingHorizontal: 5, borderRadius: 11, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginLeft: spacing.sm },
-  error: { paddingVertical: spacing.sm },
-  loading: { marginTop: spacing.xl },
-  empty: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.xl },
+  content: {
+    paddingHorizontal: spacing.screen,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.sm,
+  },
+  header: { minHeight: 58, gap: spacing.xs, paddingTop: spacing.md },
+  stories: { gap: spacing.sm, paddingVertical: spacing.xs },
+  story: { width: 60, alignItems: "center", gap: 4 },
+  storyRing: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  add: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filters: { gap: spacing.xs, paddingVertical: spacing.xs },
+  chat: {
+    minHeight: 74,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderSoft,
+  },
+  pressed: { opacity: 0.72 },
+  unread: {
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  aiRow: {
+    minHeight: 74,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceLavender,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginTop: spacing.xl,
+  },
+  aiIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  groupIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.surfaceLavender,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyButton: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  }
 });

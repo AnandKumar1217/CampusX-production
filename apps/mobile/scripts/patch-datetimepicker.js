@@ -1,3 +1,4 @@
+/* global __dirname */
 const fs = require('fs');
 const path = require('path');
 
@@ -16,7 +17,9 @@ if (!fs.existsSync(packagePath)) {
   process.exit(0);
 }
 
-// 1. Patch Java file to force legacy NativeModule
+// 1. Keep the native module metadata aligned with the active RN architecture.
+// Forcing these modules to legacy mode makes them unavailable under RN's New
+// Architecture, while BuildConfig preserves compatibility with both modes.
 const targetJavaFile = path.join(
   packagePath,
   'android',
@@ -31,15 +34,15 @@ const targetJavaFile = path.join(
 
 if (fs.existsSync(targetJavaFile)) {
   let content = fs.readFileSync(targetJavaFile, 'utf8');
-  if (content.includes('boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;')) {
+  if (content.includes('boolean isTurboModule = false; // Force fallback to legacy NativeModules to bypass Expo C++ autolinking bug')) {
     content = content.replace(
-      'boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;',
-      'boolean isTurboModule = false; // Force fallback to legacy NativeModules to bypass Expo C++ autolinking bug'
+      'boolean isTurboModule = false; // Force fallback to legacy NativeModules to bypass Expo C++ autolinking bug',
+      'boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;'
     );
     fs.writeFileSync(targetJavaFile, content, 'utf8');
-    console.log('Successfully patched RNDateTimePickerPackage.java for persistent fix.');
-  } else if (content.includes('boolean isTurboModule = false;')) {
-    console.log('Patch already applied to RNDateTimePickerPackage.java');
+    console.log('Restored architecture-aware RNDateTimePicker native module registration.');
+  } else if (content.includes('boolean isTurboModule = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;')) {
+    console.log('RNDateTimePicker native module registration is architecture-aware.');
   } else {
     throw new Error('Target string not found in RNDateTimePickerPackage.java! Layout or content has changed.');
   }

@@ -16,13 +16,15 @@ import {
   CreateChatGroupScreen,
   CreateChatGroupDetailsScreen,
 } from "@/screens/chat/ChatScreens";
+import { LocationSettingsScreen } from "@/screens/campus/CampusScreens";
 import {
+  CalendarScreen,
   EditClassScreen,
-  LocationSettingsScreen,
+  RescheduleClassScreen,
+  TimetableReviewScreen,
   TimetableScreen,
   TimetableSettingsScreen,
-  TimetableReviewScreen,
-} from "@/screens/campus/CampusScreens";
+} from "@/screens/campus/TimetableScreens";
 import {
   CreateListingScreen,
   EditEventScreen,
@@ -271,6 +273,8 @@ export function AppNavigator() {
         <Stack.Screen name="TimetableSettings" component={TimetableSettingsScreen} />
         <Stack.Screen name="TimetableReview" component={TimetableReviewScreen} />
         <Stack.Screen name="EditClass" component={EditClassScreen} />
+        <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
+        <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="StudyGroups" component={StudyGroupsScreen} />
         <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
         <Stack.Screen name="GroupMembers" component={GroupMembersScreen} />

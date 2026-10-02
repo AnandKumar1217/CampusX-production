@@ -1,12 +1,13 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View, Text, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Path, Line } from "react-native-svg";
 import { StatusBar } from "expo-status-bar";
 
-import { CXScreen } from "@/components/ui";
+import { CXScreen, CXButton } from "@/components/ui";
+import { wakeBackend } from "@/services/api";
 import { colors } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { useAppStore } from "@/store/appStore";
@@ -24,6 +25,10 @@ export function SplashScreen({ navigation }: Props) {
   const hydrate = useAppStore(state => state.hydrate);
   const fetchCurrentUser = useAppStore(state => state.fetchCurrentUser);
   const { width, height } = useWindowDimensions();
+  
+  const [retryState, setRetryState] = useState(false);
+  const [wakingSlow, setWakingSlow] = useState(false);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   // Animation values
   const bgOpacity = useRef(new Animated.Value(0)).current;
@@ -132,15 +137,37 @@ export function SplashScreen({ navigation }: Props) {
       }
     };
 
-    const timer = setTimeout(() => {
-      void initializeApp();
-    }, 2500); // Increased timeout to let animations play out
+    const controller = new AbortController();
+    
+    const boot = async () => {
+      setRetryState(false);
+      setWakingSlow(false);
+
+      const slowTimer = setTimeout(() => {
+        if (isMounted) setWakingSlow(true);
+      }, 5000);
+
+      const minSplashTime = new Promise(r => setTimeout(r, 2500));
+      const backendReady = await wakeBackend(controller.signal);
+
+      if (!isMounted) return;
+      clearTimeout(slowTimer);
+
+      if (backendReady) {
+        await minSplashTime;
+        if (isMounted) await initializeApp();
+      } else {
+        setRetryState(true);
+      }
+    };
+
+    void boot();
     
     return () => {
       isMounted = false;
-      clearTimeout(timer);
+      controller.abort();
     };
-  }, [accessToken, hydrated, navigation, onboardingComplete, fetchCurrentUser]);
+  }, [accessToken, hydrated, navigation, onboardingComplete, fetchCurrentUser, retryTrigger]);
 
   // Perspective floor calculations
   const centerX = width / 2;
@@ -253,6 +280,17 @@ export function SplashScreen({ navigation }: Props) {
         <Animated.View style={[styles.taglineWrap, { opacity: textOpacity }]}>
           <Text style={styles.tagline}>Campus, simply connected.</Text>
         </Animated.View>
+
+        {retryState ? (
+          <View style={styles.retryContainer}>
+            <Text style={styles.retryText}>CampusX is taking longer than expected to connect.</Text>
+            <CXButton label="Try Again" onPress={() => setRetryTrigger(prev => prev + 1)} variant="primary" style={styles.retryButton} />
+          </View>
+        ) : wakingSlow ? (
+          <View style={styles.wakingContainer}>
+            <Text style={styles.wakingText}>Getting CampusX ready…</Text>
+          </View>
+        ) : null}
       </View>
       
       <View accessibilityLabel="CampusX loading" />
@@ -338,5 +376,29 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     letterSpacing: 0.5,
     textAlign: "center",
+  },
+  retryContainer: {
+    marginTop: 40,
+    alignItems: "center",
+    paddingHorizontal: 32,
+  },
+  retryText: {
+    color: "#5B55A5",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    width: 200,
+  },
+  wakingContainer: {
+    marginTop: 40,
+    alignItems: "center",
+  },
+  wakingText: {
+    color: "#5B55A5",
+    fontSize: 14,
+    textAlign: "center",
+    opacity: 0.8,
   },
 });

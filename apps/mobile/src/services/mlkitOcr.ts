@@ -32,9 +32,16 @@ export async function processTimetableImageLocal(imageUri: string): Promise<{ wo
           const width = frame.width ?? 0;
           const height = frame.height ?? 0;
 
+          const rawConfidence = (part as any).confidence ?? (line as any).confidence ?? (block as any).confidence;
+          const normalizedConfidence = typeof rawConfidence === "number"
+            ? (rawConfidence <= 1 ? rawConfidence * 100 : rawConfidence)
+            : 80;
+
           words.push({
             text: part.text,
-            confidence: 100, // ML Kit doesn't easily expose word-level confidence in all wrappers, default to 100
+            // Some native ML Kit wrappers omit confidence. Treat omission as
+            // uncertain instead of manufacturing high confidence.
+            confidence: Math.max(0, Math.min(100, normalizedConfidence)),
             bbox: {
               x0: left,
               y0: top,

@@ -285,17 +285,20 @@ export function UserProfileScreen({
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [friendState, setFriendState] = useState<"none" | "pending" | "friends">("none");
+  const [stats, setStats] = useState({ eventsCount: 0, friendsCount: 0, groupsCount: 0 });
 
   const fetchProfileData = () => {
     Promise.all([
       api.get<{data: any}>(`/users/${route.params.userId}`),
-      api.get<{data: { received: any[], sent: any[]}}>("/friends/requests")
+      api.get<{data: { received: any[], sent: any[]}}>("/friends/requests"),
+      api.get<{data: any}>(`/users/${route.params.userId}/profile-summary`).catch(() => ({ data: { data: { eventsCount: 0, friendsCount: 0, groupsCount: 0 } } }))
     ])
-    .then(([userRes, reqRes]) => {
+    .then(([userRes, reqRes, statsRes]) => {
       const u = userRes.data.data;
       if (u.avatarUrl) u.avatar = u.avatarUrl;
       u.id = u._id || route.params.userId;
       setUser(u);
+      if (statsRes?.data?.data) setStats(statsRes.data.data);
 
       const isFriend = useAppStore.getState().friends.some(f => f.id === u.id);
       if (isFriend) {
@@ -355,9 +358,7 @@ export function UserProfileScreen({
     );
   }
 
-  const postsCount = events.filter(e => e?.organizer?.id === user?.id).length + listings.filter(l => l?.seller?.id === user?.id).length;
-  const connectionsCount = user.id === currentUser?.id ? friends.length : (user.id.length * 14 + 42);
-  const groupsCount = user.id === currentUser?.id ? studyGroups.filter(g => g.joined).length : (user.id.length * 3 + 2);
+  const { eventsCount, friendsCount: connectionsCount, groupsCount } = stats;
 
   const add = async () => {
     if (friendState === "friends") return; // already friends
@@ -459,7 +460,7 @@ export function UserProfileScreen({
       </CXRow>
       <CXCard style={[styles.profileStats, { flexDirection: "row", paddingVertical: spacing.md }]}>
         {[
-          [String(postsCount), "Posts"],
+          [String(eventsCount), "Events"],
           [String(connectionsCount), "Connections"],
           [String(groupsCount), "Groups"],
         ].map(([value, label], index) => (
@@ -573,11 +574,167 @@ function UsersDirectoryPage({
 }
 
 export function PeopleScreen({ navigation }: StackProps<"People">) {
+  const [activeTab, setActiveTab] = useState<"requests" | "suggestions">("requests");
+  const [requests, setRequests] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const addFriend = useAppStore(state => state.addFriend);
+  const currentUser = useAppStore(state => state.user);
+  
+  const fetchPeopleData = async () => {
+    try {
+      const [reqRes, sugRes] = await Promise.all([
+        api.get<any>("/friends/requests"),
+        api.get<any>("/users/search", { params: { limit: 25 } })
+      ]);
+      
+      const mappedReqs = reqRes.data.data.received.map((req: any) => ({
+        id: req.requester._id || req.requester.id,
+        name: req.requester.name,
+        username: req.requester.username,
+        avatar: req.requester.avatarUrl,
+        department: req.requester.department,
+        college: req.requester.college,
+      }));
+      setRequests(mappedReqs);
+
+      const friendsIds = useAppStore.getState().friends.map(f => f.id);
+      const reqIds = mappedReqs.map((r: any) => r.id);
+      const sentReqIds = reqRes.data.data.sent.map((req: any) => req.recipient?._id || req.recipient?.id);
+      
+      const mappedSugs = sugRes.data.data.items
+        .filter((u: any) => u.id !== currentUser?.id && !friendsIds.includes(u.id) && !reqIds.includes(u.id))
+        .map((user: any) => ({
+          ...user,
+          id: user.id ?? user._id,
+          avatar: user.avatarUrl ?? undefined,
+          requested: sentReqIds.includes(user.id ?? user._id)
+        })).slice(0, 10);
+      setSuggestions(mappedSugs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPeopleData();
+    const socket = require("@/services/socket").getSocket();
+    if (socket) {
+      socket.on("friend:request", fetchPeopleData);
+      socket.on("friend:accepted", fetchPeopleData);
+      socket.on("friend:removed", fetchPeopleData);
+      socket.on("friend:request_cancelled", fetchPeopleData);
+      socket.on("friend:request_rejected", fetchPeopleData);
+
+      return () => {
+        socket.off("friend:request", fetchPeopleData);
+        socket.off("friend:accepted", fetchPeopleData);
+        socket.off("friend:removed", fetchPeopleData);
+        socket.off("friend:request_cancelled", fetchPeopleData);
+        socket.off("friend:request_rejected", fetchPeopleData);
+      };
+    }
+  }, []);
+
+  const decide = (user: any, accept: boolean) => {
+    setRequests((items) => items.filter((item) => item.id !== user.id));
+    if (accept) {
+      addFriend({
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        avatarUrl: user.avatar,
+      } as any);
+    }
+    void api
+      .post(`/friends/requests/${user.id}/${accept ? "accept" : "reject"}`)
+      .catch(() => {
+        setRequests((items) => [user, ...items]);
+      });
+  };
+
+  const sendRequest = async (user: any) => {
+    setSuggestions(items => items.map(u => u.id === user.id ? { ...u, requested: true } : u));
+    api.post("/friends/requests", { targetUserId: user.id }).catch(() => {
+       setSuggestions(items => items.map(u => u.id === user.id ? { ...u, requested: false } : u));
+    });
+  };
+
   return (
-    <UsersDirectoryPage
-      navigation={navigation as StackProps<"Friends">["navigation"]}
-      title="People"
-    />
+    <CXScreen>
+      <CXHeader title="People" />
+      <View style={{ flexDirection: "row", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm }}>
+        <CXChip label="REQUESTS" active={activeTab === "requests"} onPress={() => setActiveTab("requests")} />
+        <CXChip label="SUGGESTED PEOPLE" active={activeTab === "suggestions"} onPress={() => setActiveTab("suggestions")} />
+      </View>
+      <ScrollView contentContainerStyle={styles.page}>
+        
+        {activeTab === "requests" ? (
+          <>
+            {requests.length === 0 && !loading && (
+              <CXText style={{ margin: spacing.md, textAlign: "center", color: colors.textMuted }}>No pending requests.</CXText>
+            )}
+            {requests.map((user) => (
+              <Pressable key={user.id} onPress={() => navigation.navigate("UserProfile", { userId: user.id })}>
+                <CXRow style={styles.request}>
+                  <CXAvatar source={user.avatar} name={user.name} />
+                  <View style={styles.flex}>
+                    <CXText variant="bodyStrong">{user.name}</CXText>
+                    <CXText variant="caption" color={colors.textMuted}>
+                      {user.department}
+                    </CXText>
+                  </View>
+                  <View style={styles.requestActions}>
+                    <CXButton label="Accept" size="sm" fullWidth={false} onPress={() => decide(user, true)} />
+                    <CXButton label="Decline" size="sm" variant="ghost" fullWidth={false} onPress={() => decide(user, false)} />
+                  </View>
+                </CXRow>
+              </Pressable>
+            ))}
+          </>
+        ) : (
+          <>
+            <CXRow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }}>
+              <CXButton 
+                label="Search all users" 
+                variant="secondary" 
+                iconLeft="search" 
+                onPress={() => navigation.navigate("GlobalUsers")} 
+                style={{ flex: 1 }}
+              />
+            </CXRow>
+            {suggestions.map((user) => (
+              <Pressable key={user.id} onPress={() => navigation.navigate("UserProfile", { userId: user.id })}>
+                <CXRow style={styles.request}>
+                  <CXAvatar source={user.avatar} name={user.name} />
+                  <View style={styles.flex}>
+                    <CXText variant="bodyStrong">{user.name}</CXText>
+                    <CXText variant="caption" color={colors.textMuted}>
+                      {user.department}
+                    </CXText>
+                  </View>
+                  <View style={styles.requestActions}>
+                     <CXButton 
+                        label={user.requested ? "Requested" : "Add Friend"} 
+                        size="sm" 
+                        variant={user.requested ? "outline" : "primary"}
+                        fullWidth={false} 
+                        disabled={user.requested}
+                        onPress={() => sendRequest(user)} 
+                     />
+                  </View>
+                </CXRow>
+              </Pressable>
+            ))}
+            <CXButton label="See All" variant="ghost" onPress={() => navigation.navigate("GlobalUsers")} style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} />
+          </>
+        )}
+
+        {loading && <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />}
+      </ScrollView>
+    </CXScreen>
   );
 }
 
@@ -926,23 +1083,6 @@ export function SavedScreen({ navigation }: StackProps<"Saved">) {
     <CXScreen>
       <CXHeader title="Saved" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.page}>
-        <CXSectionHeader title="Saved Posts" action={savedPosts.length > 0 ? "See all" : ""} />
-        {savedPosts.length === 0 ? (
-          <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved posts yet.</CXText>
-        ) : (
-          savedPosts.map((post) => (
-            <CXPostCard
-              key={post.id}
-              post={post}
-              onOpen={() => navigation.navigate("PostDetails", { postId: post.id })}
-              onSave={() => {
-                setSavedPosts(posts => posts.filter(p => p.id !== post.id));
-                api.post(`/posts/${post.id}/save`, { saved: false }).catch(console.log);
-              }}
-            />
-          ))
-        )}
-
         <CXSectionHeader title="Saved Events" action={savedEventsList.length > 0 ? "See all" : ""} />
         {savedEventsList.length === 0 ? (
           <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved events yet.</CXText>
@@ -1444,6 +1584,10 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
 });
+
+
+
+
 
 
 

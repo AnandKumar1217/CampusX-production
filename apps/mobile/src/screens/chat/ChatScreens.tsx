@@ -159,13 +159,19 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
       socket.on("connect", onReconnect);
 
       const onNewMessage = (msg: any) => {
-        const msgConvId = msg.conversation || msg.group;
+        const msgConvId = msg.conversation?._id || msg.conversation || msg.group?._id || msg.group;
         if (msgConvId?.toString() === conversationId.toString()) {
           setMessages(prev => {
             // Deduplicate by database _id or by nonce
-            if (prev.some(m => m._id === msg._id || (msg.nonce && m.nonce === msg.nonce))) {
-              // If we found it by nonce, we should replace the temp one with the real one
-              return prev.map(m => m.nonce === msg.nonce ? msg : m);
+            const exists = prev.some(m => 
+              (m._id && msg._id && m._id.toString() === msg._id.toString()) || 
+              (msg.nonce && m.nonce === msg.nonce)
+            );
+            if (exists) {
+              return prev.map(m => 
+                ((m._id && msg._id && m._id.toString() === msg._id.toString()) || 
+                 (msg.nonce && m.nonce === msg.nonce)) ? msg : m
+              );
             }
             return [msg, ...prev];
           });

@@ -5,6 +5,7 @@ export type TimeSlot = {
   id: string;
   label: string;
   start: string;
+  end?: string;
   break?: boolean;
 };
 
@@ -82,6 +83,7 @@ export type Message = {
 export type TimetableEntry = {
   id: Id;
   subject: string;
+  subjectCode?: string;
   room?: string;
   lecturer?: string;
   days: number[];
@@ -89,6 +91,42 @@ export type TimetableEntry = {
   endTime: string;
   color?: string;
   repeat?: string;
+};
+
+export type ScheduleClass = {
+  id: Id;
+  baseClassId?: Id;
+  source: "base" | "special";
+  date: string;
+  day: number;
+  subject: string;
+  subjectCode?: string;
+  room?: string;
+  lecturer?: string;
+  startTime: string;
+  endTime: string;
+  color?: string;
+  changed: boolean;
+  special?: boolean;
+  overrideId?: Id;
+  changedFrom?: string;
+  original?: { day: number; startTime: string; endTime: string };
+};
+
+export type AcademicHoliday = {
+  id: Id;
+  name: string;
+  date: string;
+  type: "national" | "festival" | "college" | "optional" | "custom" | "no_class";
+  description?: string;
+  custom: boolean;
+};
+
+export type ActualSchedule = {
+  date: string;
+  dayOfWeek: number;
+  holiday: AcademicHoliday | null;
+  classes: ScheduleClass[];
 };
 
 export type EventItem = {

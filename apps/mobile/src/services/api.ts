@@ -213,3 +213,42 @@ export function getApiErrorMessage(error: any) {
   }
   return "Something went wrong. Please try again.";
 }
+
+export async function wakeBackend(signal?: AbortSignal): Promise<boolean> {
+  const startTime = Date.now();
+  const maxWait = 75000; // 75 seconds
+
+  while (Date.now() - startTime < maxWait) {
+    if (signal?.aborted) return false;
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    const outerAbortListener = () => controller.abort();
+    if (signal) signal.addEventListener("abort", outerAbortListener);
+
+    try {
+      const res = await fetch(`${configuredApiUrl}/health`, {
+        method: "GET",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success === true && json.data?.status === "ok" && json.data?.database === "connected") {
+          return true;
+        }
+      }
+    } catch {
+      // Ignore fetch errors (timeout, network down, etc.)
+    } finally {
+      clearTimeout(timeoutId);
+      if (signal) signal.removeEventListener("abort", outerAbortListener);
+    }
+
+    if (signal?.aborted) return false;
+    await new Promise(r => setTimeout(r, 2500));
+  }
+  return false;
+}

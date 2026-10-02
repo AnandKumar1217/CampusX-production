@@ -1,0 +1,274 @@
+
+  logcat.txt:41:09-27 18:48:02.610 10199 25696 W AidlConversionCppNdk: aidl2legacy_AudioChannelLayout_audio_channel_mask_t: no legacy output audio_channel_mask_t found for AudioChannelLayout{layoutMask: 16}
+  logcat.txt:42:09-27 18:48:02.948 31052  7172 I AudioTrack: stop(calling package is:com.chess, portId:25869, sessionId:164929): prior state:STATE_ACTIVE
+> logcat.txt:43:09-27 18:48:05.005 18219 18219 I adbd    : adbd service requested 'shell,v2,raw:monkey -p com.campusx.mobile -c android.intent.category.LAUNCHER 1'
+  logcat.txt:44:09-27 18:48:05.039 31052  7172 I AudioTrack: set(): streamType -1, sampleRate 32000, format 0x1, channelMask 0x3, frameCount 0, flags #0, notificationFrames 0, sessionId 0, transferType 0, uid -1, pid -1
+  logcat.txt:45:09-27 18:48:05.040 31052  7172 W AudioSystem: setParameters: PlaybackCaptureProtectSupport=com.chess
+  logcat.txt:68:--------- beginning of system
+  logcat.txt:69:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: Failed to create UltraFrameworkComponentFactoryImpl
+> logcat.txt:70:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+  logcat.txt:71:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: 	at java.lang.Class.classForName(Native Method)
+  logcat.txt:72:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: 	at java.lang.Class.forName(Class.java:591)
+  logcat.txt:74:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: 	at android.os.ufw.UltraFrameworkComponentFactory.getInstance(UltraFrameworkComponentFactory.java:78)
+  logcat.txt:75:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: 	at android.view.SurfaceControl.<clinit>(SurfaceControl.java:614)
+> logcat.txt:76:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: Caused by: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+  logcat.txt:77:09-27 18:48:05.445  7199  7199 E UltraFrameworkComponentFactory: 	... 5 more
+  logcat.txt:78:09-27 18:48:05.465  7199  7199 E VivoConfigStore: it is Zygote,don't need init
+  logcat.txt:80:09-27 18:48:05.469  7199  7199 W libc    : Access denied finding property "ro.vendor.mtk.hbt_binfmt_misc_support"
+  logcat.txt:81:09-27 18:48:05.471 31052  7172 I AudioTrack: stop(calling package is:com.chess, portId:25870, sessionId:164937): prior state:STATE_ACTIVE
+> logcat.txt:82:09-27 18:48:05.498  7199  7199 W Monkey  : args: [-p, com.campusx.mobile, -c, android.intent.category.LAUNCHER, 1]
+  logcat.txt:83:09-27 18:48:05.499  7199  7199 W Monkey  :  arg: "-p"
+> logcat.txt:84:09-27 18:48:05.499  7199  7199 W Monkey  :  arg: "com.campusx.mobile"
+  logcat.txt:85:09-27 18:48:05.499  7199  7199 W Monkey  :  arg: "-c"
+  logcat.txt:86:09-27 18:48:05.499  7199  7199 W Monkey  :  arg: "android.intent.category.LAUNCHER"
+  logcat.txt:87:09-27 18:48:05.499  7199  7199 W Monkey  :  arg: "1"
+> logcat.txt:88:09-27 18:48:05.499  7199  7199 W Monkey  : data="com.campusx.mobile"
+  logcat.txt:89:09-27 18:48:05.500  7199  7199 W Monkey  : data="android.intent.category.LAUNCHER"
+  logcat.txt:90:09-27 18:48:05.558  7199  7199 E VivoConfigStore: it is Zygote,don't need init
+  logcat.txt:104:09-27 18:48:05.675  7199  7199 I AndroidRuntime: VM exiting with result code 0.
+  logcat.txt:105:09-27 18:48:05.702  4775  7224 I AdrenoGLES-0: PFP: 0x016ee201, ME: 0x00000000
+> logcat.txt:106:09-27 18:48:05.719  4775  6884 I .campusx.mobile: Background concurrent copying GC freed 6983KB AllocSpace bytes, 41(1712KB) LOS objects, 73% free, 2187KB/8331KB, paused 213us,34us total 106.694ms
+  logcat.txt:107:09-27 18:48:05.757  4121  4121 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@e8db2c1
+  logcat.txt:108:09-27 18:48:05.811  4121  4121 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@8d769b0
+  logcat.txt:287:09-27 18:48:06.423 16107 17180 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+  logcat.txt:288:09-27 18:48:06.542  4775  7254 E Expo    : Cannot initialize app loader. expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+> logcat.txt:289:09-27 18:48:06.542  4775  7254 W System.err: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+  logcat.txt:290:09-27 18:48:06.542  4775  7254 W System.err: 	at java.lang.Class.classForName(Native Method)
+  logcat.txt:291:09-27 18:48:06.542  4775  7254 W System.err: 	at java.lang.Class.forName(Class.java:591)
+  logcat.txt:310:09-27 18:48:06.542  4775  7254 W System.err: 	at com.facebook.react.bridge.queue.c.run(SourceFile:1)
+  logcat.txt:311:09-27 18:48:06.542  4775  7254 W System.err: 	at java.lang.Thread.run(Thread.java:1572)
+> logcat.txt:312:09-27 18:48:06.542  4775  7254 W System.err: Caused by: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+  logcat.txt:313:09-27 18:48:06.542  4775  7254 W System.err: 	... 22 more
+  logcat.txt:314:09-27 18:48:06.543  4775  7254 W b       : [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+  logcat.txt:315:09-27 18:48:06.547  4775  4775 E Expo    : Cannot initialize app loader. expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+> logcat.txt:316:09-27 18:48:06.548  4775  4775 W System.err: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+  logcat.txt:317:09-27 18:48:06.548  4775  4775 W System.err: 	at java.lang.Class.classForName(Native Method)
+  logcat.txt:318:09-27 18:48:06.548  4775  4775 W System.err: 	at java.lang.Class.forName(Class.java:591)
+  logcat.txt:335:09-27 18:48:06.548  4775  4775 W System.err: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+  logcat.txt:336:09-27 18:48:06.548  4775  4775 W System.err: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:957)
+> logcat.txt:337:09-27 18:48:06.548  4775  4775 W System.err: Caused by: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+  logcat.txt:338:09-27 18:48:06.548  4775  4775 W System.err: 	... 20 more
+  logcat.txt:339:09-27 18:48:06.548  4775  7254 I ExpoModulesCore: ✅ JSI interop was installed
+  logcat.txt:341:09-27 18:48:06.802  4775  7254 E unknown:TurboModuleManager: getOrCreateModule(): Unable to create module "RNCDatePicker" (legacy: true, turbo: false)
+  logcat.txt:342:09-27 18:48:06.804  4775  7254 E ReactNativeJS: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary.
+> logcat.txt:343:09-27 18:48:06.807  4775  7254 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "[runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+  logcat.txt:344:09-27 18:48:06.807  4775  7254 W unknown:BridgelessReact: invariant@1:139141
+  logcat.txt:345:09-27 18:48:06.807  4775  7254 W unknown:BridgelessReact: getEnforcing@1:148574
+  logcat.txt:390:09-27 18:48:06.807  4775  7254 W unknown:BridgelessReact: global@1:76433
+  logcat.txt:391:09-27 18:48:06.807  4775  7254 W unknown:BridgelessReact: ")
+> logcat.txt:392:09-27 18:48:06.814  4775  7254 E libc++abi: terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+  logcat.txt:393:09-27 18:48:06.814  4775  7254 E libc++abi: invariant@1:139141
+  logcat.txt:394:09-27 18:48:06.814  4775  7254 E libc++abi: getEnforcing@1:148574
+  logcat.txt:420:09-27 18:48:06.814  4775  7254 E libc++abi: loadModuleImplementation@1:77785
+  logcat.txt:421:09-27 18:48:06.814  4775  7254 E libc++abi: guardedLoadM
+> logcat.txt:422:09-27 18:48:06.814  4775  7254 I libc    : debuggerd signal invoked signal:6
+> logcat.txt:423:09-27 18:48:06.814  4775  7254 I libc    : debuggerd requestDump:0 NO_NEW_PRIVS:0
+  logcat.txt:424:--------- beginning of crash
+> logcat.txt:425:09-27 18:48:06.814  4775  7254 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 7254 (mqt_v_js), pid 4775 (.campusx.mobile)
+  logcat.txt:426:09-27 18:48:06.814  4775  7254 I libc    : clone child process pid:7294
+> logcat.txt:427:09-27 18:48:06.815  4775  7254 I libc    : debuggerd pseudothread crash_process: 7254
+  logcat.txt:428:09-27 18:48:06.850  7296  7296 I crash_dump64: crash_dump invoked target_process:4775 current_process:7296: Success
+  logcat.txt:429:09-27 18:48:06.851  7297  7297 I crash_dump64: enter crash_dump child process: Success
+  logcat.txt:478:09-27 18:48:06.872  7297  7297 E crash_dump64: failed to get the guest state header for thread 7293: Bad address
+  logcat.txt:479:09-27 18:48:06.905  7296  7296 I crash_dump64: crash_dump process receive exit: Success
+> logcat.txt:480:09-27 18:48:06.907  7297  7297 I crash_dump64: obtaining output fd from tombstoned, type: kDebuggerdTombstoneProto
+  logcat.txt:481:09-27 18:48:06.917  7297  7297 I crash_dump64: performing dump of process 4775 (target tid = 7254)
+> logcat.txt:482:09-27 18:48:07.371  7297  7297 F DEBUG   : Softversion: PD2251KF_EX_A_15.2.18.1.W30.V000L1
+> logcat.txt:483:09-27 18:48:07.371  7297  7297 F DEBUG   : Time: 2026-09-27 18:48:07
+> logcat.txt:484:09-27 18:48:07.371  7297  7297 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+> logcat.txt:485:09-27 18:48:07.371  7297  7297 F DEBUG   : Build fingerprint: 'iQOO/I2223i/I2223:15/AP3A.240905.015.A2/compiler260422111411:user/release-keys'
+> logcat.txt:486:09-27 18:48:07.371  7297  7297 F DEBUG   : Revision: '0'
+> logcat.txt:487:09-27 18:48:07.371  7297  7297 F DEBUG   : ABI: 'arm64'
+> logcat.txt:488:09-27 18:48:07.371  7297  7297 F DEBUG   : Timestamp: 2026-09-27 18:48:06.927338973+0530
+> logcat.txt:489:09-27 18:48:07.371  7297  7297 F DEBUG   : Process uptime: 456s
+> logcat.txt:490:09-27 18:48:07.371  7297  7297 F DEBUG   : Cmdline: com.campusx.mobile
+> logcat.txt:491:09-27 18:48:07.371  7297  7297 F DEBUG   : pid: 4775, tid: 7254, name: mqt_v_js  >>> com.campusx.mobile <<<
+> logcat.txt:492:09-27 18:48:07.371  7297  7297 F DEBUG   : uid: 10822
+> logcat.txt:493:09-27 18:48:07.371  7297  7297 F DEBUG   : signal 6 (SIGABRT), code -1 (SI_QUEUE), fault addr --------
+> logcat.txt:494:09-27 18:48:07.371  7297  7297 F DEBUG   : Abort message: 'terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+> logcat.txt:495:09-27 18:48:07.371  7297  7297 F DEBUG   : invariant@1:139141
+> logcat.txt:496:09-27 18:48:07.371  7297  7297 F DEBUG   : getEnforcing@1:148574
+> logcat.txt:497:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2245048
+> logcat.txt:498:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:499:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:500:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:501:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2243982
+> logcat.txt:502:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:503:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:504:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:505:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2243668
+> logcat.txt:506:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:507:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:508:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:509:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2242587
+> logcat.txt:510:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:511:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:512:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:513:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2240692
+> logcat.txt:514:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:515:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:516:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:517:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2240318
+> logcat.txt:518:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:519:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:520:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:521:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:2200219
+> logcat.txt:522:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:523:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:524:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:525:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:1477976
+> logcat.txt:526:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:527:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:528:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:529:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:1282001
+> logcat.txt:530:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:531:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:532:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:533:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:130350
+> logcat.txt:534:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:535:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77315
+> logcat.txt:536:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:537:09-27 18:48:07.371  7297  7297 F DEBUG   : anonymous@1:130305
+> logcat.txt:538:09-27 18:48:07.371  7297  7297 F DEBUG   : loadModuleImplementation@1:77785
+> logcat.txt:539:09-27 18:48:07.371  7297  7297 F DEBUG   : guardedLoadModule@1:77272
+> logcat.txt:540:09-27 18:48:07.371  7297  7297 F DEBUG   : metroRequire@1:76911
+> logcat.txt:541:09-27 18:48:07.371  7297  7297 F DEBUG   : global@1:76433
+> logcat.txt:542:09-27 18:48:07.371  7297  7297 F DEBUG   : 
+> logcat.txt:543:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(SourceFile:76)
+> logcat.txt:544:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.runtime.ReactInstance$d.reportJsException(SourceFile:22)
+> logcat.txt:545:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.jni.NativeRunnable.run(Native Method)
+> logcat.txt:546:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at android.os.Handler.handleCallback(Handler.java:1014)
+> logcat.txt:547:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+> logcat.txt:548:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(SourceFile:6)
+> logcat.txt:549:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at android.os.Looper.loopOnce(Looper.java:250)
+> logcat.txt:550:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at android.os.Looper.loop(Looper.java:340)
+> logcat.txt:551:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(SourceFile:38)
+> logcat.txt:552:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.a(SourceFile:1)
+> logcat.txt:553:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at com.facebook.react.bridge.queue.c.run(SourceFile:1)
+> logcat.txt:554:09-27 18:48:07.371  7297  7297 F DEBUG   : 	at java.lang.Thread.run(Thread.java:1572)'
+> logcat.txt:555:09-27 18:48:07.371  7297  7297 F DEBUG   :     x0  0000000000000000  x1  0000000000001c56  x2  0000000000000006  x3  000000796e17b870
+> logcat.txt:556:09-27 18:48:07.372  7297  7297 F DEBUG   :     x4  646277641f736766  x5  646277641f736766  x6  646277641f736766  x7  7f7f7f7f7f7f7f7f
+> logcat.txt:557:09-27 18:48:07.372  7297  7297 F DEBUG   :     x8  00000000000000f0  x9  0000007ee6e4e878  x10 ffffff80fffffbdf  x11 0000007eed0d5020
+> logcat.txt:558:09-27 18:48:07.372  7297  7297 F DEBUG   :     x12 000000001406207a  x13 00001537efaa8fc0  x14 00305eef63b66ed9  x15 0000000034155555
+> logcat.txt:559:09-27 18:48:07.372  7297  7297 F DEBUG   :     x16 0000007ee6f47d50  x17 0000007ee6f30140  x18 000000796d534000  x19 00000000000012a7
+> logcat.txt:560:09-27 18:48:07.372  7297  7297 F DEBUG   :     x20 0000000000001c56  x21 00000000ffffffff  x22 000000796e17b9a0  x23 000000796e17b9e0
+> logcat.txt:561:09-27 18:48:07.372  7297  7297 F DEBUG   :     x24 000000796e17ba90  x25 000000000000002f  x26 000000797559af0a  x27 0000007975597d65
+> logcat.txt:562:09-27 18:48:07.372  7297  7297 F DEBUG   :     x28 0000007975592461  x29 000000796e17b8f0
+> logcat.txt:563:09-27 18:48:07.372  7297  7297 F DEBUG   :     lr  0000007ee6ecb82c  sp  000000796e17b850  pc  0000007ee6ecb85c  pst 0000000000001000
+> logcat.txt:564:09-27 18:48:07.372  7297  7297 F DEBUG   : 46 total frames
+> logcat.txt:565:09-27 18:48:07.372  7297  7297 F DEBUG   : backtrace:
+> logcat.txt:566:09-27 18:48:07.372  7297  7297 F DEBUG   :       #00 pc 00000000000a785c  /apex/com.android.runtime/lib64/bionic/libc.so (abort+172) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+> logcat.txt:567:09-27 18:48:07.372  7297  7297 F DEBUG   :       #01 pc 00000000000a0210  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libc++_shared.so (offset 0xd48000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+> logcat.txt:568:09-27 18:48:07.372  7297  7297 F DEBUG   :       #02 pc 000000000009eeb0  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libc++_shared.so (offset 0xd48000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+> logcat.txt:569:09-27 18:48:07.372  7297  7297 F DEBUG   :       #03 pc 000000000009f374  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libc++_shared.so (offset 0xd48000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+> logcat.txt:570:09-27 18:48:07.372  7297  7297 F DEBUG   :       #04 pc 000000000009f314  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libc++_shared.so (offset 0xd48000) (std::terminate()+56) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+> logcat.txt:571:09-27 18:48:07.372  7297  7297 F DEBUG   :       #05 pc 000000000025d584  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:572:09-27 18:48:07.372  7297  7297 F DEBUG   :       #06 pc 0000000000489594  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:573:09-27 18:48:07.372  7297  7297 F DEBUG   :       #07 pc 00000000002b90c4  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::JsErrorHandler::handleErrorWithCppPipeline(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+7440) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:574:09-27 18:48:07.372  7297  7297 F DEBUG   :       #08 pc 00000000002b7068  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::JsErrorHandler::handleError(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+1680) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:575:09-27 18:48:07.372  7297  7297 F DEBUG   :       #09 pc 000000000026c630  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:576:09-27 18:48:07.372  7297  7297 F DEBUG   :       #10 pc 00000000000aaa24  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:577:09-27 18:48:07.372  7297  7297 F DEBUG   :       #11 pc 00000000000aa760  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:578:09-27 18:48:07.372  7297  7297 F DEBUG   :       #12 pc 00000000000b2cd8  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:579:09-27 18:48:07.372  7297  7297 F DEBUG   :       #13 pc 00000000000c50c8  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:580:09-27 18:48:07.372  7297  7297 F DEBUG   :       #14 pc 00000000000c4a28  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:581:09-27 18:48:07.372  7297  7297 F DEBUG   :       #15 pc 00000000000f4554  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:582:09-27 18:48:07.372  7297  7297 F DEBUG   :       #16 pc 00000000000a0260  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:583:09-27 18:48:07.372  7297  7297 F DEBUG   :       #17 pc 00000000000a5e40  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:584:09-27 18:48:07.372  7297  7297 F DEBUG   :       #18 pc 00000000000a0060  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libhermes.so (offset 0x1054000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+> logcat.txt:585:09-27 18:48:07.372  7297  7297 F DEBUG   :       #19 pc 0000000000268024  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:586:09-27 18:48:07.372  7297  7297 F DEBUG   :       #20 pc 000000000041d4c0  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::Task::execute(facebook::jsi::Runtime&, bool)+312) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:587:09-27 18:48:07.372  7297  7297 F DEBUG   :       #21 pc 000000000041b654  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const+60) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:588:09-27 18:48:07.372  7297  7297 F DEBUG   :       #22 pc 000000000041bf64  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)+124) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:589:09-27 18:48:07.372  7297  7297 F DEBUG   :       #23 pc 000000000041bc74  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)+88) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:590:09-27 18:48:07.372  7297  7297 F DEBUG   :       #24 pc 0000000000265d80  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:591:09-27 18:48:07.372  7297  7297 F DEBUG   :       #25 pc 000000000045e930  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libreactnative.so (offset 0x34b4000) (BuildId: daceecb3f8ffe4c2)
+> logcat.txt:592:09-27 18:48:07.372  7297  7297 F DEBUG   :       #26 pc 0000000000017dd0  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libfbjni.so (offset 0xfcc000) (facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)+72) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+> logcat.txt:593:09-27 18:48:07.372  7297  7297 F DEBUG   :       #27 pc 0000000000017d10  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk!libfbjni.so (offset 0xfcc000) (facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))+60) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+> logcat.txt:594:09-27 18:48:07.372  7297  7297 F DEBUG   :       #28 pc 00000000018b3ba0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (art_jni_trampoline+112)
+> logcat.txt:595:09-27 18:48:07.372  7297  7297 F DEBUG   :       #29 pc 0000000000dbed9c  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Handler.dispatchMessage+76)
+> logcat.txt:596:09-27 18:48:07.372  7297  7297 F DEBUG   :       #30 pc 000000000072c8dc  /apex/com.android.art/lib64/libart.so (nterp_helper+2124) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:597:09-27 18:48:07.372  7297  7297 F DEBUG   :       #31 pc 00000000003ab47c  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage+16)
+> logcat.txt:598:09-27 18:48:07.372  7297  7297 F DEBUG   :       #32 pc 0000000000dc36b0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loopOnce+1088)
+> logcat.txt:599:09-27 18:48:07.372  7297  7297 F DEBUG   :       #33 pc 0000000000dc31c8  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loop+712)
+> logcat.txt:600:09-27 18:48:07.372  7297  7297 F DEBUG   :       #34 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:601:09-27 18:48:07.372  7297  7297 F DEBUG   :       #35 pc 00000000003ab7f0  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1+80)
+> logcat.txt:602:09-27 18:48:07.372  7297  7297 F DEBUG   :       #36 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:603:09-27 18:48:07.372  7297  7297 F DEBUG   :       #37 pc 00000000003ab726  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.a+6)
+> logcat.txt:604:09-27 18:48:07.372  7297  7297 F DEBUG   :       #38 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:605:09-27 18:48:07.372  7297  7297 F DEBUG   :       #39 pc 00000000003ab54a  /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.c.run+10)
+> logcat.txt:606:09-27 18:48:07.372  7297  7297 F DEBUG   :       #40 pc 000000000051e788  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (java.lang.Thread.run+72)
+> logcat.txt:607:09-27 18:48:07.372  7297  7297 F DEBUG   :       #41 pc 0000000000298f94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:608:09-27 18:48:07.372  7297  7297 F DEBUG   :       #42 pc 000000000029738c  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+148) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:609:09-27 18:48:07.372  7297  7297 F DEBUG   :       #43 pc 00000000004d5fd0  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1384) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+> logcat.txt:610:09-27 18:48:07.372  7297  7297 F DEBUG   :       #44 pc 00000000000b8bc8  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+216) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+> logcat.txt:611:09-27 18:48:07.372  7297  7297 F DEBUG   :       #45 pc 00000000000aaf48  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+68) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+  logcat.txt:612:09-27 18:48:07.463 31052 31052 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+  logcat.txt:613:09-27 18:48:07.464 31052  4379 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+  logcat.txt:624:09-27 18:48:07.601 11355 11789 W AidlConversionCppNdk: aidl2legacy_AudioChannelLayout_audio_channel_mask_t: no legacy output audio_channel_mask_t found for AudioChannelLayout{layoutMask: 16}
+  logcat.txt:625:09-27 18:48:07.618 11355 11789 W AidlConversionCppNdk: aidl2legacy_AudioChannelLayout_audio_channel_mask_t: no legacy output audio_channel_mask_t found for AudioChannelLayout{layoutMask: 16}
+> logcat.txt:626:09-27 18:48:07.622 11355 11355 D ActivityThread: Package [com.campusx.mobile] reported as REPLACED, but missing application info. Assuming REMOVED.
+> logcat.txt:627:09-27 18:48:07.623 11355 11355 D ActivityThread: Package [com.campusx.mobile] reported as REPLACED, but missing application info. Assuming REMOVED.
+  logcat.txt:628:09-27 18:48:07.934  4121  4121 D EventBus: No subscribers registered for event class b4.d
+  logcat.txt:629:09-27 18:48:07.934  4121  4121 D EventBus: No subscribers registered for event class k7.f
+  logcat.txt:647:09-27 18:48:08.737 16107  7357 I PlatformStatsUtil: (REDACTED) Uploading %d dropbox entries to Clearcut
+  logcat.txt:648:09-27 18:48:08.767 16107  7357 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+> logcat.txt:649:09-27 18:48:09.543 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.mainline.primary.libs' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:650:09-27 18:48:09.617 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.wifi' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:651:09-27 18:48:10.093 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.devicelock' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:652:09-27 18:48:10.257 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.apex.cts.shim' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:653:09-27 18:48:10.433 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.appsearch' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:654:09-27 18:48:10.435 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.art' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:655:09-27 18:48:10.773 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.mediaprovider' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:656:09-27 18:48:10.952 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.virt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:657:09-27 18:48:11.104 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.btservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:658:09-27 18:48:11.188 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.resolv' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:659:09-27 18:48:11.330 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.configinfrastructure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:660:09-27 18:48:11.330 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:661:09-27 18:48:11.555 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v31' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+  logcat.txt:662:09-27 18:48:11.555  1520  3633 W BatteryStatsService: Unknown sensor handle 0 received in noteWakeupSensorEvent
+> logcat.txt:663:09-27 18:48:11.558 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v30' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:664:09-27 18:48:11.559 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v33' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:665:09-27 18:48:11.576 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v32' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:666:09-27 18:48:11.576 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v34' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:667:09-27 18:48:11.855 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:668:09-27 18:48:11.975 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:669:09-27 18:48:11.976 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:670:09-27 18:48:12.172 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.runtime' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:671:09-27 18:48:12.353 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+  logcat.txt:672:09-27 18:48:12.564 15850  1702 I gle.android.gms: Explicit concurrent copying GC freed 158KB AllocSpace bytes, 0(0B) LOS objects, 24% free, 7513KB/10017KB, paused 212us,73us total 271.360ms
+> logcat.txt:673:09-27 18:48:13.021 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tzdata6' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:674:09-27 18:48:13.129 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.permission' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+  logcat.txt:675:09-27 18:48:15.163 28779  7382 I System.out: GlobalSearch: firstInt:  -2
+  logcat.txt:676:09-27 18:48:15.163 28779  7382 I System.out: GlobalSearch: name:  _3_1.del ; size = 3
+  logcat.txt:679:09-27 18:48:15.166 28779  7382 I System.out: GlobalSearch: name:  _0_1.del ; size = 124
+  logcat.txt:680:09-27 18:48:15.166 28779  7382 I System.out: GlobalSearch: memsize = 16
+> logcat.txt:681:09-27 18:48:15.379 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media.swcodec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:682:09-27 18:48:15.451 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.profiling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:683:09-27 18:48:16.183 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adbd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:684:09-27 18:48:16.234 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.i18n' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:685:09-27 18:48:16.266 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.conscrypt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:686:09-27 18:48:16.378 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.neuralnetworks' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:687:09-27 18:48:16.493 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ipsec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:688:09-27 18:48:16.656 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ondevicepersonalization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:689:09-27 18:48:16.663 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.healthfitness' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:690:09-27 18:48:16.766 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.uwb' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:691:09-27 18:48:16.767 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.extservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:692:09-27 18:48:17.114 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.os.statsd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:693:09-27 18:48:17.126 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+> logcat.txt:694:09-27 18:48:17.160 14276 14276 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.scheduling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+  logcat.txt:695:09-27 18:48:17.321 14276 14276 I Finsky  : [2] App states replicator found 43 unowned apps
+  logcat.txt:696:09-27 18:48:17.343 14276 14310 I Finsky  : [75093] Completed 0 account content syncs with 0 successful.
+  logcat.txt:708:09-27 18:48:18.489 23543 23557 W m.vivo.appstore: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~U4uhLwmM0GFAFs12AbAJNw==/org.telegram.messenger.web-8oDN7xdsyODPLYbGzwskDQ==/base.apk' with 1 weak references
+  logcat.txt:709:09-27 18:48:18.490 23543 23557 W m.vivo.appstore: ApkAssets: Deleting an ApkAssets object '<empty> and /storage/emulated/0/Download/Telegram (1).apk' with 1 weak references
+> logcat.txt:710:09-27 18:48:18.494 23543 23557 W m.vivo.appstore: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~wg2rAMadeDxPb8PQp5onZQ==/com.campusx.mobile-RBOC-lpv4P9CQKTJD8BDOg==/base.apk' with 1 weak references
+  logcat.txt:711:09-27 18:48:18.494 23543 23557 W m.vivo.appstore: ApkAssets: Deleting an ApkAssets object '<empty> and /storage/emulated/0/Download/application-92a039b5-6279-4305-bdca-b5694e63059e.apk' with 1 weak references
+> logcat.txt:712:09-27 18:48:18.496 23543 23557 W m.vivo.appstore: ApkAssets: Deleting an ApkAssets object '<empty> and /storage/emulated/0/CampusX/CampusX-v1.0.0-RC1.apk' with 1 weak references
+  logcat.txt:713:09-27 18:48:21.323 31052  7393 I AudioTrack: set(): streamType -1, sampleRate 32000, format 0x1, channelMask 0x3, frameCount 0, flags #0, notificationFrames 0, sessionId 0, transferType 0, uid -1, pid -1
+  logcat.txt:714:09-27 18:48:21.326 31052  7393 W AudioSystem: setParameters: PlaybackCaptureProtectSupport=com.chess
+  logcat.txt:803:09-27 18:48:46.029 31052  7393 I AudioTrack: stop(calling package is:com.chess, portId:25877, sessionId:164993): prior state:STATE_ACTIVE
+  logcat.txt:804:09-27 18:48:46.521  7008  7089 I Process : Sending signal. PID: 7008 SIG: 9
+> logcat.txt:805:09-27 18:48:49.157 18219 18219 I adbd    : adbd service requested 'shell,v2,raw:pidof com.campusx.mobile'
+  logcat.txt:806:09-27 18:48:51.840 31052  7393 I AudioTrack: set(): streamType -1, sampleRate 32000, format 0x1, channelMask 0x3, frameCount 0, flags #0, notificationFrames 0, sessionId 0, transferType 0, uid -1, pid -1
+  logcat.txt:807:09-27 18:48:51.842 31052  7393 W AudioSystem: setParameters: PlaybackCaptureProtectSupport=com.chess
+

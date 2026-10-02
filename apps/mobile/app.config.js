@@ -1,4 +1,5 @@
 const RELEASE_PROFILES = new Set(["production", "production-apk", "release-apk"]);
+const DEVELOPMENT_VARIANT = "development";
 
 const isPrivateHost = (hostname) => {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
@@ -42,8 +43,22 @@ const isPublicHttpsUrl = (value) => {
 export default ({ config }) => {
   const profile = process.env.EAS_BUILD_PROFILE || "";
   const isRelease = RELEASE_PROFILES.has(profile);
+  const isDevelopmentVariant =
+    process.env.APP_VARIANT?.trim().toLowerCase() === DEVELOPMENT_VARIANT;
   const apiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
   const socketUrl = process.env.EXPO_PUBLIC_SOCKET_URL?.trim();
+
+  if (isDevelopmentVariant) {
+    config.name = "CampusX Dev";
+    config.scheme = "campusx-dev";
+    config.android = config.android || {};
+    config.android.package = "com.campusx.mobile.dev";
+
+    // The production Firebase client is registered only for com.campusx.mobile.
+    // Timetable development does not require remote push registration, so never
+    // copy that incompatible client into the side-by-side development app.
+    delete config.android.googleServicesFile;
+  }
 
   if (isRelease && !isPublicHttpsUrl(apiUrl)) {
     throw new Error(
@@ -58,8 +73,9 @@ export default ({ config }) => {
   }
 
   const allowDevelopmentCleartext =
-    !isRelease &&
-    [apiUrl, socketUrl].some((value) => value?.startsWith("http://"));
+    isDevelopmentVariant ||
+    (!isRelease &&
+      [apiUrl, socketUrl].some((value) => value?.startsWith("http://")));
 
   config.plugins = config.plugins || [];
   let buildProperties = config.plugins.find(
@@ -80,6 +96,23 @@ export default ({ config }) => {
   config.android = config.android || {};
   if (config.android.usesCleartextTraffic !== undefined) {
     delete config.android.usesCleartextTraffic;
+  }
+
+  // Sync native applicationId to match variant for Expo CLI resolution
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const buildGradlePath = path.join(__dirname, "android", "app", "build.gradle");
+    if (fs.existsSync(buildGradlePath)) {
+      let buildGradle = fs.readFileSync(buildGradlePath, "utf8");
+      const targetPackage = isDevelopmentVariant ? "com.campusx.mobile.dev" : "com.campusx.mobile";
+      const newBuildGradle = buildGradle.replace(/applicationId ['"].*['"]/, `applicationId '${targetPackage}'`);
+      if (newBuildGradle !== buildGradle) {
+        fs.writeFileSync(buildGradlePath, newBuildGradle, "utf8");
+      }
+    }
+  } catch (e) {
+    // ignore
   }
 
   return config;
