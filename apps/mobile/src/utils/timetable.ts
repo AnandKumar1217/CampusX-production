@@ -78,3 +78,36 @@ export function getUpcomingClass(timetable: TimetableEntry[]) {
 
   return null;
 }
+
+export function normalizeTimetableEntries(entries: any[], slots: { start: string; end?: string }[]): any[] {
+  return entries.map(cls => {
+    const startMins = parseTimeToMins(cls.startTime);
+    const endMins = parseTimeToMins(cls.endTime);
+    
+    let sIdx = slots.findIndex((s) => parseTimeToMins(s.start) <= startMins && parseTimeToMins(s.end ?? "") > startMins);
+    let eIdx = slots.findIndex((s) => parseTimeToMins(s.start) < endMins && parseTimeToMins(s.end ?? "") >= endMins);
+
+    if (sIdx === -1) {
+      sIdx = slots.findIndex((s) => s.start === cls.startTime);
+    }
+    if (eIdx === -1) {
+      eIdx = slots.findIndex((s) => s.end === cls.endTime);
+    }
+    if (eIdx === -1) {
+      const nextIdx = slots.findIndex((s) => s.start === cls.endTime);
+      if (nextIdx > 0) eIdx = nextIdx - 1;
+    }
+
+    return {
+      ...cls,
+      id: cls.id,
+      day: cls.days ? cls.days[0] ?? 1 : cls.day ?? 1,
+      subject: cls.subject,
+      startTime: cls.startTime,
+      endTime: cls.endTime,
+      room: cls.room,
+      columnStartIndex: sIdx !== -1 ? sIdx : (cls.columnStartIndex ?? 0),
+      columnEndIndex: eIdx !== -1 ? Math.max(sIdx, eIdx) : (sIdx !== -1 ? sIdx : (cls.columnEndIndex ?? 0)),
+    };
+  });
+}

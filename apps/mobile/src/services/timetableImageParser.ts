@@ -164,7 +164,16 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
     const match = headerCandidates.find(c => {
        const overlap = getIntersectionWidth({ left: c.left, right: c.right, top: c.top, bottom: c.bottom }, { left: hw.bbox.x0, right: hw.bbox.x1, top: hw.bbox.y0, bottom: hw.bbox.y1 });
        const gap = Math.max(0, Math.max(c.left, hw.bbox.x0) - Math.min(c.right, hw.bbox.x1));
-       return overlap > 0 || gap < 15;
+       const verticalCenter1 = (c.top + c.bottom) / 2;
+       const verticalCenter2 = (hw.bbox.y0 + hw.bbox.y1) / 2;
+       
+       if (overlap > 0) return true;
+       // Only merge by gap if they are on the same line and don't already have conflicting full times
+       if (gap < 15 && Math.abs(verticalCenter1 - verticalCenter2) < 15) {
+         if (c.times.length >= 2 && hwTimes.length >= 2) return false;
+         return true;
+       }
+       return false;
     });
 
     if (match) {
@@ -224,9 +233,32 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
   for (let i = 0; i < columns.length; i++) {
     const col = columns[i]!;
     const prevCol = columns[i - 1];
-    const nextCol = columns[i + 1];
 
-    let xStart = prevCol ? (col.left + prevCol.right) / 2 : col.left - 100;
+    if (prevCol) {
+      const pMins = Number(prevCol.endTime.split(":")[0]) * 60 + Number(prevCol.endTime.split(":")[1]);
+      const cMins = Number(col.startTime.split(":")[0]) * 60 + Number(col.startTime.split(":")[1]);
+      if (cMins > pMins) {
+        // Gap exists. Synthesize a break column.
+        const gapStart = (prevCol.right + prevCol.centerX) / 2;
+        const gapEnd = (col.left + col.centerX) / 2;
+        
+        // Adjust the prev column's end
+        if (columnRegions.length > 0) {
+           columnRegions[columnRegions.length - 1]!.xEnd = gapStart;
+        }
+        
+        columnRegions.push({
+          startTime: prevCol.endTime,
+          endTime: col.startTime,
+          xStart: gapStart,
+          xEnd: gapEnd,
+          break: true
+        });
+      }
+    }
+
+    let xStart = columnRegions.length > 0 ? columnRegions[columnRegions.length - 1]!.xEnd : col.left - 100;
+    const nextCol = columns[i + 1];
     let xEnd = nextCol ? (col.right + nextCol.left) / 2 : col.right + 100;
 
     columnRegions.push({
@@ -236,7 +268,6 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
       xEnd,
       break: false
     });
-    console.log(`[timetable-parser] header: ${col.startTime}-${col.endTime} x=[${xStart}, ${xEnd}]`);
   }
 
   if (columnRegions.length === 0) {
@@ -275,14 +306,19 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
   const nonHeaderWords = tableWords.filter(w => !headerWords.includes(w) && !dayWords.includes(w) && (w.bbox.y0 + w.bbox.y1) / 2 > headerBottomY);
 
   const breakWords = nonHeaderWords.filter(w => NON_CLASS_KEYWORDS.some(k => w.text.toLowerCase().includes(k)));
-  for (const bw of breakWords) {
-      for (let i = 0; i < columnRegions.length; i++) {
-         const cr = columnRegions[i]!;
-         const overlap = getIntersectionWidth({ left: bw.bbox.x0, right: bw.bbox.x1, top: bw.bbox.y0, bottom: bw.bbox.y1 }, { left: cr.xStart, right: cr.xEnd, top: 0, bottom: Number.MAX_SAFE_INTEGER });
-         const ratio = overlap / (bw.bbox.x1 - bw.bbox.x0);
-         if (ratio > 0.4) {
-            cr.break = true;
-         }
+  for (const cr of columnRegions) {
+      if (cr.break) continue; // Already synthesized as a break
+
+      // Find break words that are primarily located within this column's X bounds
+      const breaksInCol = breakWords.filter(bw => {
+         const overlap = getIntersectionWidth({ left: bw.bbox.x0, right: bw.bbox.x1, top: 0, bottom: 0 }, { left: cr.xStart, right: cr.xEnd, top: 0, bottom: 0 });
+         const wordWidth = bw.bbox.x1 - bw.bbox.x0;
+         return wordWidth > 0 ? (overlap / wordWidth) > 0.6 : false;
+      });
+
+      // If a column explicitly contains break/lunch words mostly inside its bounds, mark the entire column as a break.
+      if (breaksInCol.length > 0) {
+          cr.break = true;
       }
   }
 
@@ -337,13 +373,18 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
         }).filter(x => x.overlap > 0);
 
         if (intersects.length === 0) continue;
-        const mainColIndex = intersects.sort((a, b) => b.overlap - a.overlap)[0]!.index;
+        const sortedIntersects = [...intersects].sort((a, b) => b.overlap - a.overlap);
+        const mainColIndex = sortedIntersects[0]!.index;
+        
+        const significantIntersects = intersects.filter(x => x.overlap > 20);
+        const wordStartCol = significantIntersects.length > 0 ? Math.min(...significantIntersects.map(x => x.index)) : mainColIndex;
+        const wordEndCol = significantIntersects.length > 0 ? Math.max(...significantIntersects.map(x => x.index)) : mainColIndex;
 
         // Find existing cluster spanning this column, or adjacent
         let added = false;
         for (const cluster of clusters) {
-            // Is it in the same column, or very close horizontally?
-            const colOverlap = (mainColIndex >= cluster.startColIndex && mainColIndex <= cluster.endColIndex);
+            // Is it in the same column span, or very close horizontally?
+            const colOverlap = (wordStartCol <= cluster.endColIndex && wordEndCol >= cluster.startColIndex);
 
             // Or horizontally very close (e.g. part of merged lab spanning columns)
             const distance = Math.max(0, Math.max(cluster.left, rw.bbox.x0) - Math.min(cluster.right, rw.bbox.x1));
@@ -355,8 +396,8 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
                 cluster.right = Math.max(cluster.right, rw.bbox.x1);
                 cluster.top = Math.min(cluster.top, rw.bbox.y0);
                 cluster.bottom = Math.max(cluster.bottom, rw.bbox.y1);
-                cluster.startColIndex = Math.min(cluster.startColIndex, mainColIndex);
-                cluster.endColIndex = Math.max(cluster.endColIndex, mainColIndex);
+                cluster.startColIndex = Math.min(cluster.startColIndex, wordStartCol);
+                cluster.endColIndex = Math.max(cluster.endColIndex, wordEndCol);
                 added = true;
                 break;
             }
@@ -366,7 +407,7 @@ export function parseTimetableImage(rawWords: OCRWord[]): TimetableParseResult {
             clusters.push({
                 words: [rw],
                 left: rw.bbox.x0, right: rw.bbox.x1, top: rw.bbox.y0, bottom: rw.bbox.y1,
-                startColIndex: mainColIndex, endColIndex: mainColIndex
+                startColIndex: wordStartCol, endColIndex: wordEndCol
             });
         }
     }

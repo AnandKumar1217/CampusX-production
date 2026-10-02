@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import mongoose from "mongoose";
 
 import {
   ScheduleOverride,
@@ -378,9 +379,9 @@ timetableScheduleRouter.post(
   "/import",
   asyncHandler(async (request, response) => {
     const input = z.object({
-      mode: z.enum(["merge", "replace"]).default("merge"),
+      mode: z.enum(["merge", "replace"]).default("replace").optional(),
       gridTimeSlots: z.array(z.object({
-        id: z.string(), label: z.string(), start: timeValue, break: z.boolean().optional().default(false),
+        id: z.string(), label: z.string(), start: timeValue, end: timeValue.optional(), break: z.boolean().optional().default(false),
       })).default([]),
       entries: z.array(importEntrySchema).min(1),
     }).parse(request.body);
@@ -389,14 +390,14 @@ timetableScheduleRouter.post(
     const seen = new Set<string>();
     let duplicateInputCount = 0;
     const unique = normalized.filter((entry) => {
+      const lowerSubject = entry.subject.trim().toLowerCase();
+      if (["break", "short break", "lunch", "interval"].includes(lowerSubject)) return false;
       const key = `${entry.subject.toLocaleLowerCase().replace(/[^a-z0-9]/g, "")}|${entry.day}|${entry.startTime}|${entry.endTime}`;
       if (seen.has(key)) { duplicateInputCount += 1; return false; }
       seen.add(key);
       return true;
     });
 
-    const existing = input.mode === "merge" ? await getActiveTimetableEntries(request.user!._id) : [];
-    const duplicates: any[] = [];
     const conflicts: any[] = [];
     for (let index = 0; index < unique.length; index += 1) {
       for (let otherIndex = index + 1; otherIndex < unique.length; otherIndex += 1) {
@@ -407,58 +408,55 @@ timetableScheduleRouter.post(
         }
       }
     }
-    const additions = unique.filter((candidate) => {
-      const duplicate = existing.find((item: any) =>
-        item.days.includes(candidate.day)
-        && item.startTime === candidate.startTime
-        && item.endTime === candidate.endTime
-        && item.subject.toLocaleLowerCase().replace(/[^a-z0-9]/g, "") === candidate.subject.toLocaleLowerCase().replace(/[^a-z0-9]/g, ""));
-      if (duplicate) { duplicates.push(candidate); return false; }
-      const conflict = existing.find((item: any) =>
-        item.days.includes(candidate.day)
-        && timesOverlap(candidate.startTime, candidate.endTime, item.startTime, item.endTime));
-      if (conflict) conflicts.push({ candidate, existing: { id: conflict._id, subject: conflict.subject, startTime: conflict.startTime, endTime: conflict.endTime } });
-      return true;
-    });
+    
     if (conflicts.length) {
-      throw new AppError(409, `${conflicts.length} imported classes conflict with the current timetable`, "IMPORT_CONFLICTS", { conflicts, duplicates });
+      throw new AppError(409, `${conflicts.length} imported classes conflict with each other`, "IMPORT_CONFLICTS", { conflicts, duplicates: [] });
     }
 
-    const settings = await TimetableSettings.findOne({ user: request.user!._id });
-    const importBatchId = input.mode === "replace"
-      ? `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-      : settings?.activeImportBatchId;
-    const documents = additions.map((entry) => ({
-      user: request.user!._id,
-      subject: entry.subject,
-      subjectCode: entry.subjectCode,
-      room: entry.room,
-      lecturer: entry.lecturer,
-      days: [entry.day],
-      startTime: entry.startTime,
-      endTime: entry.endTime,
-      color: entry.color,
-      repeat: "weekly",
-      ...(importBatchId ? { importBatchId } : {}),
-    }));
-    if (documents.length) await TimetableEntry.insertMany(documents);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    let addedCount = 0;
+    try {
+      await TimetableEntry.deleteMany({ user: request.user!._id }, { session });
+      await ScheduleOverride.deleteMany({ user: request.user!._id }, { session });
+      await SpecialClass.deleteMany({ user: request.user!._id }, { session });
 
-    if (input.mode === "replace") {
+      const importBatchId = `import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      
       await TimetableSettings.findOneAndUpdate(
         { user: request.user!._id },
         { $set: { activeImportBatchId: importBatchId, gridTimeSlots: input.gridTimeSlots }, $inc: { timetableRevision: 1 } },
-        { upsert: true, new: true },
+        { upsert: true, new: true, session },
       );
-      await TimetableEntry.deleteMany({ user: request.user!._id, importBatchId: { $ne: importBatchId } });
-      await ScheduleOverride.deleteMany({ user: request.user!._id });
-    } else if (input.gridTimeSlots.length) {
-      await TimetableSettings.findOneAndUpdate(
-        { user: request.user!._id },
-        { $set: { gridTimeSlots: input.gridTimeSlots } },
-        { upsert: true, new: true },
-      );
+
+      const documents = unique.map((entry) => ({
+        user: request.user!._id,
+        subject: entry.subject,
+        subjectCode: entry.subjectCode,
+        room: entry.room,
+        lecturer: entry.lecturer,
+        days: [entry.day],
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        color: entry.color,
+        repeat: "weekly",
+        importBatchId,
+      }));
+
+      if (documents.length) {
+        await TimetableEntry.insertMany(documents, { session });
+        addedCount = documents.length;
+      }
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
     }
+
     emitScheduleUpdated(request, "timetable_imported");
-    return sendSuccess(response, { added: documents.length, skippedDuplicates: duplicates.length + duplicateInputCount, mode: input.mode }, "Timetable imported", 201);
+    return sendSuccess(response, { added: addedCount, skippedDuplicates: duplicateInputCount, mode: "replace" }, "Timetable imported", 201);
   }),
 );

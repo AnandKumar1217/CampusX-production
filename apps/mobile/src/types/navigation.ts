@@ -52,6 +52,7 @@ export type RootStackParamList = {
     imageUri: string;
     missingCells?: any[];
     warnings?: string[];
+    hasExistingTimetable?: boolean;
   };
   EditClass: {
     entryId?: string;

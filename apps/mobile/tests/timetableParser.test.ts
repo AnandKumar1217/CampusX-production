@@ -34,6 +34,7 @@ describe("Timetable Image Parser (Cell-First OCR Deterministic)", () => {
     const result = parseTimetableImage(words);
     expect(result.gridTimeSlots.map((slot) => [slot.start, slot.end])).toEqual([
       ["09:00", "10:00"],
+      ["10:00", "13:00"],
       ["13:00", "14:00"],
     ]);
   });

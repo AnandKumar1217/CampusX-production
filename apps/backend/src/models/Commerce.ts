@@ -85,6 +85,7 @@ const timetableSettingsSchema = new Schema(
         id: { type: String, required: true },
         label: { type: String, required: true },
         start: { type: String, required: true },
+        end: { type: String },
         break: { type: Boolean, default: false }
       }
     ]

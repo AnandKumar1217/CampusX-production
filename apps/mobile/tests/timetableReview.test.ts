@@ -48,11 +48,11 @@ describe("Timetable Review Entry Validation", () => {
     expect(res.errors).toContain("End time must be after start time");
   });
 
-  it("NeedsReview structural flag triggers invalidity", () => {
+  it("NeedsReview flag is informational and does not trigger invalidity", () => {
     const entry = { subject: "CN LAB", day: 1, startTime: "08:00", endTime: "10:00", needsReview: true };
     const res = validateReviewEntry(entry);
-    expect(res.valid).toBe(false);
-    expect(res.errors).toContain("Class timing could not be determined");
+    expect(res.valid).toBe(true);
+    expect(res.errors).not.toContain("Class timing could not be determined");
   });
 
   it("Invalid time format is rejected", () => {

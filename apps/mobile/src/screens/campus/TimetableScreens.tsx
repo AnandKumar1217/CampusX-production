@@ -47,6 +47,7 @@ import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
 import type { ScheduleClass, TimeSlot } from "@/types/domain";
 import type { RootStackParamList } from "@/types/navigation";
+import { normalizeTimetableEntries } from "@/utils/timetable";
 import { validateReviewEntry } from "@/utils/timetableValidation";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, Name>;
@@ -210,18 +211,20 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
     slots = deriveTimeSlots(baseQuery.data as any);
   }
 
-  const entries: TimetableGridEntry[] = (baseQuery.data ?? []).map(cls => {
-    const sIdx = slots.findIndex((s) => timeToMinutes(s.start) <= timeToMinutes(cls.startTime) && timeToMinutes(s.end ?? "") > timeToMinutes(cls.startTime));
-    const eIdx = slots.findIndex((s) => timeToMinutes(s.start) < timeToMinutes(cls.endTime) && timeToMinutes(s.end ?? "") >= timeToMinutes(cls.endTime));
-    return {
-      id: cls.id,
-      day: cls.days[0] ?? 1,
-      subject: cls.subject,
-      startTime: cls.startTime,
-      endTime: cls.endTime,
-      columnStartIndex: sIdx === -1 ? slots.findIndex(s => s.start === cls.startTime) : sIdx,
-      columnEndIndex: eIdx === -1 ? slots.findIndex(s => s.start === cls.startTime) : eIdx,
-    };
+  const entries: TimetableGridEntry[] = normalizeTimetableEntries(baseQuery.data ?? [], slots);
+
+  const todayTimeline: any[] = [];
+  slots.forEach(slot => {
+    const classForSlot = entries.find(e => 
+      e.day === todayVal &&
+      timeToMinutes(e.startTime) <= timeToMinutes(slot.start) && 
+      timeToMinutes(e.endTime) > timeToMinutes(slot.start)
+    );
+    if (classForSlot && !todayTimeline.find(t => t.id === classForSlot.id)) {
+      todayTimeline.push({ ...classForSlot, type: 'class' });
+    } else if (slot.break && !todayTimeline.find(t => t.startTime === slot.start)) {
+      todayTimeline.push({ id: `break-${slot.start}`, subject: "SHORT BREAK", startTime: slot.start, endTime: slot.end ?? slot.start, type: 'break' });
+    }
   });
 
   return (
@@ -244,13 +247,6 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
         contentContainerStyle={styles.timelineContent}
         refreshControl={<RefreshControl refreshing={baseQuery.isRefetching || settingsQuery.isRefetching} onRefresh={() => void refresh()} />}
       >
-        <CXRow style={styles.dateRow}>
-          <View style={styles.flex}>
-            <CXText variant="title">Weekly Schedule</CXText>
-          </View>
-          <CXButton label="Add Class" iconLeft="add" fullWidth={false} size="sm" onPress={() => navigation.navigate("EditClass", { defaultDay: todayVal, mode: "base" })} />
-          <CXButton label="Import" iconLeft="download-outline" variant="outline" fullWidth={false} size="sm" onPress={() => navigation.navigate("TimetableSettings")} />
-        </CXRow>
 
         {baseQuery.isLoading || settingsQuery.isLoading ? (
           <CXState icon="time-outline" title="Loading schedule" message="Getting your latest timetable…" />
@@ -267,19 +263,49 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
             )}
           />
         ) : (
-          <TimetableGrid 
-            slots={slots} 
-            entries={entries} 
-            onEntryPress={showActions}
-            onEmptyCellPress={(day, slot) => {
-              navigation.navigate("EditClass", { 
-                defaultDay: day, 
-                defaultStartTime: slot.start,
-                defaultEndTime: slot.end ?? slot.start,
-                mode: "base" 
-              });
-            }}
-          />
+          <>
+            <TimetableGrid 
+              slots={slots} 
+              entries={entries} 
+              onEntryPress={showActions}
+              onEmptyCellPress={(day, slot) => {
+                navigation.navigate("EditClass", { 
+                  defaultDay: day, 
+                  defaultStartTime: slot.start,
+                  defaultEndTime: slot.end ?? slot.start,
+                  mode: "base" 
+                });
+              }}
+            />
+            
+            <View style={{ marginTop: spacing.xl, paddingHorizontal: spacing.screen }}>
+              <CXText variant="bodyStrong" style={{ marginBottom: spacing.lg }}>Today's Classes</CXText>
+              {todayTimeline.length === 0 ? (
+                <CXText color={colors.textFaint}>No classes today.</CXText>
+              ) : (
+                <View style={{ gap: spacing.md }}>
+                  {todayTimeline.map((item) => (
+                    <View key={item.id} style={{ flexDirection: "row", gap: spacing.md, alignItems: "flex-start" }}>
+                      <View style={{ width: 45, paddingTop: 4 }}>
+                        <CXText variant="smallStrong" color={colors.ink}>{item.startTime}</CXText>
+                        <CXText variant="caption" color={colors.textFaint}>{item.endTime}</CXText>
+                      </View>
+                      
+                      <View style={{ marginTop: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: item.type === "break" ? colors.border : colors.primaryTint }} />
+
+                      <CXCard style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, padding: spacing.lg, borderRadius: 16 }}>
+                        <CXText variant="bodyStrong" color={item.type === "break" ? colors.textFaint : colors.ink}>{item.subject}</CXText>
+                      </CXCard>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+            
+            <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.screen, alignItems: "flex-end", marginBottom: spacing.xl }}>
+               <CXButton label="Add Class" iconLeft="add" onPress={() => navigation.navigate("EditClass", { defaultDay: todayVal, mode: "base" })} fullWidth={false} />
+            </View>
+          </>
         )}
       </ScrollView>
     </CXScreen>
@@ -663,6 +689,7 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
         gridTimeSlots: parsed.gridTimeSlots.length ? parsed.gridTimeSlots : settings.data?.gridTimeSlots,
         missingCells: parsed.missingCells,
         warnings: parsed.warnings,
+        hasExistingTimetable: ((settings.data as any)?.timetableRevision ?? 0) > 0,
       });
     } catch (e: any) {
       Alert.alert("Analysis failed", e.message || "Failed to process timetable.");
@@ -723,7 +750,6 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
   const queryClient = useQueryClient();
   const [entries, setEntries] = useState<TimetableGridEntry[]>(route.params.entries.map((e: any) => ({...e, id: Math.random().toString()})));
 
-  const [mode, setMode] = useState<"merge" | "replace">("merge");
   const [importing, setImporting] = useState(false);
   
   // OCR Edit Draft state
@@ -732,19 +758,20 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
   const slots: TimeSlot[] = route.params.gridTimeSlots ?? [];
   const invalidEntries = entries.filter((entry) => !validateReviewEntry(entry).valid);
 
-  const verifiedCount = entries.length - invalidEntries.length;
+  const validEntries = entries.filter((entry) => validateReviewEntry(entry).valid);
+  const orphansCount = entries.length - validEntries.length;
 
   const importNow = async () => {
-    if (invalidEntries.length) {
-      return Alert.alert("Review required", `${invalidEntries.length} invalid classes need to be fixed or deleted before importing.`);
+    if (validEntries.length === 0) {
+      return Alert.alert("No valid classes", "There are no valid classes to import.");
     }
     const execute = async () => {
       try {
         setImporting(true);
         const result = await scheduleService.importTimetable({
-          mode,
+          mode: "replace",
           gridTimeSlots: slots,
-          entries: entries.map((entry) => ({
+          entries: validEntries.map((entry) => ({
             subject: entry.subject.trim(), subjectCode: (entry as any).subjectCode?.trim() || undefined,
             room: (entry as any).room || undefined, lecturer: (entry as any).lecturer || undefined,
             day: entry.day, startTime: entry.startTime, endTime: entry.endTime, color: "#6338F2",
@@ -754,27 +781,29 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
         await queryClient.invalidateQueries({ queryKey: ["timetableSettings"] });
         navigation.popTo("Timetable");
       } catch (error: any) {
-        if (error?.response?.data?.code === "IMPORT_CONFLICTS") Alert.alert("Import conflicts", error.response.data.message + ". Review the existing timetable or choose Replace.");
-        else mutationError(error, "Could not import the timetable.");
+        mutationError(error, "Could not import the timetable.");
       } finally { setImporting(false); }
     };
-    if (mode === "replace") {
-      Alert.alert("Replace current timetable?", "This replaces recurring base classes. Account data, holidays and special classes are preserved.", [
-        { text: "Keep Current", style: "cancel" },
-        { text: "Replace", style: "destructive", onPress: () => void execute() },
+    
+    if (route.params.hasExistingTimetable !== false) {
+      Alert.alert("Replace current timetable?", "Importing this timetable will replace your existing schedule.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Replace & Import", style: "destructive", onPress: () => void execute() },
       ]);
     } else await execute();
   };
   
   const handleSaveDraft = (draft: TimetableGridEntry) => {
+    const normalizedDraft = normalizeTimetableEntries([draft], slots)[0];
+
     setEntries(curr => {
       const idx = curr.findIndex(e => e.id === draft.id);
       if (idx !== -1) {
         const next = [...curr];
-        next[idx] = { ...draft, needsReview: false };
+        next[idx] = { ...normalizedDraft, needsReview: false };
         return next;
       } else {
-        return [...curr, { ...draft, needsReview: false, id: Math.random().toString() }];
+        return [...curr, { ...normalizedDraft, needsReview: false, id: Math.random().toString() }];
       }
     });
     setEditDraft(null);
@@ -791,13 +820,15 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
         <CXHeader title="Review Timetable" subtitle="Check the extracted schedule before importing." onBack={navigation.goBack} />
       </View>
       <ScrollView contentContainerStyle={styles.reviewPage}>
-        <CXText variant="smallStrong">Uploaded Timetable</CXText>
+        <CXText variant="h3">Uploaded Timetable</CXText>
+        <CXText variant="small" color={colors.textMuted} style={{ marginBottom: -spacing.sm }}>Your original source</CXText>
         <View style={styles.originalImageWrap}>
           <Image source={{ uri: route.params.imageUri }} resizeMode="contain" style={StyleSheet.absoluteFill} />
         </View>
 
-        <CXText variant="smallStrong">Extracted Timetable</CXText>
+        <CXText variant="h3" style={{ marginTop: spacing.md }}>Extracted Timetable</CXText>
         <TimetableGrid 
+          isReview
           slots={slots} 
           entries={entries.map(e => ({ ...e, needsReview: e.needsReview || !validateReviewEntry(e).valid }))} 
           onEntryPress={(entry) => setEditDraft(entry)}
@@ -813,22 +844,26 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
           }}
         />
 
-        <CXRow style={styles.summaryCard}>
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong">{entries.length} classes detected</CXText>
-            <CXText variant="small" color={colors.success}>{verifiedCount} verified</CXText>
-            <CXText variant="small" color={invalidEntries.length ? colors.warning : colors.success}>{invalidEntries.length ? `${invalidEntries.length} need review` : `All valid`}</CXText>
-          </View>
-          <CXButton label="Add Missing Class" size="sm" iconLeft="add" fullWidth={false} onPress={() => setEditDraft({ id: Math.random().toString(), day: 1, startTime: "09:00", endTime: "10:00", subject: "", needsReview: true })} />
-        </CXRow>
+        <CXCard>
+          <CXRow style={styles.summaryCard}>
+            <View style={styles.flex}>
+              <CXText variant="bodyStrong">{entries.length} classes found</CXText>
+              {entries.some(e => e.needsReview) && (
+                 <CXText variant="small" color={colors.warning}>{entries.filter(e => e.needsReview).length} may need review</CXText>
+              )}
+            </View>
+            <CXButton label="Add Class" size="sm" iconLeft="add" fullWidth={false} onPress={() => setEditDraft({ id: Math.random().toString(), day: 1, startTime: "09:00", endTime: "10:00", subject: "", needsReview: false })} />
+          </CXRow>
+        </CXCard>
         
         {route.params.warnings?.map((warning: string) => <CXText key={warning} variant="caption" color={colors.warning}>⚠ {warning}</CXText>)}
+        {orphansCount > 0 && <CXText variant="caption" color={colors.textMuted} style={{ marginTop: spacing.sm }}>{orphansCount} unreadable items will be excluded.</CXText>}
 
 
         
         <CXButton 
-          label={invalidEntries.length ? `Fix ${invalidEntries.length} Issues` : `Verify & Import`} 
-          disabled={Boolean(invalidEntries.length || !entries.length)} 
+          label="Import Timetable"
+          disabled={validEntries.length === 0} 
           loading={importing} 
           onPress={() => void importNow()} 
         />
@@ -923,13 +958,9 @@ const styles = StyleSheet.create({
   reviewTabs: { flexDirection: "row", gap: spacing.xs, paddingHorizontal: spacing.screen, paddingVertical: spacing.sm },
   reviewPage: { padding: spacing.screen, gap: spacing.md, paddingBottom: spacing.xxxl },
   summaryCard: { flexDirection: "row", gap: spacing.md, flexWrap: "wrap", alignItems: "center" },
-  originalImageWrap: { width: "100%", height: 420, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.ink, position: "relative" },
+  originalImageWrap: { width: "100%", height: 220, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.surface, position: "relative" },
   compareImage: { height: 260 },
   sourceHighlight: { position: "absolute", borderWidth: 3, borderColor: colors.warning, backgroundColor: "rgba(245, 158, 11, 0.22)", borderRadius: 4 },
-  gridDayCell: { width: 58, minHeight: 62, padding: spacing.xs, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, justifyContent: "center" },
-  gridCell: { width: 112, minHeight: 62, padding: spacing.xs, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, justifyContent: "center", backgroundColor: colors.surface },
-  breakCell: { backgroundColor: colors.warningTint },
-  reviewCell: { backgroundColor: colors.warningTint, borderColor: colors.warning },
   issueCard: { gap: spacing.sm, borderColor: colors.warning, backgroundColor: colors.warningTint },
   issueActions: { gap: spacing.sm },
   importMode: { gap: spacing.sm, marginTop: spacing.sm, flexWrap: "wrap" },

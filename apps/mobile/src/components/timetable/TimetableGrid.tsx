@@ -34,33 +34,37 @@ export interface TimetableGridProps {
   onEntryPress?: (entry: TimetableGridEntry) => void;
   onEmptyCellPress?: (day: number, slot: TimeSlot) => void;
   highlightedBounds?: any;
+  isReview?: boolean;
 }
 
-export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, highlightedBounds }: TimetableGridProps) {
+export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, highlightedBounds, isReview }: TimetableGridProps) {
   if (!slots.length) return null;
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator style={styles.gridScroll}>
       <View style={styles.gridContainer}>
-        {/* Header Row */}
-        <CXRow>
-          <View style={styles.gridDayCell}>
-            <CXText variant="caption" color={colors.textFaint}>DAY</CXText>
-          </View>
-          {slots.map((slot) => (
-            <View key={slot.id || slot.start} style={[styles.gridCell, slot.break && styles.breakCell]}>
-              <CXText variant="caption" align="center" color={colors.textMuted}>{slot.label}</CXText>
-            </View>
-          ))}
-        </CXRow>
-
-        {/* Day Rows */}
-        {DAYS.map((day) => (
-          <CXRow key={day.value}>
+        <View style={styles.tableWrapper}>
+          {/* Header Row */}
+          <View style={styles.tableRow}>
             <View style={styles.gridDayCell}>
-              <CXText variant="smallStrong">{day.short}</CXText>
+              <CXText variant="caption" align="center" color={colors.textFaint}>DAY</CXText>
             </View>
-            {slots.map((slot, columnIndex) => {
+            {slots.map((slot) => (
+              <View key={slot.id || slot.start} style={[styles.headerCell, slot.break && { width: 40, padding: 0 }]}>
+                <CXText variant="caption" align="center" color={colors.textMuted} style={slot.break && { transform: [{ rotate: "-90deg" }], width: 60 }}>
+                  {slot.break ? "BREAK" : slot.label}
+                </CXText>
+              </View>
+            ))}
+          </View>
+
+          {/* Day Rows */}
+          {DAYS.map((day) => (
+            <View style={styles.tableRow} key={day.value}>
+              <View style={styles.gridDayCell}>
+                <CXText variant="smallStrong" align="center">{day.short}</CXText>
+              </View>
+              {slots.map((slot, columnIndex) => {
               const entry = entries.find(
                 (candidate) =>
                   candidate.day === day.value &&
@@ -80,6 +84,12 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
                 highlightedBounds.x0 === entry.sourceBounds.x0 &&
                 highlightedBounds.y0 === entry.sourceBounds.y0;
 
+              const getCellWidth = (startIdx: number, endIdx: number) => {
+                let w = 0;
+                for (let i = startIdx; i <= endIdx; i++) w += slots[i]!.break ? 40 : 90;
+                return w;
+              };
+
               return (
                 <Pressable
                   key={slot.id || slot.start}
@@ -89,7 +99,7 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
                   }}
                   style={({ pressed }) => [
                     styles.gridCell,
-                    { width: 112 * (endIndex - startIndex + 1) },
+                    { width: getCellWidth(startIndex, endIndex) },
                     slot.break && styles.breakCell,
                     entry?.needsReview && styles.reviewCell,
                     isHighlighted && styles.highlightedCell,
@@ -102,22 +112,27 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
                       <CXText
                         variant="caption"
                         numberOfLines={3}
-                        color={entry.needsReview ? colors.warning : isHighlighted ? colors.primary : colors.ink}
+                        color={colors.ink}
                         style={styles.entryText}
                       >
                         {entry.subject}
                       </CXText>
                     </View>
-                  ) : !slot.break ? (
-                    <View style={styles.emptyContent}>
-                      <Ionicons name="add" size={20} color={colors.textFaint} />
+                  ) : slot.break ? (
+                    <View style={styles.breakContent}>
+                      <CXText variant="caption" color={colors.textFaint} style={{ transform: [{ rotate: "-90deg" }], width: 60, textAlign: "center" }}>BREAK</CXText>
                     </View>
-                  ) : null}
+                  ) : (
+                    <View style={[styles.emptyContent, isReview && { borderStyle: "dashed", borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surface }]}>
+                      {isReview && <Ionicons name="add" size={20} color={colors.border} />}
+                    </View>
+                  )}
                 </Pressable>
               );
             })}
-          </CXRow>
+          </View>
         ))}
+      </View>
       </View>
     </ScrollView>
   );
@@ -132,21 +147,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
   },
-  gridDayCell: {
-    width: 60,
-    height: 60,
-    justifyContent: "center",
+  tableWrapper: {
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: "#E6E1FA", // soft purple border
+    backgroundColor: colors.surface,
   },
-  gridCell: {
-    width: 112,
-    height: 60,
+  tableRow: {
+    flexDirection: "row",
+  },
+  gridDayCell: {
+    width: 45,
+    height: 55,
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E6E1FA",
+  },
+  headerCell: {
+    width: 90,
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: 4,
     backgroundColor: colors.surface,
-    borderStyle: "dashed",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E6E1FA",
+  },
+  gridCell: {
+    width: 90,
+    height: 55,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    padding: 4,
+    backgroundColor: colors.surface,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E6E1FA",
   },
   emptyContent: {
     flex: 1,
@@ -154,35 +192,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
   },
+  breakContent: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   breakCell: {
-    backgroundColor: colors.background,
-    borderColor: "transparent",
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
   },
   reviewCell: {
-    backgroundColor: `${colors.warning}15`,
-    borderColor: colors.warning,
-    borderStyle: "solid",
+    backgroundColor: colors.warningTint,
   },
   activeCell: {
-    backgroundColor: `${colors.primary}08`,
-    borderColor: `${colors.primary}40`,
-    borderStyle: "solid",
+    backgroundColor: colors.surface, // no background for active classes
   },
   highlightedCell: {
-    backgroundColor: `${colors.primary}20`,
+    backgroundColor: colors.primaryTint,
+    borderWidth: 2,
     borderColor: colors.primary,
-    borderStyle: "solid",
   },
   pressedCell: {
     opacity: 0.7,
   },
   entryContent: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     width: "100%",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingLeft: 4,
   },
   entryText: {
-    textAlign: "center",
+    textAlign: "left",
+    fontFamily: "Inter-Medium",
+    fontSize: 10,
+    color: colors.ink,
   },
 });
