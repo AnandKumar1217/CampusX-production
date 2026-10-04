@@ -12,6 +12,7 @@ import { Friendship } from "../models/Social.js";
 import { GroupMembership } from "../models/Group.js";
 import { Trip, TripMember } from "../models/Trip.js";
 import { verifyAccessToken } from "../services/tokenService.js";
+import { updateRealUserActivity } from "../middleware/activity.js";
 
 export function createSocketServer(httpServer: HttpServer) {
   const io = new Server(httpServer, {
@@ -55,6 +56,31 @@ export function createSocketServer(httpServer: HttpServer) {
   };
   io.on("connection", async (socket) => {
     const userId = String(socket.data.userId);
+
+    // Authenticated socket connection itself represents a real app session.
+    void updateRealUserActivity();
+
+    // Only meaningful incoming client events count as real activity.
+    // Server-emitted events never pass through socket.onAny(), and deliberately
+    // noisy transport events such as typing + WebRTC signaling are excluded.
+    const trackedClientEvents = new Set([
+      "group:join",
+      "group:leave",
+      "join:trip",
+      "leave:trip",
+      "conversation:join",
+      "conversation:leave",
+      "conversation:active",
+      "conversation:inactive",
+      "call:start",
+      "call:accept",
+      "call:decline",
+      "call:connected",
+      "call:end",
+    ]);
+    socket.onAny((event) => {
+      if (trackedClientEvents.has(event)) void updateRealUserActivity();
+    });
     await socket.join(`user:${userId}`);
     await User.updateOne(
       { _id: userId },

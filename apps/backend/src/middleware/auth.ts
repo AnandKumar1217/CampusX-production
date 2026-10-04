@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 
 import { User } from "../models/User.js";
+import { updateRealUserActivity } from "./activity.js";
 import { verifyAccessToken } from "../services/tokenService.js";
 import { AppError, asyncHandler } from "../utils/http.js";
 
@@ -25,6 +26,9 @@ export const authenticate: RequestHandler = asyncHandler(
     if (!user)
       throw new AppError(401, "Account no longer exists", "ACCOUNT_NOT_FOUND");
     request.user = user;
+    // Authentication has succeeded, so this is legitimate user-originated API traffic.
+    // Do not await: activity tracking must never add latency to normal requests.
+    void updateRealUserActivity();
     next();
   },
 );
