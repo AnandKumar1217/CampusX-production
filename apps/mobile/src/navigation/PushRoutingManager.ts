@@ -36,7 +36,11 @@ export const handleNotification = (data: any) => {
   if (screen as string === "Message" || screen as string === "Chat") {
     screen = "Conversation" as keyof RootStackParamList;
   }
-  const params = data.params;
+  const params = screen === "Conversation"
+    ? { conversationId: data.params?.conversationId, source: "notification" }
+    : data.params;
+
+  if (screen === "Conversation" && !params.conversationId) return;
 
   if (navigationRef.isReady()) {
     // If navigation is ready, push/navigate immediately

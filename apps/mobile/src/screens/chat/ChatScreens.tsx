@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useEffect, useRef, useState, useDeferredValue, useCallback } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useMemo, useRef, useState, useDeferredValue, useCallback } from "react";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import {
   Alert,
+  AppState,
   FlatList,
   Modal,
   Platform,
@@ -21,9 +22,12 @@ import {
   Animated,
 } from "react-native";
 import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
-import Reanimated, { useAnimatedStyle } from "react-native-reanimated";
+import Reanimated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Markdown from 'react-native-markdown-display';
 
 import { CXUserRow } from "@/components/cards";
@@ -42,13 +46,15 @@ import {
   CXSectionHeader,
   CXText,
   CXActionSheet,
+  CXSnackbar,
 } from "@/components/ui";
 import { useAppStore } from "@/store/appStore";
 import { generateChatResponse, type ChatMessage } from "@/services/ai";
 import { api, getApiErrorMessage } from "@/services/api";
 import { groupService } from "@/services/groupService";
-import { getSocket } from "@/services/socket";
+import { connectSocket, getSocket } from "@/services/socket";
 import { startAudioCall } from "@/services/audioCall";
+import { getChatDateLabel, mergeChatMessages } from "@/services/chatLogic";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { Message } from "@/types/domain";
 import type { RootStackParamList } from "@/types/navigation";
@@ -58,15 +64,35 @@ type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   Name
 >;
 
+type MessageCursor = { createdAt: string; id: string } | null;
+type ChatListRow = any | { _rowType: "date"; _id: string; label: string } | { _rowType: "unread"; _id: string; count: number };
+type PendingOutgoing = {
+  clientMessageId: string;
+  conversationId: string;
+  text: string;
+  replyTo?: string;
+  createdAt: string;
+  localImage?: Pick<ImagePicker.ImagePickerAsset, "uri" | "fileName" | "mimeType" | "width" | "height" | "fileSize">;
+  attachments?: any[];
+};
+
+const CHAT_OUTBOX_KEY = "campusx.chat.outbox.v2";
+
+
 export function ConversationScreen({ navigation, route }: StackProps<"Conversation" | "GroupConversation">) {
   const isStudyGroup = route.name === "GroupConversation";
   const conversationId = isStudyGroup ? (route.params as any).groupId : (route.params as any).conversationId;
   
   const currentUser = useAppStore((state) => state.user);
+  const accessToken = useAppStore((state) => state.accessToken);
   const friends = useAppStore((state) => state.friends);
+  const isFocused = useIsFocused();
+  const isFocusedRef = useRef(isFocused);
+  const appStateRef = useRef(AppState.currentState);
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
+  const [groupPage, setGroupPage] = useState(1);
+  const [nextCursor, setNextCursor] = useState<MessageCursor>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [remoteTyping, setRemoteTyping] = useState(false);
@@ -74,10 +100,36 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
   const [dataOwnerId, setDataOwnerId] = useState<string | null>(null);
   const [messageError, setMessageError] = useState<string | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryingOutboxRef = useRef(new Set<string>());
+  const listRef = useRef<FlatList<ChatListRow>>(null);
+  const nearBottomRef = useRef(true);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [initialUnreadCount, setInitialUnreadCount] = useState(0);
+
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
+
+  useFocusEffect(useCallback(() => {
+    isFocusedRef.current = true;
+    if (!isStudyGroup && AppState.currentState === "active") {
+      getSocket()?.emit("conversation:active", { conversationId });
+    }
+    return () => {
+      isFocusedRef.current = false;
+      if (!isStudyGroup) getSocket()?.emit("conversation:inactive", { conversationId });
+    };
+  }, [conversationId, isStudyGroup]));
 
   const [replyTo, setReplyTo] = useState<any>(null);
+  const [editingMessage, setEditingMessage] = useState<any>(null);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   const [deleteMessageVisible, setDeleteMessageVisible] = useState<any>(null);
+  const [attachmentSheetVisible, setAttachmentSheetVisible] = useState(false);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
+  const [mediaPreviewVisible, setMediaPreviewVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
   const { height } = useReanimatedKeyboardAnimation();
@@ -85,24 +137,25 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
     paddingBottom: Math.max(insets.bottom, Math.abs(height.value)),
   }));
 
-  const fetchMessages = async (pageNumber = 1) => {
+  const fetchMessages = async (cursor: MessageCursor = null, replace = false, groupPageNumber = 1) => {
     try {
       const endpoint = isStudyGroup 
-        ? `/groups/${conversationId}/messages?page=${pageNumber}&limit=50`
-        : `/chats/${conversationId}/messages?page=${pageNumber}&limit=50`;
+        ? `/groups/${conversationId}/messages?page=${groupPageNumber}&limit=30`
+        : `/chats/${conversationId}/messages?limit=30${cursor ? `&beforeCreatedAt=${encodeURIComponent(cursor.createdAt)}&beforeId=${cursor.id}` : ""}`;
       
-      const res = await api.get<{ data: { items: any[], hasMore: boolean } }>(endpoint);
+      const res = await api.get<{ data: { items: any[], hasMore: boolean, nextCursor?: MessageCursor } }>(endpoint);
       if (useAppStore.getState().user?.id !== currentUser?.id) return;
-      if (pageNumber === 1) {
+      if (replace) {
         setMessages(res.data.data.items);
         setDataOwnerId(currentUser?.id || null);
       } else {
-        setMessages(prev => [...prev, ...res.data.data.items]);
+        setMessages(prev => mergeChatMessages(prev, res.data.data.items));
       }
-      setHasMore(res.data.data.items.length === 50);
+      setHasMore(res.data.data.hasMore ?? res.data.data.items.length === 30);
+      if (!isStudyGroup) setNextCursor(res.data.data.nextCursor ?? null);
       setMessageError(null);
 
-      if (pageNumber === 1 && !isStudyGroup) {
+      if (replace && !isStudyGroup) {
         // Mark as delivered and read for DMs only
         api.post(`/chats/${conversationId}/delivered`).catch(() => {});
         api.post(`/chats/${conversationId}/read`).catch(() => {});
@@ -119,19 +172,40 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
     setDataOwnerId(null);
     setConversation(null);
     setLoading(true);
-    setPage(1);
+    setGroupPage(1);
+    setNextCursor(null);
+    setInitialUnreadCount(0);
+    setNewMessageCount(0);
     setHasMore(true);
     const refreshConversation = () => {
       const endpoint = isStudyGroup ? `/groups/${conversationId}` : `/chats/${conversationId}`;
       return api.get<{ data: any }>(endpoint)
-        .then((response) => { if (useAppStore.getState().user?.id === currentUser?.id) setConversation(response.data.data); })
+        .then((response) => {
+          if (useAppStore.getState().user?.id !== currentUser?.id) return;
+          setConversation(response.data.data);
+          if (!isStudyGroup) {
+            const metadata = response.data.data.participantMetadata?.find(
+              (entry: any) => String(entry.user?._id ?? entry.user) === currentUser?.id,
+            );
+            setInitialUnreadCount((current) => current || Number(metadata?.unreadCount ?? 0));
+          }
+        })
         .catch((error) => { if (useAppStore.getState().user?.id === currentUser?.id) setMessageError(getApiErrorMessage(error)); });
     };
 
-    void fetchMessages(1);
-    void refreshConversation();
+    void refreshConversation().finally(() => {
+      void fetchMessages(null, true).then(() => retryOutbox());
+    });
 
-    const socket = getSocket();
+    const socket = accessToken ? connectSocket(accessToken) : getSocket();
+    if (__DEV__) {
+      console.info("[CHAT_OPEN]", {
+        source: (route.params as any).source ?? "chat_list",
+        conversationId: String(conversationId),
+        socketConnected: Boolean(socket?.connected),
+        socketId: socket?.id,
+      });
+    }
     const onProfileUpdated = (payload: any) => {
       refreshConversation();
       setMessages(prev => prev.map(m => {
@@ -151,33 +225,67 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
       const newMsgEvent = isStudyGroup ? "group:message:new" : "message:new";
 
       socket.emit(joinEvent, conversationId);
+      if (!isStudyGroup && isFocusedRef.current && appStateRef.current === "active") {
+        socket.emit("conversation:active", { conversationId });
+      }
       const onReconnect = () => {
         socket.emit(joinEvent, conversationId);
-        void fetchMessages(1);
+        if (!isStudyGroup && isFocusedRef.current && appStateRef.current === "active") {
+          socket.emit("conversation:active", { conversationId });
+        }
+        void fetchMessages();
         void refreshConversation();
+        void retryOutbox();
       };
       socket.on("connect", onReconnect);
 
       const onNewMessage = (msg: any) => {
-        const msgConvId = msg.conversation?._id || msg.conversation || msg.group?._id || msg.group;
-        if (msgConvId?.toString() === conversationId.toString()) {
+        // Robust ID extraction handling Mongoose populated or unpopulated paths
+        const rawConvId = msg.conversation?._id || msg.conversation || msg.group?._id || msg.group || msg.conversationId;
+        const msgConvId = rawConvId ? String(rawConvId) : null;
+
+        if (__DEV__) {
+          console.info("[CHAT_MESSAGE_NEW_RECEIVED]", {
+            messageId: msg._id,
+            conversationId: msgConvId,
+            activeConversationId: String(conversationId),
+          });
+        }
+        if (msgConvId === String(conversationId)) {
           setMessages(prev => {
-            // Deduplicate by database _id or by nonce
             const exists = prev.some(m => 
-              (m._id && msg._id && m._id.toString() === msg._id.toString()) || 
-              (msg.nonce && m.nonce === msg.nonce)
+              (m._id && msg._id && String(m._id) === String(msg._id)) ||
+              (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))
             );
+
             if (exists) {
+              if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", false);
               return prev.map(m => 
-                ((m._id && msg._id && m._id.toString() === msg._id.toString()) || 
-                 (msg.nonce && m.nonce === msg.nonce)) ? msg : m
+                ((m._id && msg._id && String(m._id) === String(msg._id)) ||
+                 (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))) ? { ...m, ...msg } : m
               );
+            }
+            if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", true);
+            if (nearBottomRef.current) {
+              requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }));
+            } else {
+              setNewMessageCount((count) => count + 1);
             }
             return [msg, ...prev];
           });
+
+          // WhatsApp-style: If user receives a message while screen is active, mark it delivered AND read immediately
           if (!isStudyGroup) {
-            api.post(`/chats/${conversationId}/delivered`).catch(() => {});
-            api.post(`/chats/${conversationId}/read`).catch(() => {});
+            const msgId = msg._id;
+            const senderId = msg.senderId || msg.sender?._id || msg.sender;
+            if (
+              msgId &&
+              senderId !== currentUser?.id &&
+              isFocusedRef.current &&
+              appStateRef.current === "active"
+            ) {
+              api.post(`/chats/${conversationId}/read`).catch(() => {});
+            }
           }
         }
       };
@@ -228,9 +336,11 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
       socket.on("typing:start", onTypingStart);
       socket.on("typing:stop", onTypingStop);
 
-      const onMessageDeleted = (data: { messageId: string, conversationId: string }) => {
+      const onMessageDeleted = (data: { messageId: string, conversationId: string, deletedForEveryoneAt?: string }) => {
         if (data.conversationId?.toString() === conversationId.toString()) {
-          setMessages(prev => prev.filter(m => m._id !== data.messageId));
+          setMessages(prev => prev.map(m => String(m._id) === String(data.messageId)
+            ? { ...m, text: "", attachments: [], deletedForEveryoneAt: data.deletedForEveryoneAt ?? new Date().toISOString() }
+            : m));
         }
       };
       socket.on("message:deleted", onMessageDeleted);
@@ -238,7 +348,28 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
       const onMessageReaction = (data: { messageId: string, reactions: any[] }) => {
         setMessages(prev => prev.map(m => m._id === data.messageId ? { ...m, reactions: data.reactions } : m));
       };
-      socket.on("message:reaction", onMessageReaction);
+      socket.on("message:reaction_updated", onMessageReaction);
+      const onMessageEdited = (message: any) => {
+        if (String(message.conversationId) !== String(conversationId)) return;
+        setMessages((current) => current.map((item) => String(item._id) === String(message._id) ? { ...item, ...message } : item));
+      };
+      socket.on("message:edited", onMessageEdited);
+
+      const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+        appStateRef.current = nextState;
+        if (nextState === "active") {
+          if (!socket.connected) socket.connect();
+          socket.emit(joinEvent, conversationId);
+          if (!isStudyGroup) socket.emit("conversation:active", { conversationId });
+          void fetchMessages();
+          void refreshConversation();
+          void retryOutbox();
+          if (!isStudyGroup && isFocusedRef.current) {
+            void api.post(`/chats/${conversationId}/delivered`);
+            void api.post(`/chats/${conversationId}/read`);
+          }
+        } else if (!isStudyGroup) socket.emit("conversation:inactive", { conversationId });
+      });
 
       return () => {
         socket.off("profile:updated", onProfileUpdated);
@@ -252,15 +383,18 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         socket.off("typing:start", onTypingStart);
         socket.off("typing:stop", onTypingStop);
         socket.off("message:deleted", onMessageDeleted);
-        socket.off("message:reaction", onMessageReaction);
+        socket.off("message:reaction_updated", onMessageReaction);
+        socket.off("message:edited", onMessageEdited);
+        appStateSubscription.remove();
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
           socket.emit("typing:stop", { conversationId });
         }
         socket.emit(leaveEvent, conversationId);
+        if (!isStudyGroup) socket.emit("conversation:inactive", { conversationId });
       };
     }
-  }, [conversationId, currentUser?.id, isStudyGroup]);
+  }, [accessToken, conversationId, currentUser?.id, isStudyGroup]);
 
   const handleTextChange = (val: string) => {
     setText(val);
@@ -283,71 +417,197 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
     });
     if (!result.canceled && result.assets?.[0]) {
       setMedia(result.assets[0]);
+      setMediaPreviewVisible(true);
     }
   };
+
+  const takePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setMessageError("Camera permission is required to take a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      setMedia(result.assets[0]);
+      setMediaPreviewVisible(true);
+    }
+  };
+
+  async function readOutbox(): Promise<PendingOutgoing[]> {
+    try {
+      return JSON.parse(await AsyncStorage.getItem(CHAT_OUTBOX_KEY) ?? "[]");
+    } catch {
+      return [];
+    }
+  }
+
+  async function savePending(item: PendingOutgoing) {
+    const queue = await readOutbox();
+    const next = [...queue.filter((entry) => entry.clientMessageId !== item.clientMessageId), item].slice(-100);
+    await AsyncStorage.setItem(CHAT_OUTBOX_KEY, JSON.stringify(next));
+  }
+
+  async function removePending(clientMessageId: string) {
+    const queue = await readOutbox();
+    await AsyncStorage.setItem(CHAT_OUTBOX_KEY, JSON.stringify(queue.filter((entry) => entry.clientMessageId !== clientMessageId)));
+  }
+
+  async function deliverPending(original: PendingOutgoing) {
+    if (retryingOutboxRef.current.has(original.clientMessageId)) return;
+    retryingOutboxRef.current.add(original.clientMessageId);
+    let pending = original;
+    setMessages((current) => current.map((message) =>
+      String(message.clientMessageId ?? message.nonce) === original.clientMessageId
+        ? { ...message, status: pending.localImage && !pending.attachments?.length ? "uploading" : "sending" }
+        : message,
+    ));
+    try {
+      let attachments = pending.attachments ?? [];
+      if (pending.localImage && attachments.length === 0) {
+        const formData = new FormData();
+        formData.append("file", {
+          uri: pending.localImage.uri,
+          name: pending.localImage.fileName || "image.jpg",
+          type: pending.localImage.mimeType || "image/jpeg",
+        } as any);
+        const uploadRes = await api.post<{ data: any }>("/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        attachments = [{
+          url: uploadRes.data.data.url,
+          thumbnailUrl: uploadRes.data.data.thumbnailUrl,
+          publicId: uploadRes.data.data.publicId,
+          name: uploadRes.data.data.originalName,
+          mimeType: uploadRes.data.data.mimeType,
+          size: uploadRes.data.data.size,
+          width: pending.localImage.width,
+          height: pending.localImage.height,
+        }];
+        pending = { ...pending, attachments };
+        await savePending(pending);
+      }
+      const endpoint = isStudyGroup
+        ? `/groups/${pending.conversationId}/messages`
+        : `/chats/${pending.conversationId}/messages`;
+      const response = await api.post<{ data: any }>(endpoint, {
+        text: pending.text,
+        replyTo: pending.replyTo,
+        nonce: pending.clientMessageId,
+        attachments,
+      });
+      setMessages((current) => current.map((message) =>
+        String(message.clientMessageId ?? message.nonce) === pending.clientMessageId
+          ? { ...response.data.data, status: "sent" }
+          : message,
+      ));
+      await removePending(pending.clientMessageId);
+    } catch {
+      await savePending(pending);
+      setMessages((current) => current.map((message) =>
+        String(message.clientMessageId ?? message.nonce) === pending.clientMessageId
+          ? { ...message, status: "failed", _pending: pending }
+          : message,
+      ));
+    } finally {
+      retryingOutboxRef.current.delete(original.clientMessageId);
+    }
+  }
+
+  async function retryOutbox() {
+    const queue = await readOutbox();
+    for (const item of queue.filter((entry) => entry.conversationId === String(conversationId))) {
+      setMessages((current) => {
+        const exists = current.some((message) => String(message.clientMessageId ?? message.nonce) === item.clientMessageId);
+        if (exists) return current;
+        return [{
+          _id: `temp-${item.clientMessageId}`,
+          clientMessageId: item.clientMessageId,
+          nonce: item.clientMessageId,
+          text: item.text,
+          sender: { _id: currentUser?.id, name: currentUser?.name || "You" },
+          attachments: item.localImage ? [{ url: item.localImage.uri, mimeType: item.localImage.mimeType }] : item.attachments ?? [],
+          createdAt: item.createdAt,
+          status: "failed",
+          _pending: item,
+        }, ...current];
+      });
+      await deliverPending(item);
+    }
+  }
 
   const send = async () => {
     const value = text.trim();
     if (!value && !media) return;
 
-    const tempId = `temp-${Date.now()}`;
-    const nonce = tempId;
+    if (editingMessage) {
+      try {
+        const response = await api.patch<{ data: any }>(
+          `/chats/${conversationId}/messages/${editingMessage._id}`,
+          { text: value },
+        );
+        setMessages((current) => current.map((message) => message._id === editingMessage._id ? { ...message, ...response.data.data } : message));
+        setText("");
+        setEditingMessage(null);
+      } catch (error) {
+        setMessageError(getApiErrorMessage(error));
+      }
+      return;
+    }
+
+    const nonce = `${currentUser?.id ?? "user"}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const tempId = `temp-${nonce}`;
+    if (__DEV__) {
+      console.info("[CHAT_SEND_START]", {
+        clientMessageId: nonce,
+        conversationId: String(conversationId),
+      });
+    }
+    const pending: PendingOutgoing = {
+      clientMessageId: nonce,
+      conversationId: String(conversationId),
+      text: value,
+      replyTo: replyTo?._id,
+      createdAt: new Date().toISOString(),
+      localImage: media ? {
+        uri: media.uri,
+        fileName: media.fileName,
+        mimeType: media.mimeType,
+        width: media.width,
+        height: media.height,
+        fileSize: media.fileSize,
+      } : undefined,
+    };
     const temp = {
       _id: tempId,
+      clientMessageId: nonce,
       nonce,
       text: value,
       sender: { _id: currentUser?.id, name: currentUser?.name || "You" },
       attachments: media ? [{ url: media.uri, name: media.fileName || "image.jpg" }] : [],
-      createdAt: new Date().toISOString(),
-      status: "sending"
+      createdAt: pending.createdAt,
+      status: media ? "uploading" : "sending",
+      _pending: pending,
     };
 
     setMessages(prev => [temp, ...prev]);
     setText("");
-    const currentMedia = media;
     setMedia(null);
     setReplyTo(null);
 
-    try {
-      let attachments: any[] = [];
-      if (currentMedia) {
-        const formData = new FormData();
-        formData.append("file", {
-          uri: currentMedia.uri,
-          name: currentMedia.fileName || "image.jpg",
-          type: currentMedia.mimeType || "image/jpeg",
-        } as any);
-        const uploadRes = await api.post<{ data: any }>("/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        attachments.push({
-          url: uploadRes.data.data.url,
-          publicId: uploadRes.data.data.publicId,
-          name: uploadRes.data.data.originalName,
-          mimeType: uploadRes.data.data.mimeType,
-          size: uploadRes.data.data.size,
-        });
-      }
-
-      const endpoint = isStudyGroup 
-        ? `/groups/${conversationId}/messages`
-        : `/chats/${conversationId}/messages`;
-
-      const response = await api.post<{ data: any }>(
-        endpoint,
-        { text: value, replyTo: replyTo?._id, nonce, attachments }
-      );
-      setMessages(prev => prev.map(m => m.nonce === nonce ? { ...response.data.data, status: "sent" } : m));
-    } catch {
-      setMessages(prev => prev.map(m => m.nonce === nonce ? { ...m, status: "failed" } : m));
-    }
+    await savePending(pending);
+    await deliverPending(pending);
   };
 
   const visibleConversation = dataOwnerId === currentUser?.id ? conversation : null;
   const isGroupConversation = visibleConversation?.type === "group" || isStudyGroup;
+  const groupData = isStudyGroup ? visibleConversation?.group : visibleConversation;
   const otherParticipant = !isGroupConversation ? visibleConversation?.participants?.find((p: any) => p._id !== currentUser?.id) : undefined;
-  const title = isGroupConversation ? visibleConversation?.title || visibleConversation?.name || route.params.name || "Group chat" : otherParticipant?.name || route.params.name || "Chat";
-  const avatarUrl = isGroupConversation ? visibleConversation?.avatarUrl : otherParticipant?.avatarUrl;
+  const title = isGroupConversation ? groupData?.title || groupData?.name || route.params.name || "Group chat" : otherParticipant?.name || route.params.name || "Chat";
+  const avatarUrl = isGroupConversation ? groupData?.avatarUrl : otherParticipant?.avatarUrl;
   const isFriend = !!otherParticipant && friends.some((friend) => friend.id === otherParticipant._id);
   const info = () => {
     if (isStudyGroup) navigation.navigate("GroupDetails", { groupId: conversationId });
@@ -356,13 +616,32 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
 
   const loadMore = () => {
     if (!loading && hasMore) {
-      setPage(p => {
-        const next = p + 1;
-        fetchMessages(next);
-        return next;
-      });
+      if (isStudyGroup) {
+        setGroupPage((current) => {
+          const next = current + 1;
+          void fetchMessages(null, false, next);
+          return next;
+        });
+      } else if (nextCursor) {
+        void fetchMessages(nextCursor);
+      }
     }
   };
+
+  const messageRows = useMemo<ChatListRow[]>(() => {
+    const rows: ChatListRow[] = [];
+    messages.forEach((message, index) => {
+      rows.push(message);
+      if (initialUnreadCount > 0 && index === initialUnreadCount - 1) {
+        rows.push({ _rowType: "unread", _id: `unread-${conversationId}`, count: initialUnreadCount });
+      }
+      const next = messages[index + 1];
+      if (!next || new Date(next.createdAt).toDateString() !== new Date(message.createdAt).toDateString()) {
+        rows.push({ _rowType: "date", _id: `date-${new Date(message.createdAt).toDateString()}`, label: getChatDateLabel(message.createdAt) });
+      }
+    });
+    return rows;
+  }, [conversationId, initialUnreadCount, messages]);
 
   return (
     <CXScreen edges={["top", "right", "left"]}>
@@ -373,20 +652,27 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
           <CXAvatar name={title} source={avatarUrl} size={40} />
           <View style={styles.flex}>
             <CXText variant="bodyStrong" numberOfLines={1}>{title}</CXText>
-            {(remoteTyping || (isFriend && otherParticipant?.online)) && <CXText variant="caption" color={colors.success}>
-              {remoteTyping ? "Typing..." : "Online"}
-            </CXText>}
+            <CXText variant="caption" color={remoteTyping || otherParticipant?.online ? colors.success : colors.textMuted}>
+              {remoteTyping
+                ? "typing…"
+                : otherParticipant?.online
+                  ? "Online"
+                  : otherParticipant?.lastSeenAt
+                    ? `last seen ${new Date(otherParticipant.lastSeenAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
+                    : "Offline"}
+            </CXText>
           </View>
         </Pressable>
         {Platform.OS !== "web" && !isGroupConversation && isFriend && otherParticipant && <CXIconButton icon="call-outline" label="Audio call" backgroundColor={colors.transparent}
           onPress={() => void startAudioCall({ conversationId, peerId: otherParticipant._id, name: title, avatarUrl })} />}
         <CXIconButton icon="ellipsis-horizontal" label="Chat info" backgroundColor={colors.transparent} onPress={info} />
       </CXRow>
-      {messageError && <Pressable onPress={() => void fetchMessages(1)} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
+      {messageError && <Pressable onPress={() => void fetchMessages()} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
         <CXText variant="small" color={colors.danger}>{messageError} · Tap to retry</CXText>
       </Pressable>}
       <FlatList
-        data={dataOwnerId === currentUser?.id ? messages : []}
+        ref={listRef}
+        data={dataOwnerId === currentUser?.id ? messageRows : []}
         ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} /> :
           !messageError ? <CXText variant="small" color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>No messages yet</CXText> : null}
         inverted
@@ -398,15 +684,44 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         windowSize={10}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
-        renderItem={({ item }) => (
-          <MessageBubble
-            message={item}
-            mine={item.sender?._id === currentUser?.id || item.senderId === currentUser?.id}
-            onLongPress={() => setSelectedMessage(item)}
-            isGroup={isGroupConversation || isStudyGroup}
-          />
-        )}
+        onScroll={(event) => {
+          const nearBottom = event.nativeEvent.contentOffset.y < 80;
+          nearBottomRef.current = nearBottom;
+          if (nearBottom && newMessageCount) setNewMessageCount(0);
+        }}
+        scrollEventThrottle={32}
+        renderItem={({ item }) => {
+          if (item._rowType === "date") {
+            return <View style={styles.dateSeparator}><CXText variant="caption" color={colors.textMuted}>{item.label}</CXText></View>;
+          }
+          if (item._rowType === "unread") {
+            return <View style={styles.unreadDivider}><View style={styles.dividerLine} /><CXText variant="caption" color={colors.primary}>{item.count} unread messages</CXText><View style={styles.dividerLine} /></View>;
+          }
+          return (
+            <MessageBubble
+              message={item}
+              mine={item.sender?._id === currentUser?.id || item.senderId === currentUser?.id}
+              onLongPress={() => setSelectedMessage(item)}
+              onReply={() => setReplyTo(item)}
+              onRetry={item._pending ? () => void deliverPending(item._pending) : undefined}
+              onOpenImage={setImageViewerUrl}
+              isGroup={isGroupConversation || isStudyGroup}
+            />
+          );
+        }}
       />
+      {newMessageCount > 0 ? (
+        <Pressable
+          style={styles.newMessagesButton}
+          onPress={() => {
+            listRef.current?.scrollToOffset({ offset: 0, animated: true });
+            setNewMessageCount(0);
+          }}
+        >
+          <Ionicons name="arrow-down" size={16} color={colors.white} />
+          <CXText variant="smallStrong" color={colors.white}>{newMessageCount} new messages</CXText>
+        </Pressable>
+      ) : null}
       {visibleConversation && (isGroupConversation || isFriend) ? <>
         {replyTo && (
           <View style={styles.replyPreviewWrapper}>
@@ -418,17 +733,18 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
             <CXIconButton label="Remove reply" icon="close" size={24} onPress={() => setReplyTo(null)} backgroundColor={colors.transparent} />
           </View>
         )}
-        {media && (
+        {editingMessage && (
           <View style={styles.replyPreviewWrapper}>
-            <Image source={{ uri: media.uri }} style={{ width: 50, height: 50, borderRadius: 8, marginRight: 10 }} />
+            <View style={styles.replyPreviewBar} />
             <View style={styles.flex}>
-              <CXText variant="smallStrong" color={colors.primary}>Attached Image</CXText>
+              <CXText variant="smallStrong" color={colors.primary}>Editing message</CXText>
+              <CXText variant="caption" numberOfLines={1}>{editingMessage.text}</CXText>
             </View>
-            <CXIconButton label="Remove media" icon="close" size={24} onPress={() => setMedia(null)} backgroundColor={colors.transparent} />
+            <CXIconButton label="Cancel edit" icon="close" size={24} onPress={() => { setEditingMessage(null); setText(""); }} backgroundColor={colors.transparent} />
           </View>
         )}
         <CXRow style={styles.composer}>
-          <CXIconButton icon="attach-outline" label="Attach file" size={38} backgroundColor={colors.backgroundLavender} onPress={pickImage} />
+          <CXIconButton icon="add" label="Add photo" size={38} backgroundColor={colors.backgroundLavender} onPress={() => setAttachmentSheetVisible(true)} />
           <TextInput
             value={text}
             onChangeText={handleTextChange}
@@ -436,6 +752,14 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
             placeholderTextColor={colors.textFaint}
             multiline
             style={styles.composerInput}
+          />
+          <CXIconButton
+            icon="happy-outline"
+            label="Add emoji"
+            size={36}
+            backgroundColor={colors.transparent}
+            color={colors.textMuted}
+            onPress={() => handleTextChange(`${text}😊`)}
           />
           {(text.trim() || media) && <CXIconButton icon="send" label="Send message" size={42} onPress={() => void send()} />}
         </CXRow>
@@ -445,74 +769,166 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         </CXText> : null}
       </Reanimated.View>
 
+      <CXActionSheet
+        visible={attachmentSheetVisible}
+        onClose={() => setAttachmentSheetVisible(false)}
+        title="Add a photo"
+        actions={[
+          { label: "Camera", icon: "camera-outline", onPress: () => void takePhoto() },
+          { label: "Photos", icon: "images-outline", onPress: () => void pickImage() },
+        ]}
+      />
       <Modal
-        visible={!!selectedMessage}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSelectedMessage(null)}
+        visible={mediaPreviewVisible && Boolean(media)}
+        animationType="slide"
+        onRequestClose={() => { setMediaPreviewVisible(false); setMedia(null); }}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setSelectedMessage(null)}>
-          <View style={styles.modalContent}>
-            <CXRow style={styles.reactionRow}>
-              {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
-                <Pressable
-                  key={emoji}
-                  onPress={() => {
-                    api.post(`/${isStudyGroup ? "groups" : "chats"}/${conversationId}/messages/${selectedMessage._id}/reaction`, { emoji }).catch((err) => console.log(getApiErrorMessage(err)));
-                    setSelectedMessage(null);
-                  }}
-                  style={styles.reactionBtn}
-                >
-                  <CXText style={{ fontSize: 24 }}>{emoji}</CXText>
-                </Pressable>
-              ))}
-            </CXRow>
-            <View style={styles.modalDivider} />
-            <Pressable style={styles.modalOption} onPress={() => { setReplyTo(selectedMessage); setSelectedMessage(null); }}>
-              <Ionicons name="arrow-undo-outline" size={20} color={colors.ink} />
-              <CXText style={styles.modalOptionText}>Reply</CXText>
-            </Pressable>
-            {(selectedMessage?.sender?._id === currentUser?.id || selectedMessage?.senderId === currentUser?.id) && (
-              <>
-                <View style={styles.modalDivider} />
-                <Pressable style={styles.modalOption} onPress={() => {
-                  setDeleteMessageVisible(selectedMessage);
-                  setSelectedMessage(null);
-                }}>
-                  <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                  <CXText style={[styles.modalOptionText, { color: colors.danger }]}>Delete Message</CXText>
-                </Pressable>
-              </>
-            )}
+        <CXScreen edges={["top", "right", "bottom", "left"]} style={styles.mediaPreviewScreen}>
+          <CXRow style={styles.mediaPreviewHeader}>
+            <CXIconButton
+              icon="close"
+              label="Cancel photo"
+              backgroundColor="rgba(255,255,255,0.16)"
+              color={colors.white}
+              onPress={() => { setMediaPreviewVisible(false); setMedia(null); }}
+            />
+            <CXText variant="bodyStrong" color={colors.white}>Photo preview</CXText>
+            <View style={{ width: 42 }} />
+          </CXRow>
+          {media ? <Image source={{ uri: media.uri }} style={styles.mediaPreviewImage} resizeMode="contain" /> : null}
+          <View style={styles.mediaPreviewActions}>
+            <CXButton
+              label="Send photo"
+              iconRight="send"
+              onPress={() => { setMediaPreviewVisible(false); void send(); }}
+            />
           </View>
-        </Pressable>
+        </CXScreen>
       </Modal>
+
+      <CXActionSheet
+        visible={Boolean(selectedMessage)}
+        onClose={() => setSelectedMessage(null)}
+        title="Message actions"
+        headerContent={selectedMessage ? (
+          <CXRow style={styles.reactionRow}>
+            {["❤️", "👍", "😂", "😮", "😢", "🙏"].map((emoji) => (
+              <Pressable
+                key={emoji}
+                onPress={() => {
+                  const mine = selectedMessage.reactions?.find(
+                    (reaction: any) => String(reaction.userId ?? reaction.user?._id ?? reaction.user) === currentUser?.id,
+                  );
+                  api.post(`/${isStudyGroup ? "groups" : "chats"}/${conversationId}/messages/${selectedMessage._id}/reaction`, {
+                    emoji: mine?.emoji === emoji ? "" : emoji,
+                  }).catch((err) => console.log(getApiErrorMessage(err)));
+                  setSelectedMessage(null);
+                }}
+                style={styles.reactionBtn}
+              >
+                <CXText style={{ fontSize: 24 }}>{emoji}</CXText>
+              </Pressable>
+            ))}
+          </CXRow>
+        ) : null}
+        actions={selectedMessage ? [
+          {
+            label: "Reply",
+            icon: "arrow-undo-outline",
+            onPress: () => setReplyTo(selectedMessage),
+          },
+          ...((selectedMessage.text && !selectedMessage.deletedForEveryoneAt) ? [{
+            label: "Copy",
+            icon: "copy-outline" as const,
+            onPress: () => {
+              void Clipboard.setStringAsync(selectedMessage.text).then(() => {
+                setSnackbarMessage("Copied");
+                setSnackbarVisible(true);
+              });
+            },
+          }] : []),
+          ...(((selectedMessage.sender?._id === currentUser?.id || selectedMessage.senderId === currentUser?.id) && selectedMessage.text && !selectedMessage.attachments?.length) ? [{
+            label: "Edit",
+            icon: "create-outline" as const,
+            onPress: () => {
+              setEditingMessage(selectedMessage);
+              setReplyTo(null);
+              setText(selectedMessage.text);
+            },
+          }] : []),
+          {
+            label: "Delete",
+            icon: "trash-outline",
+            destructive: true,
+            onPress: () => setDeleteMessageVisible(selectedMessage),
+          },
+        ] : []}
+      />
 
       <CXActionSheet
         visible={!!deleteMessageVisible}
         onClose={() => setDeleteMessageVisible(null)}
+        title="Delete message"
         actions={[
           {
-            label: "Delete Message",
+            label: "Delete for me",
             icon: "trash-outline",
             destructive: true,
-            confirmationTitle: "Delete Message",
-            confirmationMessage: "Are you sure you want to delete this message for everyone?",
-            confirmationButtonText: "Delete",
             onPress: () => {
               if (deleteMessageVisible) {
-                api.delete(`/${isStudyGroup ? "groups" : "chats"}/${conversationId}/messages/${deleteMessageVisible._id}`).catch((err) => console.log(getApiErrorMessage(err)));
+                setMessages((current) => current.filter((message) => message._id !== deleteMessageVisible._id));
+                api.delete(`/${isStudyGroup ? "groups" : "chats"}/${conversationId}/messages/${deleteMessageVisible._id}?scope=me`).catch((err) => {
+                  console.log(getApiErrorMessage(err));
+                  void fetchMessages();
+                });
                 setDeleteMessageVisible(null);
               }
             }
-          }
+          },
+          ...((deleteMessageVisible?.sender?._id === currentUser?.id || deleteMessageVisible?.senderId === currentUser?.id) ? [{
+            label: "Delete for everyone",
+            icon: "trash-outline" as const,
+            destructive: true,
+            confirmationTitle: "Delete for everyone?",
+            confirmationMessage: "Everyone in this conversation will see a deleted-message placeholder.",
+            confirmationButtonText: "Delete for everyone",
+            onPress: () => {
+              if (deleteMessageVisible) {
+                api.delete(`/${isStudyGroup ? "groups" : "chats"}/${conversationId}/messages/${deleteMessageVisible._id}?scope=everyone`).catch((err) => console.log(getApiErrorMessage(err)));
+                setDeleteMessageVisible(null);
+              }
+            },
+          }] : []),
         ]}
+      />
+      <Modal
+        visible={Boolean(imageViewerUrl)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageViewerUrl(null)}
+      >
+        <View style={styles.imageViewer}>
+          <CXIconButton
+            icon="close"
+            label="Close image"
+            backgroundColor="rgba(255,255,255,0.16)"
+            color={colors.white}
+            onPress={() => setImageViewerUrl(null)}
+          />
+          {imageViewerUrl ? <Image source={{ uri: imageViewerUrl }} style={styles.viewerImage} resizeMode="contain" /> : null}
+        </View>
+      </Modal>
+      <CXSnackbar
+        visible={snackbarVisible}
+        message={snackbarMessage}
+        duration={1600}
+        onDismiss={() => setSnackbarVisible(false)}
       />
     </CXScreen>
   );
 }
 
-function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; mine: boolean; onLongPress?: () => void, isGroup?: boolean }) {
+function MessageBubble({ message, mine, onLongPress, onReply, onRetry, onOpenImage, isGroup }: { message: any; mine: boolean; onLongPress?: () => void; onReply?: () => void; onRetry?: () => void; onOpenImage?: (url: string) => void; isGroup?: boolean }) {
   // Simple hash to assign a unique color to each user's name
   const nameColors = ["#E57373", "#F06292", "#BA68C8", "#9575CD", "#7986CB", "#64B5F6", "#4FC3F7", "#4DD0E1", "#4DB6AC", "#81C784", "#AED581", "#FF8A65"];
   const colorIndex = message.sender?.name ? message.sender.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % nameColors.length : 0;
@@ -526,7 +942,7 @@ function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; 
   const recipientRecorded = (entries: any[] | undefined) => entries?.some((entry) =>
     String(entry.user?._id || entry.user || "") !== senderId
   ) ?? false;
-  const status = message.status === "failed" || message.status === "sending" ? message.status :
+  const status = ["failed", "sending", "uploading"].includes(message.status) ? message.status :
     recipientRecorded(message.readBy) ? "read" : recipientRecorded(message.deliveredTo) ? "delivered" : "sent";
 
   let iconName = "checkmark";
@@ -534,7 +950,7 @@ function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; 
   if (status === "failed") {
     iconName = "alert-circle";
     iconColor = "#FFD2D2";
-  } else if (status === "sending") {
+  } else if (status === "sending" || status === "uploading") {
     iconName = "time-outline";
   } else if (status === "delivered") {
     iconName = "checkmark-done";
@@ -543,8 +959,36 @@ function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; 
     iconColor = "#34B7F1"; // blue tick
   }
 
+  const swipeX = useSharedValue(0);
+  const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
+  const swipeGesture = Gesture.Pan()
+    .enabled(Boolean(onReply) && !message.deletedForEveryoneAt)
+    .activeOffsetX(14)
+    .failOffsetY([-12, 12])
+    .onUpdate((event) => {
+      swipeX.value = Math.min(76, Math.max(0, event.translationX));
+    })
+    .onEnd(() => {
+      if (swipeX.value >= 58 && onReply) runOnJS(onReply)();
+    })
+    .onFinalize(() => {
+      swipeX.value = withSpring(0, { damping: 18, stiffness: 240 });
+    });
+  const reactionCounts = ((message.reactions ?? []) as Array<{ emoji: string }>).reduce((counts, reaction) => {
+    counts.set(reaction.emoji, (counts.get(reaction.emoji) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+  const reactionSummary = Array.from(reactionCounts.entries())
+    .map(([emoji, count]) => `${emoji}${count > 1 ? ` ${count}` : ""}`)
+    .join("  ");
+
   return (
-    <View style={[styles.messageRow, mine && styles.messageRowMine]}>
+    <GestureDetector gesture={swipeGesture}>
+      <View style={styles.swipeContainer}>
+        <View style={styles.swipeReplyIcon}>
+          <Ionicons name="arrow-undo" size={18} color={colors.primary} />
+        </View>
+        <Reanimated.View style={[styles.messageRow, mine && styles.messageRowMine, swipeStyle]}>
       {!mine && isGroup && (
         <View style={{ justifyContent: 'flex-end', marginBottom: 2, marginRight: 6 }}>
           <CXAvatar source={message.sender?.avatarUrl} name={message.sender?.name || "User"} size={28} />
@@ -567,10 +1011,17 @@ function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; 
             </View>
           </View>
         )}
-        {message.attachments && message.attachments.length > 0 && (
+        {message.deletedForEveryoneAt ? (
+          <CXRow style={{ gap: spacing.xs }}>
+            <Ionicons name="ban-outline" size={15} color={mine ? "#EDE9FF" : colors.textMuted} />
+            <CXText color={mine ? "#EDE9FF" : colors.textMuted} style={{ fontStyle: "italic" }}>
+              This message was deleted
+            </CXText>
+          </CXRow>
+        ) : message.attachments && message.attachments.length > 0 && (
           <View style={{ marginBottom: 4 }}>
             {message.attachments.map((att: any, i: number) => <Pressable key={`${message._id}-${i}`}
-              onPress={() => void Linking.openURL(att.url)} accessibilityRole="link">
+              onPress={() => onOpenImage?.(att.url)} accessibilityRole="button">
               {att.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|webp)(\?|$)/i.test(att.url) ?
                 <Image source={{ uri: att.url }} style={{ width: 200, height: 200, borderRadius: 8, marginBottom: 4 }} /> :
                 <CXRow style={{ padding: spacing.sm, gap: spacing.xs }}>
@@ -580,23 +1031,28 @@ function MessageBubble({ message, mine, onLongPress, isGroup }: { message: any; 
             </Pressable>)}
           </View>
         )}
-        {!!message.text && <CXText color={mine ? colors.white : colors.ink}>{message.text}</CXText>}
+        {!message.deletedForEveryoneAt && !!message.text && <CXText color={mine ? colors.white : colors.ink}>{message.text}</CXText>}
         <CXRow style={styles.messageMeta}>
           <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>{timeString}</CXText>
+          {message.editedAt ? <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>edited</CXText> : null}
           {mine ? (
-            <Ionicons name={iconName as any} size={14} color={iconColor} />
+            <Pressable disabled={status !== "failed" || !onRetry} onPress={onRetry} hitSlop={8}>
+              <Ionicons name={iconName as any} size={14} color={iconColor} />
+            </Pressable>
           ) : null}
         </CXRow>
 
         {message.reactions && message.reactions.length > 0 && (
           <View style={[styles.reactionBadge, mine ? styles.reactionBadgeMine : styles.reactionBadgeOther]}>
             <CXText style={styles.reactionText}>
-              {Array.from(new Set(message.reactions.map((r: any) => r.emoji))).join(" ")}
+              {reactionSummary}
             </CXText>
           </View>
         )}
       </Pressable>
-    </View>
+        </Reanimated.View>
+      </View>
+    </GestureDetector>
   );
 }
 
@@ -1175,6 +1631,25 @@ export function AIHistoryScreen({ navigation }: StackProps<"AIHistory">) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  imageViewer: {
+    flex: 1,
+    backgroundColor: "rgba(12, 10, 26, 0.98)",
+    paddingTop: spacing.xl,
+    paddingHorizontal: spacing.md,
+    alignItems: "flex-end",
+  },
+  viewerImage: {
+    flex: 1,
+    width: "100%",
+  },
+  mediaPreviewScreen: { backgroundColor: "#0E0C1C" },
+  mediaPreviewHeader: {
+    minHeight: 58,
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.sm,
+  },
+  mediaPreviewImage: { flex: 1, width: "100%" },
+  mediaPreviewActions: { padding: spacing.md },
   page: {
     paddingHorizontal: spacing.screen,
     paddingBottom: spacing.xxxl,
@@ -1189,6 +1664,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   messageList: { padding: spacing.md, gap: spacing.sm },
+  swipeContainer: { position: "relative" },
+  swipeReplyIcon: {
+    position: "absolute",
+    left: spacing.md,
+    top: "50%",
+    marginTop: -16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceLavender,
+  },
   messageRow: { alignItems: "flex-start" },
   messageRowMine: { alignItems: "flex-end" },
   bubble: {
@@ -1219,6 +1707,38 @@ const styles = StyleSheet.create({
   },
   attachmentMine: { backgroundColor: "rgba(255,255,255,.16)" },
   messageMeta: { alignSelf: "flex-end", gap: 3 },
+  dateSeparator: {
+    alignSelf: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceLavender,
+    marginVertical: spacing.xs,
+  },
+  unreadDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginVertical: spacing.sm,
+  },
+  dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.primary },
+  newMessagesButton: {
+    position: "absolute",
+    right: spacing.md,
+    bottom: 66,
+    zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    shadowColor: colors.primaryDark,
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 5,
+  },
   composer: {
     padding: spacing.xs,
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -1,13 +1,23 @@
 import { Socket } from "socket.io-client";
 import { queryClient } from "@/query/queryClient";
+import { api } from "@/services/api";
 
 export interface SocketEventDependencies {
   removeFriendLocation: (userId: string) => void;
   updateFriendIdentity: (userId: string, name?: string, avatarUrl?: string, username?: string) => void;
   fetchInitialFriendLocations: () => void;
+  getCurrentUserId: () => string | undefined;
 }
 
 export function setupSocketInvalidations(socket: Socket, deps: SocketEventDependencies) {
+  socket.on("message:new", (message: any) => {
+    const conversationId = String(message?.conversationId ?? message?.conversation?._id ?? message?.conversation ?? "");
+    const senderId = String(message?.senderId ?? message?.sender?._id ?? message?.sender ?? "");
+    if (conversationId && senderId && senderId !== deps.getCurrentUserId()) {
+      void api.post(`/chats/${conversationId}/delivered`).catch(() => {});
+    }
+    queryClient.invalidateQueries({ queryKey: ["chats"] });
+  });
   // --- PRESENCE & IDENTITY ---
 
   socket.on("presence:changed", (data: { userId: string, status: "online" | "offline", lastSeenAt?: string }) => {

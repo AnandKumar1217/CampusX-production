@@ -617,6 +617,7 @@ export const useAppStore = create<AppState>()(
       removeFriendLocation: get().removeFriendLocation,
       updateFriendIdentity: get().updateFriendIdentity,
       fetchInitialFriendLocations: get().fetchInitialFriendLocations,
+      getCurrentUserId: () => get().user?.id,
     });
 
     socket.on("location:friend_updated", (payload: any) => {

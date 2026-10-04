@@ -189,6 +189,18 @@ export function createSocketServer(httpServer: HttpServer) {
         void socket.leave(`conversation:${conversationId}`);
       }
     });
+    socket.on("conversation:active", async (payload: unknown) => {
+      const conversationId = String((payload as any)?.conversationId ?? "");
+      if (!mongoose.isValidObjectId(conversationId)) return;
+      const allowed = await Conversation.exists({ _id: conversationId, participants: userId });
+      if (allowed) socket.data.activeConversationId = conversationId;
+    });
+    socket.on("conversation:inactive", (payload: unknown) => {
+      const conversationId = String((payload as any)?.conversationId ?? "");
+      if (!conversationId || socket.data.activeConversationId === conversationId) {
+        delete socket.data.activeConversationId;
+      }
+    });
     socket.on("call:start", async (payload: unknown, ack?: (result: { ok: boolean; callId?: string; reason?: string }) => void) => {
       const reply = (result: { ok: boolean; callId?: string; reason?: string }) => { if (typeof ack === "function") ack(result); };
       try {

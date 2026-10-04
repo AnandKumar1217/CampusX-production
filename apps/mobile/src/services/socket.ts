@@ -2,6 +2,8 @@ import { io, type Socket } from "socket.io-client";
 import { requireServiceUrl } from "@/config/runtimeEnvironment";
 
 let socket: Socket | null = null;
+type SocketEventHandler = (...args: any[]) => void;
+const subscriptions = new Map<string, Set<SocketEventHandler>>();
 
 const configuredSocketUrl = requireServiceUrl(
   "EXPO_PUBLIC_SOCKET_URL",
@@ -19,7 +21,34 @@ export function connectSocket(token: string) {
     auth: { token },
     reconnection: true,
   });
+  for (const [event, handlers] of subscriptions) {
+    for (const handler of handlers) socket.on(event, handler);
+  }
   return socket;
+}
+
+/**
+ * Subscribes through the shared authenticated socket even when the socket is
+ * created after the calling screen mounts (for example, notification entry).
+ */
+export function subscribeSocketEvent(event: string, handler: SocketEventHandler) {
+  let handlers = subscriptions.get(event);
+  if (!handlers) {
+    handlers = new Set();
+    subscriptions.set(event, handlers);
+  }
+  handlers.add(handler);
+  socket?.on(event, handler);
+
+  return () => {
+    subscriptions.get(event)?.delete(handler);
+    if (subscriptions.get(event)?.size === 0) subscriptions.delete(event);
+    socket?.off(event, handler);
+  };
+}
+
+export function emitSocketEvent(event: string, ...args: any[]) {
+  socket?.emit(event, ...args);
 }
 
 export function updateSocketAuthToken(token: string) {

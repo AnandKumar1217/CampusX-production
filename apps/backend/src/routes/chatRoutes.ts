@@ -5,8 +5,8 @@ import { z } from "zod";
 import { Conversation, Message } from "../models/Chat.js";
 import { Friendship } from "../models/Social.js";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
-import { pagination } from "../utils/pagination.js";
 import { pushService } from "../services/pushService.js";
+import { serializeChatMessage } from "../serializers/chatMessage.js";
 
 export const chatRouter = Router();
 
@@ -133,22 +133,47 @@ chatRouter.get(
         "You are not a participant in this conversation",
         "FORBIDDEN",
       );
-    const { page, limit, skip } = pagination(request.query, 100);
+    const cursorQuery = z.object({
+      limit: z.coerce.number().int().min(1).max(50).default(30),
+      beforeCreatedAt: z.string().datetime().optional(),
+      beforeId: z.string().optional(),
+    }).parse(request.query);
+    if (cursorQuery.beforeId && !isValidObjectId(cursorQuery.beforeId)) {
+      throw new AppError(400, "Invalid message cursor", "BAD_REQUEST");
+    }
     const myMeta = conversation.participantMetadata.find(p => p.user?.toString() === request.user!._id.toString());
     const filter: any = {
       conversation: request.params.conversationId,
       deletedAt: { $exists: false },
+      deletedFor: { $ne: request.user!._id },
     };
     if (myMeta?.clearedAt) {
       filter.createdAt = { $gt: myMeta.clearedAt };
+    }
+    if (cursorQuery.beforeCreatedAt) {
+      const before = new Date(cursorQuery.beforeCreatedAt);
+      filter.$or = cursorQuery.beforeId
+        ? [
+            { createdAt: { $lt: before } },
+            { createdAt: before, _id: { $lt: cursorQuery.beforeId } },
+          ]
+        : [{ createdAt: { $lt: before } }];
     }
     const items = await Message.find(filter)
       .populate("sender", "name username avatarUrl")
       .populate({ path: "replyTo", select: "sender text", populate: { path: "sender", select: "name" } })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-    return sendSuccess(response, { items, page, limit });
+      .limit(cursorQuery.limit + 1);
+    const hasMore = items.length > cursorQuery.limit;
+    const pageItems = hasMore ? items.slice(0, cursorQuery.limit) : items;
+    const oldest = pageItems[pageItems.length - 1];
+    return sendSuccess(response, {
+      items: pageItems,
+      hasMore,
+      nextCursor: hasMore && oldest
+        ? { createdAt: oldest.createdAt.toISOString(), id: oldest._id.toString() }
+        : null,
+    });
   }),
 );
 
@@ -178,6 +203,12 @@ chatRouter.post(
         "Message cannot be empty",
       )
       .parse(request.body);
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[CHAT_HTTP_RECEIVED]", {
+        clientMessageId: input.nonce,
+        conversationId: request.params.conversationId,
+      });
+    }
     if (!isValidObjectId(request.params.conversationId)) {
       throw new AppError(404, "Conversation not found", "NOT_FOUND");
     }
@@ -200,12 +231,34 @@ chatRouter.post(
         throw new AppError(403, "You can only message friends", "FORBIDDEN");
       }
     }
+    if (input.replyTo) {
+      if (!isValidObjectId(input.replyTo) || !await Message.exists({
+        _id: input.replyTo,
+        conversation: conversation._id,
+      })) {
+        throw new AppError(400, "Reply target is not in this conversation", "BAD_REQUEST");
+      }
+    }
+    if (input.nonce) {
+      const existing = await Message.findOne({
+        conversation: conversation._id,
+        sender: request.user!._id,
+        nonce: input.nonce,
+      }).populate("sender", "name username avatarUrl");
+      if (existing) return sendSuccess(response, serializeChatMessage(existing), "Message already sent");
+    }
     const message = await Message.create({
       conversation: conversation._id,
       sender: request.user!._id,
       ...input,
       readBy: [{ user: request.user!._id, readAt: new Date() }],
     });
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[CHAT_DB_SAVED]", {
+        messageId: message._id.toString(),
+        conversationId: conversation._id.toString(),
+      });
+    }
     conversation.lastMessageAt = message.createdAt;
     conversation.lastMessage = message._id as any;
     if (!conversation.participantMetadata) {
@@ -231,16 +284,22 @@ chatRouter.post(
       await message.populate({ path: "replyTo", select: "sender text", populate: { path: "sender", select: "name" } });
     }
 
+    const msgPayload = serializeChatMessage(message);
     const io = request.app.get("io");
     if (io) {
-      io.to(`conversation:${conversation._id.toString()}`).emit("message:new", message);
-      // Also emit to all participants' individual rooms to guarantee delivery (Rule 24 & 25)
-
       const { Notification } = await import("../models/Social.js");
       for (const p of conversation.participants) {
-        io.to(`user:${p.toString()}`).emit("chat:updated", { conversationId: conversation._id.toString() });
-        if (p.toString() !== request.user!._id.toString()) {
-          io.to(`user:${p.toString()}`).emit("message:new", message);
+        const participantId = p.toString();
+        io.to(`user:${participantId}`).emit("chat:updated", { conversationId: conversation._id.toString() });
+        io.to(`user:${participantId}`).emit("message:new", msgPayload);
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[CHAT_SOCKET_EMIT]", {
+            messageId: message._id.toString(),
+            conversationId: conversation._id.toString(),
+            receiverUserId: participantId,
+          });
+        }
+        if (participantId !== request.user!._id.toString()) {
 
           const notification = await Notification.findOneAndUpdate(
             { user: p, type: "message", $or: [{ "target.params.conversationId": conversation._id.toString() }, { "target.params.groupId": conversation._id.toString() }] },
@@ -263,19 +322,28 @@ chatRouter.post(
 
           io.to(`user:${p.toString()}`).emit("notification:new", notification);
 
-          void pushService.sendPushNotification(p, {
-            title: notification.title,
-            body: notification.body || "New Message",
-            data: {
-              route: notification.target?.route,
-              params: notification.target?.params,
-              notificationId: notification._id.toString()
-            }
-          });
+          const participantMeta = conversation.participantMetadata.find(
+            (entry: any) => entry.user?.toString() === participantId,
+          );
+          const participantSockets = await io.in(`user:${participantId}`).fetchSockets();
+          const activelyViewing = participantSockets.some(
+            (participantSocket: any) => participantSocket.data.activeConversationId === conversation._id.toString(),
+          );
+          if (!participantMeta?.muted && !activelyViewing) {
+            void pushService.sendPushNotification(p, {
+              title: notification.title,
+              body: notification.body || "New Message",
+              data: {
+                route: notification.target?.route,
+                params: notification.target?.params,
+                notificationId: notification._id.toString()
+              }
+            });
+          }
         }
       }
     }
-    return sendSuccess(response, message, "Message sent", 201);
+    return sendSuccess(response, msgPayload, "Message sent", 201);
   }),
 );
 
@@ -285,10 +353,10 @@ chatRouter.post(
     if (!isValidObjectId(request.params.conversationId)) {
       throw new AppError(404, "Conversation not found", "NOT_FOUND");
     }
-    const allowed = await Conversation.exists({
+    const allowed = await Conversation.findOne({
       _id: request.params.conversationId,
       participants: request.user!._id,
-    });
+    }).select("participants");
     if (!allowed)
       throw new AppError(403, "You are not a participant", "FORBIDDEN");
     await Message.updateMany(
@@ -319,11 +387,12 @@ chatRouter.post(
       io.to(`user:${request.user!._id.toString()}`).emit("notification:read", notification);
     }
     io?.to(`user:${request.user!._id.toString()}`).emit("chat:updated", { conversationId: request.params.conversationId });
-    io?.to(`conversation:${request.params.conversationId}`)
-      .emit("message:read", {
+    for (const participant of allowed.participants) {
+      io?.to(`user:${participant.toString()}`).emit("message:read", {
         conversationId: request.params.conversationId,
         userId: request.user!._id.toString(),
       });
+    }
     return sendSuccess(response, null, "Messages marked as read");
   }),
 );
@@ -334,10 +403,10 @@ chatRouter.post(
     if (!isValidObjectId(request.params.conversationId)) {
       throw new AppError(404, "Conversation not found", "NOT_FOUND");
     }
-    const allowed = await Conversation.exists({
+    const allowed = await Conversation.findOne({
       _id: request.params.conversationId,
       participants: request.user!._id,
-    });
+    }).select("participants");
     if (!allowed)
       throw new AppError(403, "You are not a participant", "FORBIDDEN");
     await Message.updateMany(
@@ -348,13 +417,12 @@ chatRouter.post(
       },
       { $push: { deliveredTo: { user: request.user!._id, deliveredAt: new Date() } } },
     );
-    request.app
-      .get("io")
-      ?.to(`conversation:${request.params.conversationId}`)
-      .emit("message:delivered", {
+    for (const participant of allowed.participants) {
+      request.app.get("io")?.to(`user:${participant.toString()}`).emit("message:delivered", {
         conversationId: request.params.conversationId,
         userId: request.user!._id.toString(),
       });
+    }
     return sendSuccess(response, null, "Messages marked as delivered");
   }),
 );
@@ -365,10 +433,10 @@ chatRouter.post(
     if (!isValidObjectId(request.params.conversationId) || !isValidObjectId(request.params.messageId)) {
       throw new AppError(404, "Message or conversation not found", "NOT_FOUND");
     }
-    const allowed = await Conversation.exists({
+    const allowed = await Conversation.findOne({
       _id: request.params.conversationId,
       participants: request.user!._id,
-    });
+    }).select("participants");
     if (!allowed)
       throw new AppError(403, "You are not a participant", "FORBIDDEN");
     const { emoji } = z.object({ emoji: z.string() }).parse(request.body);
@@ -389,13 +457,53 @@ chatRouter.post(
 
     await message.save();
 
-    request.app.get("io")?.to(`conversation:${request.params.conversationId}`).emit("message:reaction", {
-      messageId: message._id,
-      reactions: message.reactions
-    });
+    const payload = {
+      messageId: message._id.toString(),
+      conversationId: request.params.conversationId,
+      reactions: message.reactions?.map((reaction: any) => ({
+        userId: reaction.user.toString(),
+        emoji: reaction.emoji,
+      })) ?? [],
+    };
+    for (const participant of allowed.participants) {
+      request.app.get("io")?.to(`user:${participant.toString()}`).emit("message:reaction_updated", payload);
+    }
 
-    return sendSuccess(response, message.reactions, "Reaction updated");
+    return sendSuccess(response, payload.reactions, "Reaction updated");
   })
+);
+
+chatRouter.patch(
+  "/:conversationId/messages/:messageId",
+  asyncHandler(async (request, response) => {
+    if (!isValidObjectId(request.params.conversationId) || !isValidObjectId(request.params.messageId)) {
+      throw new AppError(404, "Message or conversation not found", "NOT_FOUND");
+    }
+    const { text } = z.object({ text: z.string().trim().min(1).max(4000) }).parse(request.body);
+    const conversation = await Conversation.findOne({
+      _id: request.params.conversationId,
+      participants: request.user!._id,
+    });
+    if (!conversation) throw new AppError(403, "You are not a participant", "FORBIDDEN");
+    const message = await Message.findOne({
+      _id: request.params.messageId,
+      conversation: conversation._id,
+      sender: request.user!._id,
+      deletedForEveryoneAt: { $exists: false },
+    });
+    if (!message) throw new AppError(403, "Only the sender can edit this message", "FORBIDDEN");
+    if (message.attachments.length) throw new AppError(400, "Image messages cannot be edited", "BAD_REQUEST");
+
+    message.text = text;
+    message.editedAt = new Date();
+    await message.save();
+    await message.populate("sender", "name username avatarUrl");
+    const payload = serializeChatMessage(message);
+    for (const participant of conversation.participants) {
+      request.app.get("io")?.to(`user:${participant.toString()}`).emit("message:edited", payload);
+    }
+    return sendSuccess(response, payload, "Message edited");
+  }),
 );
 
 chatRouter.delete(
@@ -405,25 +513,81 @@ chatRouter.delete(
       throw new AppError(404, "Message or conversation not found", "NOT_FOUND");
     }
 
+    const conversation = await Conversation.findOne({
+      _id: request.params.conversationId,
+      participants: request.user!._id,
+    });
+    if (!conversation) throw new AppError(403, "You are not a participant", "FORBIDDEN");
+
     const message = await Message.findOne({
       _id: request.params.messageId,
       conversation: request.params.conversationId,
     });
     if (!message) throw new AppError(404, "Message not found");
 
-    if (message.sender.toString() !== request.user!._id.toString()) {
-      throw new AppError(403, "You can only delete your own messages", "FORBIDDEN");
+    const scope = request.query.scope === "me" ? "me" : "everyone";
+    if (scope === "everyone" && message.sender.toString() !== request.user!._id.toString()) {
+      throw new AppError(403, "You can only delete your own messages for everyone", "FORBIDDEN");
     }
 
-    await message.deleteOne();
+    if (scope === "me") {
+      if (!message.deletedFor?.some((id: any) => id.toString() === request.user!._id.toString())) {
+        message.deletedFor = [...(message.deletedFor ?? []), request.user!._id] as any;
+      }
+    } else {
+      message.deletedForEveryoneAt = new Date();
+      message.text = "";
+      message.attachments = [] as any;
+    }
+    await message.save();
 
-    request.app.get("io")?.to(`conversation:${request.params.conversationId}`).emit("message:deleted", {
-      messageId: message._id,
-      conversationId: message.conversation,
-    });
+    if (scope === "everyone") {
+      for (const participant of conversation.participants) {
+        request.app.get("io")?.to(`user:${participant.toString()}`).emit("message:deleted", {
+          messageId: message._id.toString(),
+          conversationId: message.conversation.toString(),
+          deletedForEveryoneAt: message.deletedForEveryoneAt?.toISOString(),
+        });
+      }
+    }
 
-    return sendSuccess(response, null, "Message deleted successfully");
+    return sendSuccess(response, null, scope === "me" ? "Message hidden" : "Message deleted for everyone");
   })
+);
+
+chatRouter.patch(
+  "/:conversationId/preferences",
+  asyncHandler(async (request, response) => {
+    if (!isValidObjectId(request.params.conversationId)) {
+      throw new AppError(404, "Conversation not found", "NOT_FOUND");
+    }
+    const preferences = z.object({
+      pinned: z.boolean().optional(),
+      muted: z.boolean().optional(),
+      archived: z.boolean().optional(),
+    }).refine((value) => Object.keys(value).length > 0, "No preference supplied").parse(request.body);
+
+    const conversation = await Conversation.findOne({
+      _id: request.params.conversationId,
+      participants: request.user!._id,
+    });
+    if (!conversation) throw new AppError(404, "Conversation not found", "NOT_FOUND");
+
+    let metadata = conversation.participantMetadata.find(
+      (entry: any) => entry.user?.toString() === request.user!._id.toString(),
+    );
+    if (!metadata) {
+      conversation.participantMetadata.push({ user: request.user!._id } as any);
+      metadata = conversation.participantMetadata[conversation.participantMetadata.length - 1];
+    }
+    Object.assign(metadata!, preferences);
+    await conversation.save();
+
+    request.app.get("io")?.to(`user:${request.user!._id.toString()}`).emit("chat:updated", {
+      conversationId: conversation._id.toString(),
+    });
+    return sendSuccess(response, preferences, "Chat preferences updated");
+  }),
 );
 
 chatRouter.delete(
@@ -452,7 +616,7 @@ chatRouter.delete(
       await conversation.save();
     }
 
-    request.app.get("io")?.to(request.user!._id.toString()).emit("conversation:deleted", {
+    request.app.get("io")?.to(`user:${request.user!._id.toString()}`).emit("conversation:deleted", {
       conversationId: conversation._id,
     });
 

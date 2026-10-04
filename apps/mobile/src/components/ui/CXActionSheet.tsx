@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, type ReactNode } from "react";
 import {
   Modal,
   View,
   StyleSheet,
   Pressable,
   TouchableWithoutFeedback,
-  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,9 +28,10 @@ export type CXActionSheetProps = {
   onClose: () => void;
   title?: string;
   actions: CXAction[];
+  headerContent?: ReactNode;
 };
 
-export function CXActionSheet({ visible, onClose, title, actions }: CXActionSheetProps) {
+export function CXActionSheet({ visible, onClose, title, actions, headerContent }: CXActionSheetProps) {
   const insets = useSafeAreaInsets();
   const [confirmAction, setConfirmAction] = useState<CXAction | null>(null);
 
@@ -66,13 +66,14 @@ export function CXActionSheet({ visible, onClose, title, actions }: CXActionShee
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
             <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+              <View style={styles.handle} />
               {confirmAction ? (
                 // CONFIRMATION VIEW
                 <View style={styles.confirmationView}>
@@ -109,6 +110,7 @@ export function CXActionSheet({ visible, onClose, title, actions }: CXActionShee
                       </CXText>
                     </View>
                   )}
+                  {headerContent}
                   {actions.map((action, index) => (
                     <Pressable
                       key={action.label + index}
@@ -168,6 +170,14 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingHorizontal: spacing.sm,
     ...shadows.floating,
+  },
+  handle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: spacing.xs,
   },
   titleContainer: {
     paddingVertical: spacing.md,

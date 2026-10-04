@@ -30,7 +30,7 @@ export type RootStackParamList = {
   CreatePost: undefined;
   Reactions: { postId?: string } | undefined;
   MutualFriends: { userId?: string } | undefined;
-  Conversation: { conversationId: string; name?: string };
+  Conversation: { conversationId: string; name?: string; source?: "notification" | "chat_list" };
   GroupConversation: { groupId: string; name?: string };
   NewChat: undefined;
   ChatInfo: { conversationId: string };

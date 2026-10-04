@@ -46,7 +46,16 @@ const messageSchema = new Schema(
     sender: { type: objectId, ref: "User", required: true, index: true },
     text: { type: String, maxlength: 4000, default: "" },
     attachments: [
-      { url: String, name: String, mimeType: String, size: Number },
+      {
+        url: String,
+        thumbnailUrl: String,
+        publicId: String,
+        name: String,
+        mimeType: String,
+        size: Number,
+        width: Number,
+        height: Number,
+      },
     ],
     replyTo: { type: objectId, ref: "Message" },
     reactions: [
@@ -60,10 +69,16 @@ const messageSchema = new Schema(
     nonce: { type: String, select: true },
     editedAt: Date,
     deletedAt: Date,
+    deletedFor: [{ type: objectId, ref: "User" }],
+    deletedForEveryoneAt: Date,
   },
   { timestamps: true, versionKey: false },
 );
 messageSchema.index({ conversation: 1, createdAt: -1 });
+messageSchema.index(
+  { conversation: 1, sender: 1, nonce: 1 },
+  { unique: true, partialFilterExpression: { nonce: { $type: "string" } } },
+);
 
 export const Conversation = model("Conversation", conversationSchema);
 export const Message = model("Message", messageSchema);

@@ -105,7 +105,15 @@ export function SplashScreen({ navigation }: Props) {
               const data = response?.notification?.request?.content?.data;
               if (!target && data) {
                 if (data.route) {
-                  target = { screen: data.route as any, params: data.params };
+                  const screen = (data.route === "Message" || data.route === "Chat")
+                    ? "Conversation"
+                    : data.route;
+                  const params = screen === "Conversation"
+                    ? { conversationId: (data.params as any)?.conversationId, source: "notification" }
+                    : data.params;
+                  if (screen !== "Conversation" || (params as any)?.conversationId) {
+                    target = { screen: screen as any, params };
+                  }
                 } else if (data.url) {
                   const url = data.url as string;
                   const screenStr = url.replace("campusx://", "");

@@ -11,6 +11,7 @@ import {
   CXScreen,
   CXSearchBar,
   CXText,
+  CXActionSheet,
 } from "@/components/ui";
 
 import { useRootNavigation } from "@/hooks/useRootNavigation";
@@ -33,6 +34,7 @@ export function ChatsScreen() {
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const globalFriends = useAppStore(state => state.friends);
 
   const fetchChats = async () => {
@@ -111,18 +113,28 @@ export function ChatsScreen() {
     fetchChats();
   };
 
-  const handleLongPress = (chat: any) => {
-    Alert.alert(
-      "Chat Options",
-      "Choose an action",
-      [
-        { text: "Pin", onPress: () => console.log("Pin", chat.id) },
-        { text: "Mute", onPress: () => console.log("Mute", chat.id) },
-        { text: "Archive", onPress: () => console.log("Archive", chat.id) },
-        { text: "Cancel", style: "cancel" }
-      ],
-      { cancelable: true }
-    );
+  const handleLongPress = (chat: any) => setSelectedChat(chat);
+
+  const updatePreference = async (key: "pinned" | "muted" | "archived", value: boolean) => {
+    if (!selectedChat) return;
+    const id = selectedChat.id;
+    setConversations((current) => current.map((conversation) => {
+      if (conversation._id !== id) return conversation;
+      const participantMetadata = [...(conversation.participantMetadata ?? [])];
+      const index = participantMetadata.findIndex((entry: any) => String(entry.user?._id ?? entry.user) === currentUser?.id);
+      if (index >= 0) participantMetadata[index] = { ...participantMetadata[index], [key]: value };
+      else participantMetadata.push({ user: currentUser?.id, [key]: value });
+      return { ...conversation, participantMetadata };
+    }));
+    await api.patch(`/chats/${id}/preferences`, { [key]: value });
+    void fetchChats();
+  };
+
+  const deleteChat = async () => {
+    if (!selectedChat) return;
+    const id = selectedChat.id;
+    setConversations((current) => current.filter((conversation) => conversation._id !== id));
+    await api.delete(`/chats/${id}`);
   };
 
   const formattedConversations = useMemo(() => {
@@ -140,6 +152,7 @@ export function ChatsScreen() {
         const title = c.type === "group" ? c.title : (otherParticipant?.name || "Unknown");
         if (deferredSearch && !title.toLowerCase().includes(deferredSearch.toLowerCase())) return;
 
+        if (meta?.archived) return;
         if (!seen.has(c._id)) {
           seen.add(c._id);
           list.push({
@@ -149,6 +162,9 @@ export function ChatsScreen() {
             avatarUrl: c.type === "group" ? c.avatarUrl : otherParticipant?.avatarUrl,
             online: otherParticipant?.online,
             unread: unreadCount,
+            pinned: Boolean(meta?.pinned),
+            muted: Boolean(meta?.muted),
+            archived: Boolean(meta?.archived),
             lastMessage: c.lastMessage?.text || (c.lastMessage?.attachments?.length ? "Sent an attachment" : "Started a conversation"),
             updatedAt: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
           });
@@ -175,7 +191,7 @@ export function ChatsScreen() {
       });
     }
 
-    return list;
+    return list.sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)));
   }, [conversations, groups, filter, deferredSearch, currentUser]);
 
   const startChat = async (user: any) => {
@@ -287,12 +303,12 @@ export function ChatsScreen() {
           if (item.type === "group" || item.type === "community_group") {
             return (
               <Pressable
-                onLongPress={() => handleLongPress(item)}
+                onLongPress={item.type === "community_group" ? undefined : () => handleLongPress(item)}
                 onPress={() => {
                   if (item.type === "community_group") {
                     navigation.navigate("GroupConversation" as any, { groupId: item.id, name: item.name });
                   } else {
-                    navigation.navigate("Conversation", { conversationId: item.id, name: item.name });
+                    navigation.navigate("Conversation", { conversationId: item.id, name: item.name, source: "chat_list" });
                   }
                 }}
                 style={({ pressed }) => [styles.chat, pressed && styles.pressed]}
@@ -322,7 +338,7 @@ export function ChatsScreen() {
           return (
             <Pressable
               onLongPress={() => handleLongPress(item)}
-              onPress={() => navigation.navigate("Conversation", { conversationId: item.id, name: item.title })}
+              onPress={() => navigation.navigate("Conversation", { conversationId: item.id, name: item.title, source: "chat_list" })}
               style={({ pressed }) => [styles.chat, pressed && styles.pressed]}
             >
               <CXAvatar name={item.title} source={item.avatarUrl} size={50} online={item.online} />
@@ -359,6 +375,37 @@ export function ChatsScreen() {
             <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </Pressable>
         }
+      />
+      <CXActionSheet
+        visible={Boolean(selectedChat)}
+        onClose={() => setSelectedChat(null)}
+        title="Chat options"
+        actions={selectedChat ? [
+          {
+            label: selectedChat.pinned ? "Unpin chat" : "Pin chat",
+            icon: selectedChat.pinned ? "pin-outline" : "pin",
+            onPress: () => void updatePreference("pinned", !selectedChat.pinned),
+          },
+          {
+            label: selectedChat.muted ? "Unmute notifications" : "Mute notifications",
+            icon: selectedChat.muted ? "notifications-outline" : "notifications-off-outline",
+            onPress: () => void updatePreference("muted", !selectedChat.muted),
+          },
+          {
+            label: selectedChat.archived ? "Unarchive chat" : "Archive chat",
+            icon: selectedChat.archived ? "arrow-undo-outline" : "archive-outline",
+            onPress: () => void updatePreference("archived", !selectedChat.archived),
+          },
+          {
+            label: "Delete chat",
+            icon: "trash-outline",
+            destructive: true,
+            confirmationTitle: "Delete this chat?",
+            confirmationMessage: "This hides the conversation only for you. It can reappear if a new message arrives.",
+            confirmationButtonText: "Delete chat",
+            onPress: () => void deleteChat(),
+          },
+        ] : []}
       />
     </CXScreen>
   );
