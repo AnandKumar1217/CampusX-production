@@ -1493,8 +1493,8 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
       let finalAvatarPublicId = group.avatarPublicId;
 
       if (avatarUri === "") {
-        finalAvatarUrl = undefined;
-        finalAvatarPublicId = undefined;
+        finalAvatarUrl = "";
+        finalAvatarPublicId = "";
       } else if (avatarUri && avatarUri !== group.avatarUrl) {
         const formData = new FormData();
         const filename = avatarUri.split('/').pop() || 'avatar.jpg';
@@ -1519,8 +1519,8 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
         name: name.trim(),
         category: subtitle.trim(),
         description: description.trim(),
-        avatarUrl: finalAvatarUrl === undefined ? null : finalAvatarUrl,
-        avatarPublicId: finalAvatarPublicId === undefined ? null : finalAvatarPublicId
+        avatarUrl: finalAvatarUrl,
+        avatarPublicId: finalAvatarPublicId
       });
 
       queryClient.invalidateQueries({ queryKey: ["groups"] });

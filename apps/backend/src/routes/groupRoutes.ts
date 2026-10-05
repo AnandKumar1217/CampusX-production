@@ -193,8 +193,8 @@ groupRouter.patch(
         description: z.string().max(1000).optional(),
         category: z.string().max(80).optional(),
         privacy: z.enum(["public", "private"]).optional(),
-        avatarUrl: z.string().url().optional().nullable(),
-        avatarPublicId: z.string().optional().nullable(),
+        avatarUrl: z.union([z.string().url(), z.literal("")]).optional().nullable(),
+        avatarPublicId: z.union([z.string(), z.literal("")]).optional().nullable(),
       })
       .parse(request.body);
 
