@@ -54,10 +54,10 @@ export function EventDetailsScreen({ navigation, route }: any) {
   });
 
   const isSaved = savedEvents.some(e => e.id === eventId);
-  const isOwner = event?.organizer?.id === user?.id || event?.organizer?.id === user?.id;
+  const isOwner = (event?.organizer as any)?._id === user?.id || event?.organizer?.id === user?.id;
   const isCancelled = event?.status === "cancelled";
   
-  const attendeeRecord = event?.attendees?.find(a => a.user?.id === user?.id || a.user?.id === user?.id);
+  const attendeeRecord = event?.attendees?.find((a: any) => a.user?._id === user?.id || a.user?.id === user?.id);
   const isRegistered = attendeeRecord?.status === "going";
   const isFull = event?.capacity && event?.interested >= event.capacity;
   const isDeadlinePassed = event?.registrationDeadline && new Date(event.registrationDeadline) < new Date();
