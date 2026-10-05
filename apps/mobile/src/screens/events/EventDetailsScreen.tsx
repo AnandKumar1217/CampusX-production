@@ -18,7 +18,6 @@ export function EventDetailsScreen({ navigation, route }: any) {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
-  const [cancelRegSheetVisible, setCancelRegSheetVisible] = useState(false);
 
   const { data: event, isLoading, isError, refetch } = useQuery({
     queryKey: ["event", eventId],
@@ -162,10 +161,7 @@ export function EventDetailsScreen({ navigation, route }: any) {
   }
 
   const handleRegisterToggle = () => {
-    if (isRegistered) {
-      setCancelRegSheetVisible(true);
-      return;
-    }
+    if (isRegistered) return;
     if (isFull) {
       setSnackbarMessage("Event Full");
       setSnackbarVisible(true);
@@ -254,24 +250,6 @@ export function EventDetailsScreen({ navigation, route }: any) {
         ]}
       />
       
-      <CXActionSheet
-        visible={cancelRegSheetVisible}
-        onClose={() => setCancelRegSheetVisible(false)}
-        actions={[
-          {
-            label: "Cancel Registration", icon: "close-circle", destructive: true, 
-            onPress: () => { 
-              setCancelRegSheetVisible(false); 
-              registerMutation.mutate(); 
-              setSnackbarMessage("Registration cancelled");
-              setSnackbarVisible(true);
-            },
-            confirmationTitle: "Cancel registration?",
-            confirmationButtonText: "Cancel Registration"
-          }
-        ]}
-      />
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.heroContainer}>
           {event.image ? (
@@ -424,10 +402,10 @@ export function EventDetailsScreen({ navigation, route }: any) {
       {!isOwner && (
         <View style={styles.actionBar}>
           <CXButton
-            label={isRegistered ? "Cancel Registration" : isCancelled ? "Event Cancelled" : isFull ? "Event Full" : isDeadlinePassed ? "Registration Closed" : "Register Now"}
+            label={isRegistered ? "Registered" : isCancelled ? "Event Cancelled" : isFull ? "Event Full" : isDeadlinePassed ? "Registration Closed" : "Register Now"}
             onPress={handleRegisterToggle}
             variant={isRegistered ? "outline" : "primary"}
-            disabled={!!((!isRegistered && isFull) || isCancelled || registerMutation.isPending || (!isRegistered && isDeadlinePassed))}
+            disabled={!!(isRegistered || isFull || isCancelled || registerMutation.isPending || isDeadlinePassed)}
             style={[styles.actionBtn, isRegistered && { backgroundColor: theme.colors.surfaceHover, borderColor: 'transparent' }]}
             loading={registerMutation.isPending}
           />
