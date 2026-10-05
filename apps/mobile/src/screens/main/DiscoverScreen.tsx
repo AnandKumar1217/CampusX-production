@@ -62,8 +62,8 @@ export function DiscoverScreen() {
   const friendLocations = useAppStore(state => state.friendLocations);
   const activeOnlineFriends = Object.values(friendLocations); // Shows everyone sharing location, offline or online
   const user = useAppStore(state => state.user);
+  const locationCoords = useAppStore(state => state.locationCoords);
   const setLocationCoords = useAppStore(state => state.setLocationCoords);
-  const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
   const cameraRef = useRef<any>(null);
   const [tick, setTick] = useState(0);
 
@@ -282,7 +282,6 @@ export function DiscoverScreen() {
             }
             
             if (location) {
-              setUserLocation({ lat: location.coords.latitude, lon: location.coords.longitude });
               setLocationCoords({ lat: location.coords.latitude, lon: location.coords.longitude });
               setRegion({
                 latitude: location.coords.latitude,
@@ -401,9 +400,9 @@ export function DiscoverScreen() {
         )}
         
         {/* User's Current Location Marker */}
-        {userLocation && (
+        {locationCoords && (
           <Marker
-            coordinate={{ latitude: userLocation.lat, longitude: userLocation.lon }}
+            coordinate={{ latitude: locationCoords.lat, longitude: locationCoords.lon }}
             title="You"
             anchor="center"
           >
@@ -513,9 +512,9 @@ export function DiscoverScreen() {
       <View style={[styles.mapControls, (selectedPlace || selectedFriend) && { bottom: 180 }, isSearchFocused && { display: "none" }, activeMode === "friends" && !selectedFriend && { bottom: 220 }]}>
         <Pressable style={styles.fab} onPress={async () => {
           try {
-            if (userLocation) {
+            if (locationCoords) {
               cameraRef.current?.easeTo({
-                center: [userLocation.lon, userLocation.lat],
+                center: [locationCoords.lon, locationCoords.lat],
                 zoom: 15,
                 duration: 600
               });
@@ -527,7 +526,6 @@ export function DiscoverScreen() {
               location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
             }
             if (location) {
-              setUserLocation({ lat: location.coords.latitude, lon: location.coords.longitude });
               setLocationCoords({ lat: location.coords.latitude, lon: location.coords.longitude });
               setRegion((prev: any) => ({ 
                 ...prev, 

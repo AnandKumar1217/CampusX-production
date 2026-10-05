@@ -16,13 +16,22 @@ export function LocationSettingsScreen({ navigation }: Props) {
 
   const toggleSharing = async (value: boolean) => {
     if (value) {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
+      const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+      if (fgStatus !== "granted") {
         Alert.alert(
           "Permission Denied",
           "Location permission is required to share your location with friends.",
         );
         return;
+      }
+      
+      const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (bgStatus !== "granted") {
+        Alert.alert(
+          "Background Permission Denied",
+          "Without background location permission, your friends won't see your live location when the app is closed.",
+        );
+        // We can still proceed with foreground-only sharing.
       }
     }
 
