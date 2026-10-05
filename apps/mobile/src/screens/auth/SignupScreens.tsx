@@ -148,10 +148,11 @@ export function SignupAccountScreen({
       setUsernameSuggestions([]);
       return;
     }
+    const abortController = new AbortController();
     const timeoutId = setTimeout(async () => {
       setCheckingUsername(true);
       try {
-        const response = await api.post("/auth/check-username", { username: usernameValue });
+        const response = await api.post("/auth/check-username", { username: usernameValue }, { signal: abortController.signal });
         if (response.data.data.available) {
           setUsernameAvailable(true);
           setUsernameSuggestions([]);
@@ -159,14 +160,20 @@ export function SignupAccountScreen({
           setUsernameAvailable(false);
           setUsernameSuggestions(response.data.data.suggestions || []);
         }
-      } catch (err) {
+      } catch (err: any) {
+        if (err.name === "CanceledError") return;
         setUsernameAvailable(null);
       } finally {
-        setCheckingUsername(false);
+        if (!abortController.signal.aborted) {
+          setCheckingUsername(false);
+        }
       }
     }, 400);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      abortController.abort();
+    };
   }, [usernameValue]);
 
   const submit = handleSubmit(async (values) => {
@@ -223,8 +230,10 @@ export function SignupAccountScreen({
               value={field.value}
               onBlur={field.onBlur}
               onChangeText={(val) => {
+                const normalized = val.toLowerCase().replace(/\s/g, "");
                 setUsernameSuggestions([]);
-                field.onChange(val);
+                setUsernameAvailable(null);
+                field.onChange(normalized);
               }}
               error={fieldState.error?.message}
               trailing={

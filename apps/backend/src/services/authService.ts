@@ -109,15 +109,7 @@ export async function checkIdentity(identityRaw: string, usernameRaw?: string, o
   if (usernameRaw) {
     const username = usernameRaw.trim().toLowerCase();
     if (await User.exists({ username })) {
-      const suggestions: string[] = [];
-      let i = 1;
-      while (suggestions.length < 3 && i <= 100) {
-        const suggestion = `${username}${i}`;
-        if (!(await User.exists({ username: suggestion })) && !suggestions.includes(suggestion)) {
-          suggestions.push(suggestion);
-        }
-        i++;
-      }
+      const suggestions = await generateUsernameSuggestions(username);
       throw new AppError(409, "Username is already taken", "USERNAME_TAKEN", { suggestions });
     }
   }
@@ -149,19 +141,26 @@ export async function checkUsername(usernameRaw: string) {
   }
 
   if (await User.exists({ username })) {
-    const suggestions: string[] = [];
-    let i = 1;
-    while (suggestions.length < 3 && i <= 100) {
-      const suggestion = `${username}${i}`;
-      if (!(await User.exists({ username: suggestion }))) {
-        suggestions.push(suggestion);
-      }
-      i++;
-    }
+    const suggestions = await generateUsernameSuggestions(username);
     return { available: false, username, suggestions };
   }
   
   return { available: true, username, suggestions: [] };
+}
+
+async function generateUsernameSuggestions(username: string): Promise<string[]> {
+  const suggestions: string[] = [];
+  let i = 1;
+  while (suggestions.length < 3 && i <= 100) {
+    const suffix = String(i);
+    const base = username.slice(0, 30 - suffix.length);
+    const suggestion = `${base}${suffix}`;
+    if (!(await User.exists({ username: suggestion })) && !suggestions.includes(suggestion)) {
+      suggestions.push(suggestion);
+    }
+    i++;
+  }
+  return suggestions;
 }
 
 export async function generateUniqueQrToken(): Promise<string> {

@@ -124,7 +124,14 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && error.response?.data?.code === "ACCOUNT_NOT_FOUND") {
       const { useAppStore } = require("../store/appStore");
+      const { navigationRef } = require("../navigation/PushRoutingManager");
       await useAppStore.getState().clearSession();
+      if (navigationRef.isReady()) {
+        const state = navigationRef.getRootState();
+        if (state?.routes[state.index]?.name !== "Login") {
+          navigationRef.reset({ index: 0, routes: [{ name: "Login" }] });
+        }
+      }
       return Promise.reject(error);
     }
 

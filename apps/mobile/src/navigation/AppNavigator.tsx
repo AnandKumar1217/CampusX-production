@@ -148,8 +148,27 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
+import { AppState, type AppStateStatus } from "react-native";
+import { useEffect, useRef } from "react";
+import { useAppStore } from "@/store/appStore";
+import { api } from "@/services/api";
+
 export function AppNavigator() {
   useLiveLocationWatcher();
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === "active") {
+        const token = useAppStore.getState().accessToken;
+        if (token) {
+          api.get("/users/me").catch(() => {});
+        }
+      }
+      appState.current = nextAppState;
+    });
+    return () => subscription.remove();
+  }, []);
 
   return (
     <NavigationContainer
