@@ -32,6 +32,7 @@ import {
   CXText,
   CXActionSheet,
   type CXAction,
+  CXAlert,
 } from "@/components/ui";
 
 import { api } from "@/services/api";
@@ -1017,6 +1018,7 @@ export function InviteToGroupScreen({
 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [alertState, setAlertState] = useState<{ visible: boolean, title: string, message: string, type: any, onOk?: () => void }>({ visible: false, title: "", message: "", type: "error" });
 
   const toggle = (id: string) =>
     setSelected((items) =>
@@ -1026,11 +1028,20 @@ export function InviteToGroupScreen({
   const send = async () => {
     try {
       await groupService.inviteUsers(route.params.groupId, selected);
-      Alert.alert("Success", "Invites sent successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() }
-      ]);
+      setAlertState({
+        visible: true,
+        title: "Success",
+        message: "Invites sent successfully!",
+        type: "success",
+        onOk: () => navigation.goBack()
+      });
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.message || "Failed to send invites");
+      setAlertState({
+        visible: true,
+        title: "Error",
+        message: err.response?.data?.message || "Failed to send invites",
+        type: "error"
+      });
     }
   };
 
@@ -1134,6 +1145,16 @@ export function InviteToGroupScreen({
           onPress={() => void send()}
         />
       </View>
+      <CXAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onClose={() => {
+          setAlertState(s => ({ ...s, visible: false }));
+          if (alertState.onOk) alertState.onOk();
+        }}
+      />
     </CXScreen>
   );
 }
