@@ -25,17 +25,25 @@ type ForgotProps = NativeStackScreenProps<RootStackParamList, "ForgotPassword">;
 
 export function ForgotPasswordScreen({ navigation }: ForgotProps) {
   const [isOtpSent, setIsOtpSent] = React.useState(false);
+  const [countdown, setCountdown] = React.useState(0);
   const lastAttemptedOtpRef = React.useRef<string>("");
   const schema = z.object({
-    email: z.string().email("Enter a valid email address"),
+    email: z.string().min(3, "Enter a valid email or username"),
     otp: z.string().optional(),
   });
-  const { control, handleSubmit, setError, formState, watch } = useForm({
+  const { control, handleSubmit, setError, formState, watch, getValues } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { email: "", otp: "" },
   });
 
   const otpValue = watch("otp");
+
+  React.useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   React.useEffect(() => {
     if (isOtpSent && otpValue && /^[0-9]{6}$/.test(otpValue) && !formState.isSubmitting && otpValue !== lastAttemptedOtpRef.current) {
@@ -49,6 +57,7 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
       if (!isOtpSent) {
         await api.post("/auth/forgot-password", { value: values.email });
         setIsOtpSent(true);
+        setCountdown(30);
       } else {
         if (!values.otp || values.otp.length < 4) {
           setError("otp", { message: "Please enter the OTP" });
@@ -80,10 +89,10 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
         name="email"
         render={({ field, fieldState }) => (
           <CXInput
-            label="Registered Email"
+            label="Email or Username"
             icon="mail-outline"
-            placeholder="Enter your email"
-            keyboardType="email-address"
+            placeholder="Enter your email or username"
+            keyboardType="default"
             autoCapitalize="none"
             editable={!isOtpSent}
             value={field.value}
@@ -121,6 +130,25 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
           ⓘ We will send a one-time code to your registered email account.
         </CXText>
       </View>
+      {isOtpSent && (
+        <View style={{ flexDirection: "row", justifyContent: "center", marginVertical: spacing.sm }}>
+          <Pressable
+            disabled={countdown > 0}
+            onPress={async () => {
+              try {
+                await api.post("/auth/forgot-password", { value: getValues().email });
+                setCountdown(30);
+              } catch (err) {
+                setError("root", { message: getApiErrorMessage(err) });
+              }
+            }}
+          >
+            <CXText variant="smallStrong" color={countdown > 0 ? colors.textMuted : colors.primary}>
+              {countdown > 0 ? `Resend Code in ${countdown}s` : "Resend Code"}
+            </CXText>
+          </Pressable>
+        </View>
+      )}
       <View style={{ minHeight: 24, justifyContent: "center", marginVertical: spacing.xs }}>
         {formState.errors.root?.message ? (
           <CXText color={colors.danger} variant="small">{formState.errors.root.message}</CXText>

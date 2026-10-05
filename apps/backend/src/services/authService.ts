@@ -372,7 +372,17 @@ export async function createPasswordReset(identifier: string) {
 }
 
 export async function verifyForgotPasswordOtp(emailRaw: string, otp: string) {
-  const email = emailRaw.trim().toLowerCase();
+  const normalized = emailRaw.trim().toLowerCase();
+  
+  const userToVerify = await User.findOne({
+    $or: [
+      { email: normalized },
+      { username: normalized },
+      { phone: normalized },
+    ],
+  });
+
+  const email = userToVerify ? userToVerify.email : normalized;
   
   // Prevent brute force by incrementing attempts
   const record = await EmailOtp.findOneAndUpdate(
