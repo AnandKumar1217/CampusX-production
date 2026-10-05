@@ -58,6 +58,40 @@ export function createApp() {
       message: databaseReady ? "Service is healthy" : "Service is not ready",
     });
   });
+
+  app.get("/events/:id", (req, res) => {
+    const installUrl = env.CAMPUSX_INSTALL_URL || "https://expo.dev";
+    const appScheme = `campusx://event/${req.params.id}`;
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>CampusX Event</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { font-family: -apple-system, sans-serif; text-align: center; padding: 40px 20px; background: #f9fafb; color: #1f2937; }
+            .btn { display: inline-block; margin: 12px; padding: 14px 24px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; }
+            .btn-primary { background: #7c3aed; color: #fff; box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.3); }
+            .btn-secondary { background: #ffffff; color: #1f2937; border: 1px solid #e5e7eb; }
+          </style>
+          <script>
+            window.onload = function() {
+              window.location.href = "${appScheme}";
+            };
+          </script>
+        </head>
+        <body>
+          <h2 style="margin-bottom: 24px; font-size: 24px;">Open this event in CampusX</h2>
+          <a href="${appScheme}" class="btn btn-primary">Open in CampusX App</a>
+          <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; margin-bottom: 16px;">Don't have the app yet?</p>
+            <a href="${installUrl}" class="btn btn-secondary">Install CampusX</a>
+          </div>
+        </body>
+      </html>
+    `);
+  });
+
   app.use("/api/auth", authRouter);
   app.use("/api/users", authenticate, userRouter);
   app.use("/api/friends", authenticate, friendRouter);

@@ -12,6 +12,7 @@ import { Friendship } from "../models/Social.js";
 import { GroupMembership } from "../models/Group.js";
 import { Trip, TripMember } from "../models/Trip.js";
 import { verifyAccessToken } from "../services/tokenService.js";
+import { updateRealUserActivity } from "../middleware/activity.js";
 
 export function createSocketServer(httpServer: HttpServer) {
   const io = new Server(httpServer, {
@@ -26,6 +27,7 @@ export function createSocketServer(httpServer: HttpServer) {
       if (!await User.exists({ _id: payload.sub }))
         throw new Error("Account no longer exists");
       socket.data.userId = payload.sub;
+      updateRealUserActivity();
       next();
     } catch {
       next(new Error("Unauthorized"));
@@ -55,7 +57,6 @@ export function createSocketServer(httpServer: HttpServer) {
   };
   io.on("connection", async (socket) => {
     const userId = String(socket.data.userId);
-
     await socket.join(`user:${userId}`);
     await User.updateOne(
       { _id: userId },
@@ -82,6 +83,14 @@ export function createSocketServer(httpServer: HttpServer) {
     io.to(`user:${userId}`).emit("presence:changed", { userId, status: "online" });
     acceptedFriendIds.forEach((friendId) => {
       io.to(`user:${friendId.toString()}`).emit("presence:changed", { userId, status: "online" });
+    });
+
+    socket.use((packet, next) => {
+      const eventName = packet[0];
+      if (typeof eventName === "string" && !eventName.startsWith("typing:")) {
+        updateRealUserActivity();
+      }
+      next();
     });
 
     const getCanonicalVirtualRoom = (peerId: string) => {

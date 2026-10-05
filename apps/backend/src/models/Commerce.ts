@@ -19,12 +19,19 @@ const eventSchema = new Schema(
       {
         user: { type: objectId, ref: "User" },
         status: { type: String, enum: ["going", "maybe"] },
+        registeredAt: { type: Date, default: Date.now },
       },
     ],
+    capacity: { type: Number, min: 1 },
+    registrationDeadline: Date,
+    status: { type: String, enum: ["active", "cancelled"], default: "active" },
     draft: { type: Boolean, default: false },
+    cancelledAt: Date,
   },
   { timestamps: true, versionKey: false },
 );
+
+eventSchema.index({ cancelledAt: 1 }, { expireAfterSeconds: 86400 });
 
 const listingSchema = new Schema(
   {
@@ -37,7 +44,13 @@ const listingSchema = new Schema(
     images: [String],
     imagePublicIds: [String],
     condition: String,
-    location: String,
+    location: {
+      name: String,
+      address: String,
+      latitude: Number,
+      longitude: Number,
+    },
+    viewedBy: [{ type: objectId, ref: "User" }],
     status: {
       type: String,
       enum: ["active", "sold", "draft"],
@@ -45,8 +58,11 @@ const listingSchema = new Schema(
       index: true,
     },
   },
-  { timestamps: true, versionKey: false },
+  { timestamps: true, versionKey: false, toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
+listingSchema.virtual("views").get(function (this: any) {
+  return this.viewedBy ? this.viewedBy.length : 0;
+});
 listingSchema.index({ title: "text", description: "text", category: "text" });
 
 const timetableEntrySchema = new Schema(

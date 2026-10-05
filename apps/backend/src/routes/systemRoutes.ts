@@ -183,6 +183,10 @@ locationRouter.post(
       .object({
         latitude: z.number().min(-90).max(90),
         longitude: z.number().min(-180).max(180),
+        accuracy: z.number().optional(),
+        heading: z.number().optional(),
+        speed: z.number().optional(),
+        source: z.enum(["foreground", "background", "manual"]).optional(),
       })
       .parse(request.body);
     const settings = await LocationSharing.findOne({
@@ -196,6 +200,10 @@ locationRouter.post(
         "LOCATION_SHARING_DISABLED",
       );
     settings.point = { type: "Point", coordinates: [longitude, latitude] };
+    if (request.body.accuracy !== undefined) settings.accuracy = request.body.accuracy;
+    if (request.body.heading !== undefined) settings.heading = request.body.heading;
+    if (request.body.speed !== undefined) settings.speed = request.body.speed;
+    if (request.body.source !== undefined) settings.source = request.body.source;
     settings.positionUpdatedAt = new Date();
     await settings.save();
 
@@ -211,6 +219,10 @@ locationRouter.post(
       },
       latitude,
       longitude,
+      accuracy: settings.accuracy,
+      heading: settings.heading,
+      speed: settings.speed,
+      source: settings.source,
       updatedAt: settings.positionUpdatedAt,
     };
 
@@ -227,12 +239,10 @@ locationRouter.get(
     const relations = await Friendship.find({ users: request.user!._id });
     const acceptedFriendIds = relations.flatMap((r) => r.users).filter((id) => id.toString() !== request.user!._id.toString());
 
-    const STALE_THRESHOLD = new Date(Date.now() - LIVE_LOCATION_MAX_AGE_MS);
     const items = await LocationSharing.find({
       user: { $in: acceptedFriendIds },
       enabled: true,
       ghostMode: { $ne: true },
-      positionUpdatedAt: { $gte: STALE_THRESHOLD },
       "point.coordinates.1": { $exists: true },
     }).populate("user", "name username avatarUrl");
 
@@ -247,6 +257,10 @@ locationRouter.get(
         },
         latitude: item.point?.coordinates?.[1],
         longitude: item.point?.coordinates?.[0],
+        accuracy: item.accuracy,
+        heading: item.heading,
+        speed: item.speed,
+        source: item.source,
         updatedAt: item.positionUpdatedAt,
         status: "active",
       };

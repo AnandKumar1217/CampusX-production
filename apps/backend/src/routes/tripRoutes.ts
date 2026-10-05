@@ -512,3 +512,19 @@ tripRouter.post(
     throw new AppError(501, "Trip expense settlement is not available yet", "NOT_IMPLEMENTED");
   }),
 );
+
+tripRouter.delete(
+  "/:id",
+  asyncHandler(async (request, response) => {
+    const trip = await Trip.findOne({ _id: request.params.id, createdBy: request.user!._id });
+    if (!trip) throw new AppError(403, "Only the organizer can delete the trip", "FORBIDDEN");
+    
+    await TripMember.deleteMany({ trip: trip._id });
+    await TripItinerary.deleteMany({ trip: trip._id });
+    await TripExpense.deleteMany({ trip: trip._id });
+    await TripVote.deleteMany({ trip: trip._id });
+    await trip.deleteOne();
+    
+    return sendSuccess(response, null, "Trip deleted permanently");
+  }),
+);

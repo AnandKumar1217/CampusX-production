@@ -15,26 +15,25 @@ import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 import { pagination } from "../utils/pagination.js";
 
 export const eventRouter = Router();
+
 eventRouter.get(
   "/",
   asyncHandler(async (request, response) => {
     const { page, limit, skip } = pagination(request.query);
     const filter: any = {
+      status: { $ne: "cancelled" },
       $or: [
-        { 
-          draft: { $ne: true },
-          $or: [
-            { endsAt: { $gte: new Date() } },
-            { endsAt: null, startsAt: { $gte: new Date() } },
-            { endsAt: { $exists: false }, startsAt: { $gte: new Date() } }
-          ]
-        },
+        { status: "active", draft: { $ne: true } },
         { creator: request.user!._id }
       ]
     };
     if (request.query.category) {
       filter.category = request.query.category;
     }
+    if (request.query.q) {
+      filter.$text = { $search: request.query.q };
+    }
+    
     const [items, total] = await Promise.all([
       Event.find(filter)
         .populate("creator", "name username avatarUrl")
@@ -46,51 +45,56 @@ eventRouter.get(
     return sendSuccess(response, { items, page, limit, total });
   }),
 );
+
 eventRouter.post(
   "/",
   asyncHandler(async (request, response) => {
     const input = z
       .object({
         title: z.string().min(3).max(200),
-        description: z.string().max(5000).optional(),
+        description: z.string().max(5000),
         imageUrl: z.url().optional(),
         imagePublicId: z.string().optional(),
-        category: z.string().max(80).optional(),
+        category: z.string().max(80),
         startsAt: z.coerce.date(),
-        endsAt: z.coerce.date().optional(),
-        location: z
-          .object({
-            name: z.string().max(200),
-            coordinates: z.tuple([z.number(), z.number()]).optional(),
-          })
-          .optional(),
+        endsAt: z.coerce.date(),
+        location: z.object({
+          name: z.string().max(200),
+          coordinates: z.tuple([z.number(), z.number()]).optional(),
+        }),
+        capacity: z.number().min(1).optional(),
+        registrationDeadline: z.coerce.date().optional(),
+        status: z.enum(["draft", "active", "cancelled"]).default("active"),
         draft: z.boolean().default(false),
       })
       .parse(request.body);
+
+    if (input.endsAt <= input.startsAt) {
+      throw new AppError(400, "End time must be after start time", "INVALID_DATES");
+    }
+    if (input.registrationDeadline && input.registrationDeadline > input.startsAt) {
+      throw new AppError(400, "Registration deadline cannot be after event starts", "INVALID_DEADLINE");
+    }
+
     const item = await Event.create({ ...input, creator: request.user!._id });
     const io = request.app.get("io");
-    if (!item.draft) io?.emit("event:created", { eventId: item._id.toString() });
+    if (!item.draft && item.status === "active") io?.emit("event:created", { eventId: item._id.toString() });
     
-    return sendSuccess(
-      response,
-      item,
-      "Event created",
-      201,
-    );
+    return sendSuccess(response, item, "Event created", 201);
   }),
 );
+
 eventRouter.get(
   "/saved",
   asyncHandler(async (request, response) => {
-    const saved = await SavedItem.find({ user: request.user!._id, itemType: "event" })
-      .sort({ createdAt: -1 });
+    const saved = await SavedItem.find({ user: request.user!._id, itemType: "event" }).sort({ createdAt: -1 });
     const ids = saved.map((entry) => entry.item);
-    const events = await Event.find({ _id: { $in: ids }, draft: { $ne: true } })
-      .populate("creator", "name username avatarUrl");
+    const events = await Event.find({ _id: { $in: ids }, draft: { $ne: true } }).populate("creator", "name username avatarUrl");
     const byId = new Map(events.map((event) => [event._id.toString(), event]));
     return sendSuccess(response, ids.map((id) => byId.get(id.toString())).filter(Boolean));
   }),
 );
+
 eventRouter.get(
   "/:id",
   asyncHandler(async (request, response) => {
@@ -98,11 +102,12 @@ eventRouter.get(
       .populate("creator", "name username avatarUrl")
       .populate("attendees.user", "name username avatarUrl");
     if (!item) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
-    if (item.draft && item.creator._id.toString() !== request.user!._id.toString())
+    if ((item.draft || item.status !== "active") && item.creator._id.toString() !== request.user!._id.toString())
       throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
     return sendSuccess(response, item);
   }),
 );
+
 eventRouter.patch(
   "/:id",
   asyncHandler(async (request, response) => {
@@ -118,92 +123,152 @@ eventRouter.patch(
         name: z.string().max(200),
         coordinates: z.tuple([z.number(), z.number()]).optional(),
       }).optional(),
+      capacity: z.number().min(1).optional(),
+      registrationDeadline: z.coerce.date().optional(),
+      status: z.enum(["draft", "active", "cancelled"]).optional(),
       draft: z.boolean().optional(),
     }).parse(request.body);
-    const event = await Event.findById(request.params.id);
-    if (!event)
-      throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
     
+    const event = await Event.findById(request.params.id);
+    if (!event) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
     if (event.creator.toString() !== request.user!._id.toString()) {
       throw new AppError(403, "Not authorized to modify this event", "FORBIDDEN");
     }
     
+    const startsAt = input.startsAt || event.startsAt;
+    const endsAt = input.endsAt || event.endsAt;
+    if (endsAt && startsAt && endsAt <= startsAt) {
+      throw new AppError(400, "End time must be after start time", "INVALID_DATES");
+    }
+    
+    const updateData: any = { ...input };
+    if (updateData.status === "cancelled" && event.status !== "cancelled") {
+      updateData.cancelledAt = new Date();
+    }
+    
     const oldPublicId = event.imagePublicId;
-    const item = await Event.findByIdAndUpdate(
-      event._id,
-      { $set: input },
-      { new: true, runValidators: true },
-    );
+    const item = await Event.findByIdAndUpdate(event._id, { $set: updateData }, { new: true, runValidators: true });
     
     if (input.imagePublicId && oldPublicId && input.imagePublicId !== oldPublicId) {
       await cloudinaryService.deleteImage(oldPublicId).catch(console.error);
     }
     
-    if (item && !item.draft && item.attendees && item.attendees.length > 0) {
-      const goingAttendees = item.attendees.filter((a: any) => a.status === "going").map((a: any) => a.user);
-      if (goingAttendees.length > 0) {
-        const notifs = goingAttendees.map((userId: any) => ({
-          user: userId,
-          actor: request.user!._id,
-          type: "event_update",
-          title: `Event updated: ${item.title}`,
-          target: { route: "EventDetails", params: { eventId: item._id.toString() } }
-        }));
-        await Notification.insertMany(notifs).catch(console.error);
-      }
+    if (updateData.status === "cancelled" && event.status !== "cancelled") {
+       const goingAttendees = event.attendees.filter((a: any) => a.status === "going").map((a: any) => a.user).filter(Boolean);
+       if (goingAttendees.length > 0) {
+           const notifs = goingAttendees.map((userId: any) => ({
+               user: userId,
+               actor: request.user!._id,
+               type: "event_cancel",
+               title: `Event cancelled: ${event.title}`
+           }));
+           await Notification.insertMany(notifs).catch(console.error);
+           
+           goingAttendees.forEach((userId: any) => {
+             void pushService.sendPushNotification(userId, {
+               title: `Event Cancelled`,
+               body: `${event.title} has been cancelled.`,
+               data: { route: "EventDetails", params: { eventId: event._id.toString() } }
+             });
+           });
+       }
+       request.app.get("io")?.emit("event:cancelled", { eventId: event._id.toString() });
+    } else {
+       const io = request.app.get("io");
+       if (item?.draft && !event.draft) io?.emit("event:deleted", { eventId: item._id.toString() });
+       else if (item?.draft) io?.to(`user:${request.user!._id}`).emit("event:updated", { eventId: item._id.toString() });
+       else io?.emit(event.draft ? "event:created" : "event:updated", { eventId: item?._id.toString() });
     }
-    
-    const io = request.app.get("io");
-    if (item?.draft && !event.draft) io?.emit("event:deleted", { eventId: item._id.toString() });
-    else if (item?.draft) io?.to(`user:${request.user!._id}`).emit("event:updated", { eventId: item._id.toString() });
-    else io?.emit(event.draft ? "event:created" : "event:updated", { eventId: item?._id.toString() });
 
     return sendSuccess(response, item, "Event updated");
   }),
 );
+
 eventRouter.post(
-  "/:id/attendance",
+  "/:id/register",
   asyncHandler(async (request, response) => {
-    const { status } = z
-      .object({ status: z.enum(["none", "maybe", "going"]) })
-      .parse(request.body);
-    const visibleEvent = await Event.exists({ _id: request.params.id, draft: { $ne: true } });
-    if (!visibleEvent) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
-    await Event.updateOne(
-      { _id: request.params.id },
-      { $pull: { attendees: { user: request.user!._id } } },
-    );
-    if (status !== "none") {
-      await Event.updateOne(
-        { _id: request.params.id },
-        { $push: { attendees: { user: request.user!._id, status } } },
-      );
+    const event = await Event.findById(request.params.id);
+    if (!event || event.draft || event.status !== "active") throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
+    
+    if (event.creator.toString() === request.user!._id.toString()) {
+      throw new AppError(400, "Event owners cannot register for their own event.", "BAD_REQUEST");
     }
     
-    if (status === "going") {
-      const event = await Event.findById(request.params.id);
-      if (event && event.creator.toString() !== request.user!._id.toString()) {
-        const notif = await Notification.create({
-          user: event.creator,
-          actor: request.user!._id,
-          type: "event_join",
-          title: `${request.user!.name} is going to your event`,
-          target: { route: "EventDetails", params: { eventId: event._id.toString() } }
-        }).catch(console.error);
-        if (notif) {
-          void pushService.sendPushNotification(event.creator as any, {
-            title: notif.title,
-            body: "Tap to view",
-            data: { route: "EventDetails", params: { eventId: event._id.toString() } }
-          });
-        }
-      }
+    if (event.registrationDeadline && new Date() > event.registrationDeadline) {
+      throw new AppError(400, "Registration is closed for this event", "DEADLINE_PASSED");
+    }
+    
+    const isGoing = event.attendees.some(a => a.user?.toString() === request.user!._id.toString() && a.status === "going");
+    if (isGoing) {
+      return sendSuccess(response, null, "Already registered");
+    }
+    
+    const goingCount = event.attendees.filter(a => a.status === "going").length;
+    if (event.capacity && goingCount >= event.capacity) {
+      throw new AppError(400, "Event is full", "EVENT_FULL");
+    }
+
+    await Event.updateOne(
+      { _id: request.params.id },
+      { $pull: { attendees: { user: request.user!._id } } }
+    );
+    await Event.updateOne(
+      { _id: request.params.id },
+      { $push: { attendees: { user: request.user!._id, status: "going", registeredAt: new Date() } } }
+    );
+    
+    const notif = await Notification.create({
+      user: event.creator,
+      actor: request.user!._id,
+      type: "event_join",
+      title: `${request.user!.name} is going to your event`,
+      target: { route: "EventDetails", params: { eventId: event._id.toString() } }
+    }).catch(console.error);
+    if (notif) {
+      void pushService.sendPushNotification(event.creator as any, {
+        title: notif.title,
+        body: "Tap to view",
+        data: { route: "EventDetails", params: { eventId: event._id.toString() } }
+      });
     }
     
     const io = request.app.get("io");
     io?.emit("event:updated", { eventId: request.params.id });
+    io?.to(`user:${event.creator}`).emit("event:registration_added", { eventId: request.params.id, userId: request.user!._id });
     
-    return sendSuccess(response, { status }, "Attendance updated");
+    return sendSuccess(response, null, "Registered successfully");
+  }),
+);
+
+eventRouter.delete(
+  "/:id/register",
+  asyncHandler(async (request, response) => {
+    const event = await Event.findById(request.params.id);
+    if (!event) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
+    
+    await Event.updateOne(
+      { _id: request.params.id },
+      { $pull: { attendees: { user: request.user!._id } } }
+    );
+    
+    const io = request.app.get("io");
+    io?.emit("event:updated", { eventId: request.params.id });
+    io?.to(`user:${event.creator}`).emit("event:registration_cancelled", { eventId: request.params.id, userId: request.user!._id });
+    
+    return sendSuccess(response, null, "Registration cancelled");
+  }),
+);
+
+eventRouter.get(
+  "/:id/registrations",
+  asyncHandler(async (request, response) => {
+    const event = await Event.findById(request.params.id).populate("attendees.user", "name username avatarUrl department year");
+    if (!event) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
+    if (event.creator.toString() !== request.user!._id.toString()) {
+      throw new AppError(403, "Not authorized to view registrations", "FORBIDDEN");
+    }
+    const going = event.attendees.filter(a => a.status === "going");
+    return sendSuccess(response, going);
   }),
 );
 
@@ -214,17 +279,6 @@ eventRouter.delete(
     if (!event) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
     if (event.creator.toString() !== request.user!._id.toString()) {
       throw new AppError(403, "Not authorized to delete this event", "FORBIDDEN");
-    }
-    
-    const goingAttendees = event.attendees.filter((a: any) => a.status === "going").map((a: any) => a.user);
-    if (goingAttendees.length > 0) {
-       const notifs = goingAttendees.map((userId: any) => ({
-           user: userId,
-           actor: request.user!._id,
-           type: "event_cancel",
-           title: `Event cancelled: ${event.title}`
-       }));
-       await Notification.insertMany(notifs).catch(console.error);
     }
     
     if (event.imagePublicId) {
@@ -249,226 +303,387 @@ eventRouter.post(
     if (saved) {
       const event = await Event.exists({ _id: request.params.id, draft: { $ne: true } });
       if (!event) throw new AppError(404, "Event not found", "EVENT_NOT_FOUND");
-      await SavedItem.updateOne(filter, { $setOnInsert: filter }, { upsert: true });
+      await SavedItem.findOneAndUpdate(filter, filter, { upsert: true });
     } else {
-      await SavedItem.deleteOne(filter);
+      await SavedItem.findOneAndDelete(filter);
     }
-    request.app.get("io")?.to(`user:${request.user!._id}`).emit("event:saved", { eventId: request.params.id, saved });
-    return sendSuccess(response, { saved }, saved ? "Event saved" : "Event removed from saved");
+    return sendSuccess(response, { saved });
   }),
 );
 
 export const marketplaceRouter = Router();
+
 marketplaceRouter.get(
   "/",
   asyncHandler(async (request, response) => {
-    const { page, limit, skip } = pagination(request.query);
+    const limit = Math.min(Math.max(Number(request.query.limit) || 16, 1), 40);
     const query = String(request.query.q ?? "").trim();
-    const filter = {
-      status: "active",
-      ...(query ? { $text: { $search: query } } : {}),
-      ...(request.query.category ? { category: request.query.category } : {}),
-    };
-    const [items, total] = await Promise.all([
-      MarketplaceListing.find(filter)
-        .populate("seller", "name username avatarUrl verified")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      MarketplaceListing.countDocuments(filter),
-    ]);
-    return sendSuccess(response, { items, page, limit, total });
-  }),
+    const category = request.query.category ? String(request.query.category) : null;
+    const sort = String(request.query.sort || "newest");
+    const cursorStr = request.query.cursor ? String(request.query.cursor) : null;
+
+    let filter: any = { status: "available" };
+    if (category && category !== "All") filter.category = category;
+    if (query) filter.$text = { $search: query };
+
+    // Cursor Pagination
+    if (cursorStr) {
+      try {
+        const cursorData = JSON.parse(Buffer.from(cursorStr, 'base64').toString('utf8'));
+        if (sort === "price_asc") {
+          filter.$or = [
+            { price: { $gt: cursorData.price } },
+            { price: cursorData.price, _id: { $gt: cursorData._id } }
+          ];
+        } else if (sort === "price_desc") {
+          filter.$or = [
+            { price: { $lt: cursorData.price } },
+            { price: cursorData.price, _id: { $lt: cursorData._id } }
+          ];
+        } else {
+          // newest
+          if (query) {
+             filter.score = { $lt: cursorData.score };
+          } else {
+             filter.$or = [
+               { createdAt: { $lt: cursorData.createdAt } },
+               { createdAt: cursorData.createdAt, _id: { $lt: cursorData._id } }
+             ];
+          }
+        }
+      } catch (e) {
+        console.error("Invalid cursor");
+      }
+    }
+
+    let sortObj: any = { createdAt: -1, _id: -1 };
+    if (sort === "price_asc") sortObj = { price: 1, _id: 1 };
+    if (sort === "price_desc") sortObj = { price: -1, _id: -1 };
+    if (query) {
+      sortObj = { score: { $meta: "textScore" } };
+    }
+
+    let dbQuery = MarketplaceListing.find(filter)
+      .populate("seller", "name username avatarUrl")
+      .select("-description -images")
+      .sort(sortObj)
+      .limit(limit + 1)
+      .lean();
+      
+    if (query) {
+      dbQuery = dbQuery.select({ score: { $meta: "textScore" }, description: 0, images: 0 });
+    }
+
+    const items = await dbQuery;
+
+    const hasMore = items.length > limit;
+    if (hasMore) items.pop();
+
+    let nextCursor = null;
+    if (hasMore && items.length > 0) {
+      const lastItem = items[items.length - 1];
+      if (lastItem) {
+        let cursorData: any = {};
+        if (sort === "price_asc" || sort === "price_desc") {
+          cursorData = { price: lastItem.price, _id: lastItem._id };
+        } else {
+          if (query) {
+             cursorData = { score: (lastItem as any).score };
+          } else {
+             cursorData = { createdAt: lastItem.createdAt, _id: lastItem._id };
+          }
+        }
+        nextCursor = Buffer.from(JSON.stringify(cursorData)).toString('base64');
+      }
+    }
+
+    // Apply Cloudinary transformations to coverImage
+    const formattedItems = items.map(item => {
+      let coverImage = item.imagePublicIds?.[0] 
+        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        : null;
+      
+      const formatted: any = {
+        ...item,
+        coverImage,
+      };
+      delete formatted.imagePublicIds;
+      return formatted;
+    });
+
+    return sendSuccess(response, { items: formattedItems, hasMore, nextCursor });
+  })
 );
+
 marketplaceRouter.post(
   "/",
   asyncHandler(async (request, response) => {
-    const input = z
-      .object({
-        title: z.string().min(3).max(180),
-        description: z.string().max(4000).optional(),
-        category: z.string().min(1).max(80),
-        price: z.number().min(0),
-        negotiable: z.boolean().default(true),
-        images: z.array(z.url()).max(5).default([]),
-        imagePublicIds: z.array(z.string()).max(5).default([]),
-        condition: z.string().max(80).optional(),
-        location: z.string().max(200).optional(),
-        draft: z.boolean().default(false),
-      })
-      .parse(request.body);
+    const input = z.object({
+      title: z.string().min(3).max(180),
+      description: z.string().max(4000).optional(),
+      category: z.string().min(1).max(80),
+      price: z.number().min(0),
+      negotiable: z.boolean().default(true),
+      images: z.array(z.url()).max(5).default([]),
+      imagePublicIds: z.array(z.string()).max(5).default([]),
+      condition: z.string().max(80).optional(),
+      location: z.object({
+        name: z.string().optional(),
+        address: z.string().optional(),
+        latitude: z.number().nullable().optional(),
+        longitude: z.number().nullable().optional(),
+      }).optional(),
+      draft: z.boolean().default(false),
+    }).parse(request.body);
+
     const item = await MarketplaceListing.create({
       ...input,
       seller: request.user!._id,
-      status: input.draft ? "draft" : "active",
+      status: input.draft ? "draft" : "available",
     });
 
     if (!input.draft) {
-      const io = request.app.get("io");
-      io?.emit("listing:created", { listingId: item._id.toString() });
+      request.app.get("io")?.emit("marketplace:listing_updated", { listingId: item._id.toString() });
     }
 
-    return sendSuccess(
-      response,
-      item,
-      "Listing created",
-      201,
-    );
-  }),
+    return sendSuccess(response, item, "Listing created", 201);
+  })
 );
+
 marketplaceRouter.get(
   "/mine",
-  asyncHandler(async (request, response) =>
-    sendSuccess(
-      response,
-      await MarketplaceListing.find({ seller: request.user!._id }).sort({
-        createdAt: -1,
-      }),
-    ),
-  ),
+  asyncHandler(async (request, response) => {
+    const limit = Math.min(Math.max(Number(request.query.limit) || 16, 1), 40);
+    const statusFilter = String(request.query.status || "available");
+    const cursorStr = request.query.cursor ? String(request.query.cursor) : null;
+    
+    let filter: any = { seller: request.user!._id };
+    if (statusFilter === "available") {
+      filter.status = { $in: ["available", "reserved"] };
+    } else if (statusFilter === "draft") {
+      filter.status = "draft";
+    } else if (statusFilter === "sold") {
+      filter.status = "sold";
+    }
+
+    if (cursorStr) {
+      try {
+        const cursorData = JSON.parse(Buffer.from(cursorStr, 'base64').toString('utf8'));
+        filter.$or = [
+          { createdAt: { $lt: cursorData.createdAt } },
+          { createdAt: cursorData.createdAt, _id: { $lt: cursorData._id } }
+        ];
+      } catch (e) {
+        console.error("Invalid cursor");
+      }
+    }
+
+    const items = await MarketplaceListing.find(filter)
+      .select("-description -images")
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const hasMore = items.length > limit;
+    if (hasMore) items.pop();
+
+    let nextCursor = null;
+    if (hasMore && items.length > 0) {
+      const lastItem = items[items.length - 1];
+      if (lastItem) {
+        nextCursor = Buffer.from(JSON.stringify({ createdAt: lastItem.createdAt, _id: lastItem._id })).toString('base64');
+      }
+    }
+    
+    const formattedItems = items.map(item => {
+      let coverImage = item.imagePublicIds?.[0] 
+        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        : null;
+      return { ...item, coverImage, imagePublicIds: undefined };
+    });
+
+    return sendSuccess(response, { items: formattedItems, hasMore, nextCursor });
+  })
 );
 
 marketplaceRouter.get(
   "/saved",
   asyncHandler(async (request, response) => {
-    const savedItems = await SavedItem.find({ user: request.user!._id, itemType: "listing" });
+    const limit = Math.min(Math.max(Number(request.query.limit) || 16, 1), 40);
+    const cursorStr = request.query.cursor ? String(request.query.cursor) : null;
+    
+    let savedFilter: any = { user: request.user!._id, itemType: "listing" };
+    if (cursorStr) {
+      try {
+        const cursorData = JSON.parse(Buffer.from(cursorStr, 'base64').toString('utf8'));
+        savedFilter.$or = [
+          { createdAt: { $lt: cursorData.createdAt } },
+          { createdAt: cursorData.createdAt, _id: { $lt: cursorData._id } }
+        ];
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+
+    const savedItems = await SavedItem.find(savedFilter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
+      .lean();
+      
+    const hasMore = savedItems.length > limit;
+    if (hasMore) savedItems.pop();
+    
+    let nextCursor = null;
+    if (hasMore && savedItems.length > 0) {
+      const lastItem = savedItems[savedItems.length - 1];
+      if (lastItem) {
+        nextCursor = Buffer.from(JSON.stringify({ createdAt: lastItem.createdAt, _id: lastItem._id })).toString('base64');
+      }
+    }
+
     const listingIds = savedItems.map(s => s.item);
     
     const items = await MarketplaceListing.find({ _id: { $in: listingIds }, status: { $ne: "draft" } })
       .populate("seller", "name username avatarUrl verified")
-      .sort({ createdAt: -1 });
+      .select("-description -images")
+      .lean();
       
-    return sendSuccess(response, items);
+    const formattedItems = items.map(item => {
+      let coverImage = item.imagePublicIds?.[0] 
+        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        : null;
+      return { ...item, coverImage, imagePublicIds: undefined };
+    });
+      
+    // Sort items to match savedItems order
+    const orderedItems = savedItems
+      .map(s => formattedItems.find(i => i._id.toString() === s.item.toString()))
+      .filter(Boolean);
+
+    return sendSuccess(response, { items: orderedItems, hasMore, nextCursor });
   })
 );
+
 marketplaceRouter.get(
   "/:id",
   asyncHandler(async (request, response) => {
-    const item = await MarketplaceListing.findById(request.params.id).populate(
-      "seller",
-      "name username avatarUrl verified",
-    );
-    if (!item)
-      throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
+    const item = await MarketplaceListing.findById(request.params.id)
+      .populate("seller", "name username avatarUrl verified")
+      .lean();
+      
+    if (!item) throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
     if (item.status === "draft" && item.seller._id.toString() !== request.user!._id.toString())
       throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
+
+    if (item.seller._id.toString() !== request.user!._id.toString()) {
+      await MarketplaceListing.updateOne(
+        { _id: item._id },
+        { $addToSet: { viewedBy: request.user!._id } }
+      );
+    }
+
     return sendSuccess(response, item);
-  }),
+  })
 );
+
 marketplaceRouter.patch(
   "/:id",
   asyncHandler(async (request, response) => {
-    const input = z
-      .object({
-        title: z.string().min(3).max(180).optional(),
-        description: z.string().max(4000).optional(),
-        price: z.number().min(0).optional(),
-        status: z.enum(["active", "sold", "draft"]).optional(),
-        images: z.array(z.url()).max(5).optional(),
-        imagePublicIds: z.array(z.string()).max(5).optional(),
-      })
-      .parse(request.body);
+    const input = z.object({
+      title: z.string().min(3).max(180).optional(),
+      description: z.string().max(4000).optional(),
+      category: z.string().min(1).max(80).optional(),
+      price: z.number().min(0).optional(),
+      status: z.enum(["available", "sold", "draft", "reserved", "deleted"]).optional(),
+      condition: z.string().optional(),
+      location: z.object({
+        name: z.string().optional(),
+        address: z.string().optional(),
+        latitude: z.number().nullable().optional(),
+        longitude: z.number().nullable().optional(),
+      }).optional(),
+      images: z.array(z.url()).max(5).optional(),
+      imagePublicIds: z.array(z.string()).max(5).optional(),
+    }).parse(request.body);
 
     const oldListing = await MarketplaceListing.findById(request.params.id);
-
-    if (!oldListing)
-      throw new AppError(
-        404,
-        "Listing not found",
-        "LISTING_NOT_FOUND",
-      );
-
+    if (!oldListing) throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
     if (oldListing.seller.toString() !== request.user!._id.toString()) {
-      throw new AppError(
-        403,
-        "Not authorized to modify this listing",
-        "FORBIDDEN",
-      );
+      throw new AppError(403, "Not authorized", "FORBIDDEN");
     }
+    
+    const oldIds = oldListing.imagePublicIds || [];
+    const newIds = input.imagePublicIds || [];
+    const newlyAddedIds = newIds.filter((id) => !oldIds.includes(id));
+    const removedIds = oldIds.filter((id) => !newIds.includes(id));
 
-    const item = await MarketplaceListing.findOneAndUpdate(
-      { _id: request.params.id, seller: request.user!._id },
-      { $set: input },
-      { new: true, runValidators: true },
-    );
+    try {
+      const item = await MarketplaceListing.findOneAndUpdate(
+        { _id: request.params.id, seller: request.user!._id },
+        { $set: input },
+        { new: true, runValidators: true }
+      ).populate("seller", "name username avatarUrl verified");
 
-    if (input.imagePublicIds && item) {
-      const oldIds = oldListing.imagePublicIds || [];
-      const newIds = input.imagePublicIds;
-      const removedIds = oldIds.filter((id: string) => !newIds.includes(id));
-      for (const removedId of removedIds) {
-        await cloudinaryService.deleteImage(removedId).catch(console.error);
+      if (item) {
+        request.app.get("io")?.emit("marketplace:listing_updated", { listingId: item._id.toString() });
       }
-    }
-
-    if (input.status === "sold" && oldListing.status !== "sold" && item) {
-      const savedItems = await SavedItem.find({ itemType: "listing", item: item._id });
-      const userIds = savedItems.map(s => s.user.toString()).filter(id => id !== request.user!._id.toString());
       
-      if (userIds.length > 0) {
-        const notifs = userIds.map(userId => ({
-          user: userId,
-          actor: request.user!._id,
-          type: "listing_sold",
-          title: `An item you saved was sold: ${item.title}`,
-          target: { route: "ListingDetails", params: { listingId: item._id.toString() } }
-        }));
-        await Notification.insertMany(notifs).catch(console.error);
+      // Cleanup OLD images after success
+      if (input.imagePublicIds) {
+        for (const removedId of removedIds) {
+          cloudinaryService.deleteImage(removedId).catch(console.error);
+        }
       }
-      const io = request.app.get("io");
-      if (oldListing.status === "draft") io?.to(`user:${request.user!._id}`).emit("listing:updated", { listingId: item._id.toString() });
-      else io?.emit("listing:sold", { listingId: item._id.toString() });
-    } else if (item) {
-      const io = request.app.get("io");
-      if (item.status === "draft" && oldListing.status === "draft") io?.to(`user:${request.user!._id}`).emit("listing:updated", { listingId: item._id.toString() });
-      else io?.emit("listing:updated", { listingId: item._id.toString() });
+      
+      return sendSuccess(response, item, "Listing updated");
+    } catch (error) {
+      // Cleanup NEW images if DB update failed
+      if (input.imagePublicIds) {
+        for (const addedId of newlyAddedIds) {
+           cloudinaryService.deleteImage(addedId).catch(console.error);
+        }
+      }
+      throw error;
     }
-
-    return sendSuccess(response, item, "Listing updated");
-  }),
+  })
 );
+
 marketplaceRouter.delete(
   "/:id",
   asyncHandler(async (request, response) => {
     const item = await MarketplaceListing.findById(request.params.id);
-    if (!item)
-      throw new AppError(
-        404,
-        "Listing not found",
-        "LISTING_NOT_FOUND",
-      );
-
+    if (!item) throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
     if (item.seller.toString() !== request.user!._id.toString()) {
-      throw new AppError(
-        403,
-        "Not authorized to delete this listing",
-        "FORBIDDEN",
-      );
+      throw new AppError(403, "Not authorized", "FORBIDDEN");
     }
 
-    if (item.imagePublicIds && item.imagePublicIds.length > 0) {
-      for (const publicId of item.imagePublicIds) {
-        await cloudinaryService.deleteImage(publicId).catch(console.error);
-      }
-    }
+    const publicIdsToDelete = item.imagePublicIds || [];
 
+    // Delete DB first
     await item.deleteOne();
     await SavedItem.deleteMany({ itemType: "listing", item: item._id });
 
-    const io = request.app.get("io");
-    if (item.status === "draft") io?.to(`user:${request.user!._id}`).emit("listing:deleted", { listingId: request.params.id });
-    else io?.emit("listing:deleted", { listingId: request.params.id });
+    // Emit event
+    request.app.get("io")?.emit("marketplace:listing_deleted", { listingId: request.params.id });
+    
+    // Cloudinary cleanup AFTER DB success
+    if (publicIdsToDelete.length > 0) {
+      for (const publicId of publicIdsToDelete) {
+        cloudinaryService.deleteImage(publicId).catch(e => {
+          console.error(`Failed to clean up cloudinary image ${publicId} for deleted listing ${item._id}`, e);
+        });
+      }
+    }
 
     return sendSuccess(response, null, "Listing deleted");
-  }),
+  })
 );
 
 marketplaceRouter.post(
   "/:id/save",
   asyncHandler(async (request, response) => {
-    const item = await MarketplaceListing.findOne({ _id: request.params.id, status: "active" });
+    const item = await MarketplaceListing.findOne({ _id: request.params.id, status: "available" });
     if (!item) throw new AppError(404, "Listing not found", "LISTING_NOT_FOUND");
-    
     if (item.seller.toString() === request.user!._id.toString()) {
       throw new AppError(400, "Cannot save your own listing", "BAD_REQUEST");
     }
@@ -478,7 +693,6 @@ marketplaceRouter.post(
       { user: request.user!._id, itemType: "listing", item: item._id },
       { upsert: true, new: true }
     );
-    request.app.get("io")?.to(`user:${request.user!._id}`).emit("listing:saved", { listingId: item._id.toString(), saved: true });
     return sendSuccess(response, null, "Listing saved");
   })
 );
@@ -491,7 +705,6 @@ marketplaceRouter.delete(
       itemType: "listing",
       item: request.params.id
     });
-    request.app.get("io")?.to(`user:${request.user!._id}`).emit("listing:saved", { listingId: request.params.id, saved: false });
     return sendSuccess(response, null, "Listing unsaved");
   })
 );

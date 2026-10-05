@@ -4,6 +4,8 @@ import { User } from "../models/User.js";
 import { verifyAccessToken } from "../services/tokenService.js";
 import { AppError, asyncHandler } from "../utils/http.js";
 
+import { updateRealUserActivity } from "./activity.js";
+
 export const authenticate: RequestHandler = asyncHandler(
   async (request, _response, next) => {
     const authorization = request.header("authorization");
@@ -25,6 +27,7 @@ export const authenticate: RequestHandler = asyncHandler(
     if (!user)
       throw new AppError(401, "Account no longer exists", "ACCOUNT_NOT_FOUND");
     request.user = user;
+    updateRealUserActivity();
     next();
   },
 );

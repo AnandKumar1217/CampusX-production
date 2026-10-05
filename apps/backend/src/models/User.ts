@@ -44,6 +44,20 @@ const userSchema = new Schema(
     roles: { type: [String], default: ["student"] },
     passwordResetTokenHash: { type: String, select: false },
     passwordResetExpiresAt: { type: Date, select: false },
+    locationSharing: {
+      enabled: { type: Boolean, default: false },
+      updatedAt: { type: Date }
+    },
+    lastLocation: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+      accuracy: { type: Number },
+      altitude: { type: Number },
+      heading: { type: Number },
+      speed: { type: Number },
+      source: { type: String, enum: ["foreground", "background", "manual"] },
+      updatedAt: { type: Date }
+    },
     qrToken: { type: String, unique: true, sparse: true },
   },
   { timestamps: true, versionKey: false },
