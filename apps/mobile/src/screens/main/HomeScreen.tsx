@@ -279,7 +279,7 @@ export function HomeScreen() {
           </Pressable>
         </CXRow>
         <CXSearchBar
-          placeholder="Search people, events, groups..."
+          placeholder="Search classes, events, features..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           onClear={() => {

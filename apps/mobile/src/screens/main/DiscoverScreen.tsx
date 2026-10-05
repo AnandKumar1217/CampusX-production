@@ -596,6 +596,17 @@ export function DiscoverScreen() {
           ) : null}
         </View>
 
+        {!isSearchFocused && activeMode === "places" && (
+          <View style={{ alignItems: 'center', marginTop: 12 }}>
+            <View style={{ backgroundColor: colors.white, paddingHorizontal: 16, paddingVertical: 6, borderRadius: radius.pill, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="location" size={14} color={colors.primary} />
+              <CXText variant="caption" color={colors.ink} style={{ fontWeight: '500' }}>
+                Tap anywhere on the map to find a place
+              </CXText>
+            </View>
+          </View>
+        )}
+
         {/* Search Mode Content */}
         {isSearchFocused && (
           <View style={styles.searchModeContent}>
