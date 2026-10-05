@@ -378,16 +378,16 @@ export function UserProfileScreen({
         title=""
         onBack={navigation.goBack}
         right={
-          <CXRow>
-            <CXIconButton
-              icon="chatbubble-outline"
-              label="Message"
-              backgroundColor={colors.transparent}
-              onPress={() =>
-                openChat(user.id, user.name)
-              }
-            />
-          </CXRow>
+          user.id !== currentUser?.id ? (
+            <CXRow>
+              <CXIconButton
+                icon="chatbubble-outline"
+                label="Message"
+                backgroundColor={colors.transparent}
+                onPress={() => openChat(user.id, user.name)}
+              />
+            </CXRow>
+          ) : undefined
         }
       />
       <View style={{ alignItems: "center", paddingHorizontal: spacing.md, paddingBottom: spacing.xxl }}>
@@ -449,31 +449,43 @@ export function UserProfileScreen({
         </View>
 
         <CXRow style={{ width: "100%", marginTop: spacing.xl, gap: spacing.md }}>
-          <CXButton
-            label={
-              friendState === "none"
-                ? "Add Friend"
-                : friendState === "pending"
-                  ? "Requested"
-                  : "Friends"
-            }
-            iconLeft={
-              friendState === "friends" ? "checkmark" : friendState === "pending" ? "time-outline" : "person-add-outline"
-            }
-            onPress={() => void add()}
-            disabled={friendState !== "none"}
-            variant={friendState === "none" ? "primary" : "outline"}
-            fullWidth={false}
-            style={{ flex: 1 }}
-          />
-          <CXButton
-            label="Message"
-            iconLeft="chatbubble-outline"
-            variant="outline"
-            fullWidth={false}
-            style={{ flex: 1 }}
-            onPress={() => openChat(user.id, user.name)}
-          />
+          {user.id !== currentUser?.id ? (
+            <>
+              <CXButton
+                label={
+                  friendState === "none"
+                    ? "Add Friend"
+                    : friendState === "pending"
+                      ? "Requested"
+                      : "Friends"
+                }
+                iconLeft={
+                  friendState === "friends" ? "checkmark" : friendState === "pending" ? "time-outline" : "person-add-outline"
+                }
+                onPress={() => void add()}
+                disabled={friendState !== "none"}
+                variant={friendState === "none" ? "primary" : "outline"}
+                fullWidth={false}
+                style={{ flex: 1 }}
+              />
+              <CXButton
+                label="Message"
+                iconLeft="chatbubble-outline"
+                variant="outline"
+                fullWidth={false}
+                style={{ flex: 1 }}
+                onPress={() => openChat(user.id, user.name)}
+              />
+            </>
+          ) : (
+            <CXButton
+              label="Edit Profile"
+              iconLeft="create-outline"
+              variant="outline"
+              style={{ flex: 1 }}
+              onPress={() => navigation.navigate("EditProfile")}
+            />
+          )}
         </CXRow>
       </View>
     </CXScrollScreen>
