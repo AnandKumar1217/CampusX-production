@@ -208,7 +208,8 @@ export function ChatsScreen() {
             muted: Boolean(meta?.muted),
             archived: Boolean(meta?.archived),
             lastMessage: c.lastMessage?.text || (c.lastMessage?.attachments?.length ? "Sent an attachment" : "Started a conversation"),
-            updatedAt: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""
+            updatedAt: c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "",
+            timestamp: c.lastMessageAt ? new Date(c.lastMessageAt).getTime() : new Date(c.updatedAt || c.createdAt || 0).getTime()
           });
         }
       });
@@ -227,13 +228,18 @@ export function ChatsScreen() {
             name: g.name,
             avatarUrl: g.avatarUrl,
             subtitle: g.category || g.description,
-            updatedAt: ""
+            updatedAt: "",
+            timestamp: new Date(g.updatedAt || g.createdAt || 0).getTime()
           });
         }
       });
     }
 
-    return list.sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)));
+    return list.sort((left, right) => {
+      if (left.pinned && !right.pinned) return -1;
+      if (!left.pinned && right.pinned) return 1;
+      return (right.timestamp || 0) - (left.timestamp || 0);
+    });
   }, [conversations, groups, filter, deferredSearch, currentUser]);
 
   const startChat = async (user: any) => {
