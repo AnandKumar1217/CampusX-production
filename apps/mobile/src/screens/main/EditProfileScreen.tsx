@@ -13,6 +13,7 @@ import {
   CXKeyboardScreen,
   CXText,
   CXDropdown,
+  CXActionSheet,
 } from "@/components/ui";
 
 import { colleges, departments, years } from "@/constants/academic";
@@ -39,6 +40,7 @@ export function EditProfileScreen() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const [avatarOptionsVisible, setAvatarOptionsVisible] = useState(false);
 
   const toggleDropdown = (key: string) => {
     setOpenDropdown((prev) => (prev === key ? null : key));
@@ -55,6 +57,7 @@ export function EditProfileScreen() {
     if (!result.canceled && result.assets?.[0]?.uri) {
       setAvatarUri(result.assets[0].uri);
     }
+    setAvatarOptionsVisible(false);
   };
   
     const handleSave = async () => {
@@ -63,7 +66,9 @@ export function EditProfileScreen() {
         const { api } = require("@/services/api");
         let finalAvatarUrl = currentUser?.avatarUrl;
       
-      if (avatarUri && avatarUri !== currentUser?.avatarUrl) {
+      if (avatarUri === "") {
+        finalAvatarUrl = "";
+      } else if (avatarUri && avatarUri !== currentUser?.avatarUrl) {
         const formData = new FormData();
         const filename = avatarUri.split('/').pop() || 'avatar.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -141,9 +146,9 @@ export function EditProfileScreen() {
         <View style={styles.avatarSection}>
           <View>
             <View style={styles.avatar}>
-              <CXAvatar source={avatarUri || currentUser?.avatarUrl || undefined} name={name || "CampusX user"} size={96} />
+              <CXAvatar source={avatarUri === "" ? undefined : (avatarUri || currentUser?.avatarUrl || undefined)} name={name || "CampusX user"} size={96} />
             </View>
-            <Pressable style={styles.editBadge} onPress={pickImage}>
+            <Pressable style={styles.editBadge} onPress={() => setAvatarOptionsVisible(true)}>
               <Ionicons name="camera" size={16} color={colors.white} />
             </Pressable>
           </View>
@@ -306,6 +311,27 @@ export function EditProfileScreen() {
           style={{ marginTop: spacing.xl }} 
         />
       </ScrollView>
+
+      <CXActionSheet
+        visible={avatarOptionsVisible}
+        onClose={() => setAvatarOptionsVisible(false)}
+        actions={[
+          {
+            label: "Choose Photo",
+            icon: "image-outline",
+            onPress: pickImage,
+          },
+          {
+            label: "Remove Photo",
+            icon: "trash-outline",
+            destructive: true,
+            onPress: () => {
+              setAvatarUri("");
+              setAvatarOptionsVisible(false);
+            },
+          }
+        ]}
+      />
     </CXKeyboardScreen>
   );
 }

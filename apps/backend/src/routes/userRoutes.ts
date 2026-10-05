@@ -28,7 +28,7 @@ userRouter.patch(
         name: z.string().min(2).max(80).optional(),
         username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_.]+$/).optional(),
         bio: z.string().max(300).optional(),
-        avatarUrl: z.url().optional(),
+        avatarUrl: z.union([z.url(), z.literal("")]).optional(),
         college: z.string().max(120).optional(),
         department: z.string().max(100).optional(),
         academicYear: z.string().max(30).optional(),
