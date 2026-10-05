@@ -29,10 +29,18 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
     email: z.string().email("Enter a valid email address"),
     otp: z.string().optional(),
   });
-  const { control, handleSubmit, setError, formState } = useForm({
+  const { control, handleSubmit, setError, formState, watch } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { email: "", otp: "" },
   });
+
+  const otpValue = watch("otp");
+
+  React.useEffect(() => {
+    if (isOtpSent && otpValue?.length === 6 && !formState.isSubmitting) {
+      submit();
+    }
+  }, [otpValue, isOtpSent, formState.isSubmitting]);
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -111,11 +119,21 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
       {formState.errors.root?.message ? (
         <CXText color={colors.danger}>{formState.errors.root.message}</CXText>
       ) : null}
-      <CXButton
-        label={isOtpSent ? "Verify & Reset" : "Send OTP"}
-        loading={formState.isSubmitting}
-        onPress={submit}
-      />
+      {!isOtpSent && (
+        <CXButton
+          label="Send OTP"
+          loading={formState.isSubmitting}
+          onPress={submit}
+        />
+      )}
+      {isOtpSent && (
+        <CXButton
+          label="Verify & Reset"
+          loading={formState.isSubmitting}
+          onPress={submit}
+          disabled={otpValue?.length !== 6}
+        />
+      )}
       <Pressable
         onPress={() => navigation.navigate("Login")}
         style={styles.centerLink}

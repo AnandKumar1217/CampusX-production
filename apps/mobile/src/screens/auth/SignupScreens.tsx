@@ -110,7 +110,7 @@ export function SignupAccountScreen({
   });
   return (
     <SignupShell>
-      <CXHeader title="" onBack={navigation.goBack} />
+      <CXHeader title="" onBack={() => { draft.reset(); navigation.goBack(); }} />
       <StepHeader
         step={1}
         title="Create your account"
@@ -416,6 +416,7 @@ export function SignupProfileScreen({
               response.data.data.refreshToken,
               response.data.data.user
             );
+            draft.reset();
             navigation.reset({ index: 0, routes: [{ name: "SignupSuccess" }] });
           } catch (caught) {
             setError(getApiErrorMessage(caught));

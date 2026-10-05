@@ -158,8 +158,77 @@ describe("Auth Service Tests", () => {
     });
   });
 
-  describe("signup OTP reuse", () => {
-    it("signup OTP is consumed during successful signup", async () => {
+  describe("signup persistence and OTP reuse", () => {
+    it("requesting signup OTP creates NO User", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(null);
+      vi.mocked(OtpSendWindow.countDocuments).mockResolvedValue(0);
+      vi.mocked(EmailOtp.create).mockResolvedValue({ _id: "1" } as any);
+      vi.mocked(emailService.sendSignupVerificationOtp).mockResolvedValue(true);
+      
+      await authService.sendVerificationOtp("test@example.com");
+      expect(User.create).not.toHaveBeenCalled();
+    });
+
+    it("verifying OTP via checkIdentity creates NO User", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      vi.mocked(EmailOtp.findOne).mockResolvedValue({ 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000) 
+      } as any);
+      
+      await authService.checkIdentity("test@example.com", undefined, "123456");
+      expect(User.create).not.toHaveBeenCalled();
+    });
+
+    it("invalid final OTP creates NO User", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        _id: "1",
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000),
+        attempts: 0,
+        save: vi.fn()
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      await expect(authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "654321" // Wrong OTP
+      }, {})).rejects.toThrowError(new AppError(400, "Incorrect verification code", "INVALID_OTP"));
+      
+      expect(User.create).not.toHaveBeenCalled();
+    });
+
+    it("expired final OTP creates NO User", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() - 10000), // Expired
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      await expect(authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "123456"
+      }, {})).rejects.toThrowError(new AppError(400, "Verification code is invalid or expired", "INVALID_OTP"));
+      
+      expect(User.create).not.toHaveBeenCalled();
+    });
+
+    it("successful full signup creates exactly ONE User with emailVerified=true and consumes OTP", async () => {
       vi.mocked(User.exists).mockResolvedValue(null);
       const mockRecord = { 
         codeHash: "hashed_123456", 
@@ -167,7 +236,7 @@ describe("Auth Service Tests", () => {
       };
       vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
       
-      const mockUser = { _id: "user_1", name: "t", username: "t", email: "t", college: "t", department: "t", academicYear: "1", interests: [], verified: false };
+      const mockUser = { _id: "user_1", name: "Test", username: "test", email: "test@example.com", college: "College", department: "Dept", academicYear: "1", interests: [], emailVerified: true };
       vi.mocked(User.create).mockResolvedValue(mockUser as any);
       
       await authService.signup({
@@ -181,7 +250,15 @@ describe("Auth Service Tests", () => {
         otp: "123456"
       }, {});
 
-      // Verify OTP is deleted
+      // Verify User created exactly once with emailVerified: true
+      expect(User.create).toHaveBeenCalledTimes(1);
+      expect(User.create).toHaveBeenCalledWith(expect.objectContaining({
+        email: "test@example.com",
+        username: "test",
+        emailVerified: true
+      }));
+
+      // Verify OTP is deleted AFTER verification
       expect(EmailOtp.deleteMany).toHaveBeenCalledWith({ email: "test@example.com", purpose: "signup_verification" });
     });
   });

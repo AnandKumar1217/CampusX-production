@@ -146,10 +146,6 @@ export async function signup(input: SignupInput, meta: SessionMeta) {
   await checkIdentity(input.email, input.username, input.otp);
   
   const email = input.email.trim().toLowerCase();
-  
-  // OTP is verified, delete it
-  await EmailOtp.deleteMany({ email, purpose: "signup_verification" });
-
   const username = input.username.trim().toLowerCase();
   const passwordHash = await bcrypt.hash(input.password, 12);
   const user = await User.create({
@@ -164,6 +160,9 @@ export async function signup(input: SignupInput, meta: SessionMeta) {
     qrToken: await generateUniqueQrToken(),
     emailVerified: true,
   });
+
+  // OTP is verified and user created successfully, delete OTP
+  await EmailOtp.deleteMany({ email, purpose: "signup_verification" });
 
   return issueSession(user, meta);
 }
