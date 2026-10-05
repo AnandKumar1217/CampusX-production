@@ -5,12 +5,14 @@ import {
   CXCard,
   CXScreen,
   CXText,
+  CXHeader,
 } from "@/components/ui";
 import { colors, spacing } from "@/theme";
 
-export function AboutScreen() {
+export function AboutScreen({ navigation }: any) {
   return (
-    <CXScreen headerTitle="About CampusX" showBackButton>
+    <CXScreen>
+      <CXHeader title="About CampusX" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <CXText variant="h1" style={styles.title}>

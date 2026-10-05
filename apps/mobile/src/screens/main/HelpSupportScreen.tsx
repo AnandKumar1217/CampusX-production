@@ -6,10 +6,11 @@ import {
   CXCard,
   CXScreen,
   CXText,
+  CXHeader,
 } from "@/components/ui";
 import { colors, spacing } from "@/theme";
 
-export function HelpSupportScreen() {
+export function HelpSupportScreen({ navigation }: any) {
   const handleEmailPress = () => {
     Linking.openURL("mailto:campusx.testotp@gmail.com").catch(() => {
       // Fallback if email client can't be opened
@@ -17,7 +18,8 @@ export function HelpSupportScreen() {
   };
 
   return (
-    <CXScreen headerTitle="Help & Support" showBackButton>
+    <CXScreen>
+      <CXHeader title="Help & Support" onBack={navigation.goBack} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <Ionicons name="help-buoy-outline" size={64} color={colors.primary} />
