@@ -106,6 +106,27 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
+let isHandlingAccountDeletion = false;
+async function handleAccountNoLongerExists() {
+  if (isHandlingAccountDeletion) return;
+  isHandlingAccountDeletion = true;
+  try {
+    const { useAppStore } = require("../store/appStore");
+    const { navigationRef } = require("../navigation/PushRoutingManager");
+    await useAppStore.getState().clearSession();
+    if (navigationRef.isReady()) {
+      const state = navigationRef.getRootState();
+      if (state?.routes[state.index]?.name !== "Login") {
+        navigationRef.reset({ index: 0, routes: [{ name: "Login" }] });
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to handle account deletion reset", err);
+  } finally {
+    setTimeout(() => { isHandlingAccountDeletion = false; }, 2000);
+  }
+}
+
 api.interceptors.response.use(
   (response) => {
     const request = response.config as SessionRequestConfig;
@@ -123,15 +144,7 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401 && error.response?.data?.code === "ACCOUNT_NOT_FOUND") {
-      const { useAppStore } = require("../store/appStore");
-      const { navigationRef } = require("../navigation/PushRoutingManager");
-      await useAppStore.getState().clearSession();
-      if (navigationRef.isReady()) {
-        const state = navigationRef.getRootState();
-        if (state?.routes[state.index]?.name !== "Login") {
-          navigationRef.reset({ index: 0, routes: [{ name: "Login" }] });
-        }
-      }
+      await handleAccountNoLongerExists();
       return Promise.reject(error);
     }
 
@@ -188,11 +201,15 @@ api.interceptors.response.use(
 
         processQueue(null, newAccessToken);
         return api(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         if (refreshEpoch === sessionEpoch) {
           processQueue(refreshError as Error, null);
-          const { useAppStore } = require("../store/appStore");
-          await useAppStore.getState().clearSession();
+          if (refreshError.response?.status === 401 && refreshError.response?.data?.code === "ACCOUNT_NOT_FOUND") {
+            await handleAccountNoLongerExists();
+          } else {
+            const { useAppStore } = require("../store/appStore");
+            await useAppStore.getState().clearSession();
+          }
         }
         return Promise.reject(refreshError);
       } finally {
