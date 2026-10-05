@@ -53,8 +53,8 @@ const listingSchema = new Schema(
     viewedBy: [{ type: objectId, ref: "User" }],
     status: {
       type: String,
-      enum: ["active", "sold", "draft"],
-      default: "active",
+      enum: ["active", "available", "sold", "draft", "reserved", "deleted"],
+      default: "available",
       index: true,
     },
   },
