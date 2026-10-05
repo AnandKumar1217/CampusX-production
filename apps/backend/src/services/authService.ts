@@ -305,7 +305,9 @@ export async function createPasswordReset(identifier: string) {
     await sendPasswordResetOtp(email, otp, user.name);
   } catch (error) {
     await EmailOtp.deleteOne({ _id: otpRecord._id });
-    throw new AppError(503, "Failed to send email. Please try again.", "EMAIL_DELIVERY_FAILED");
+    console.error(`[AuthService] Password reset email delivery failed for ${email}:`, error);
+    // DO NOT throw error. Return generic response to prevent account enumeration.
+    return { message: "If that account exists, we have sent a password reset email." };
   }
 
   await OtpSendWindow.create({ email, purpose: "password_reset", expiresAt: new Date(Date.now() + 60 * 60_000) });

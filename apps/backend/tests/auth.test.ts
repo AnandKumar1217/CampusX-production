@@ -145,7 +145,7 @@ describe("Auth Service Tests", () => {
       expect(emailService.sendPasswordResetOtp).toHaveBeenCalled();
     });
 
-    it("Brevo network failure => 503 EMAIL_DELIVERY_FAILED", async () => {
+    it("Brevo network failure is masked for forgot-password", async () => {
       vi.mocked(EmailOtp.findOne).mockResolvedValue(null);
       vi.mocked(OtpSendWindow.countDocuments).mockResolvedValue(0);
       vi.mocked(User.findOne).mockResolvedValue({ email: "known@example.com", name: "test" } as any);
@@ -153,8 +153,36 @@ describe("Auth Service Tests", () => {
       
       vi.mocked(emailService.sendPasswordResetOtp).mockRejectedValue(new AppError(503, "Network error", "EMAIL_DELIVERY_FAILED"));
       
-      await expect(authService.createPasswordReset("known@example.com"))
-        .rejects.toThrowError(new AppError(503, "Failed to send email. Please try again.", "EMAIL_DELIVERY_FAILED"));
+      const res = await authService.createPasswordReset("known@example.com");
+      expect(res.message).toBe("If that account exists, we have sent a password reset email.");
+    });
+  });
+
+  describe("signup OTP reuse", () => {
+    it("signup OTP is consumed during successful signup", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000) 
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      const mockUser = { _id: "user_1", name: "t", username: "t", email: "t", college: "t", department: "t", academicYear: "1", interests: [], verified: false };
+      vi.mocked(User.create).mockResolvedValue(mockUser as any);
+      
+      await authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "123456"
+      }, {});
+
+      // Verify OTP is deleted
+      expect(EmailOtp.deleteMany).toHaveBeenCalledWith({ email: "test@example.com", purpose: "signup_verification" });
     });
   });
 
@@ -256,6 +284,15 @@ describe("Auth Service Tests", () => {
         { user: "u1", revokedAt: { $exists: false } },
         { $set: { revokedAt: expect.any(Date) } }
       );
+    });
+
+    it("reset token second use fails", async () => {
+      vi.mocked(User.findOne).mockReturnValue({
+        select: vi.fn().mockResolvedValue(null) // Token cleared, so it won't be found
+      } as any);
+
+      await expect(authService.resetPassword("token123", "NewPass123!"))
+        .rejects.toThrowError(new AppError(400, "Password reset link is invalid or expired", "INVALID_RESET_TOKEN"));
     });
   });
   
