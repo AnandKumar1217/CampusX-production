@@ -20,8 +20,6 @@ import type { RootStackParamList } from "@/types/navigation";
 
 import React from "react";
 
-const logo = require("../../../assets/branding/campusx-logo-new-transparent.png");
-const aura = require("../../../assets/branding/bottom-aura.png");
 
 type ForgotProps = NativeStackScreenProps<RootStackParamList, "ForgotPassword">;
 
@@ -271,12 +269,10 @@ function AuthShell({ children }: React.PropsWithChildren) {
   );
 }
 
-function AuthLogo() {
-  return <Image source={logo} contentFit="contain" style={styles.logo} />;
-}
+
 
 const styles = StyleSheet.create({
-  aura: { position: "absolute", bottom: 0, width: "100%", height: "28%" },
+
   content: {
     flexGrow: 1,
     paddingHorizontal: 26,
@@ -284,7 +280,7 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     gap: spacing.md,
   },
-  logo: { alignSelf: "center", width: 160, height: 150, marginTop: -22 },
+
   methods: { gap: spacing.xs },
   method: {
     flex: 1,
