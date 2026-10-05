@@ -24,6 +24,7 @@ eventRouter.get(
       status: { $ne: "cancelled" },
       $or: [
         { status: "active", draft: { $ne: true } },
+        { status: { $exists: false }, draft: { $ne: true } },
         { creator: request.user!._id }
       ]
     };

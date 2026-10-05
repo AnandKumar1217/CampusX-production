@@ -69,7 +69,10 @@ describe("Events API Integration", () => {
       .set("Authorization", `Bearer ${userAToken}`)
       .send({
         title: "Test Event",
+        description: "A valid description",
+        category: "TestCategory",
         startsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 86400000).toISOString(),
         location: { name: "Test Location" }
       });
 
@@ -107,6 +110,100 @@ describe("Events API Integration", () => {
       .set("Authorization", `Bearer ${userBToken}`);
     expect(resSingle.status).toBe(200);
     expect(resSingle.body.data.title).toBe("List Event");
+  });
+
+  it("legacy event with status missing and draft false is visible", async () => {
+    const event = await Event.collection.insertOne({
+      title: "Legacy Event 1",
+      startsAt: new Date(Date.now() + 86400000),
+      creator: new mongoose.Types.ObjectId(userAId),
+      location: { name: "Loc" },
+      draft: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    trackEvent(event.insertedId.toString());
+
+    const resList = await request(app)
+      .get("/api/events")
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resList.status).toBe(200);
+    expect(resList.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Legacy Event 1" })
+      ])
+    );
+  });
+
+  it("legacy event with status missing and draft missing is visible", async () => {
+    const event = await Event.collection.insertOne({
+      title: "Legacy Event 2",
+      startsAt: new Date(Date.now() + 86400000),
+      creator: new mongoose.Types.ObjectId(userAId),
+      location: { name: "Loc" },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    trackEvent(event.insertedId.toString());
+
+    const resList = await request(app)
+      .get("/api/events")
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resList.status).toBe(200);
+    expect(resList.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Legacy Event 2" })
+      ])
+    );
+  });
+
+  it("draft event is only visible to creator", async () => {
+    const event = await Event.create({
+      title: "Draft Event",
+      startsAt: new Date(Date.now() + 86400000),
+      creator: userAId,
+      location: { name: "Loc" },
+      draft: true
+    });
+    trackEvent(event._id.toString());
+
+    const resB = await request(app)
+      .get("/api/events")
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resB.body.data.items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Draft Event" })
+      ])
+    );
+
+    const resA = await request(app)
+      .get("/api/events")
+      .set("Authorization", `Bearer ${userAToken}`);
+    expect(resA.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Draft Event" })
+      ])
+    );
+  });
+
+  it("cancelled event is not visible in public discovery", async () => {
+    const event = await Event.create({
+      title: "Cancelled Event",
+      startsAt: new Date(Date.now() + 86400000),
+      creator: userAId,
+      location: { name: "Loc" },
+      status: "cancelled"
+    });
+    trackEvent(event._id.toString());
+
+    const resB = await request(app)
+      .get("/api/events")
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resB.body.data.items).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ title: "Cancelled Event" })
+      ])
+    );
   });
 
   it("should return 404 for missing event", async () => {
@@ -189,11 +286,10 @@ describe("Events API Integration", () => {
     });
     trackEvent(event._id.toString());
 
-    // B goes
+    // B goes (registers)
     const resGo = await request(app)
-      .post(`/api/events/${event._id}/attendance`)
-      .set("Authorization", `Bearer ${userBToken}`)
-      .send({ status: "going" });
+      .post(`/api/events/${event._id}/register`)
+      .set("Authorization", `Bearer ${userBToken}`);
     expect(resGo.status).toBe(200);
 
     let dbEvent = await Event.findById(event._id);
@@ -201,28 +297,21 @@ describe("Events API Integration", () => {
     expect(dbEvent!.attendees[0].user.toString()).toBe(userBId);
     expect(dbEvent!.attendees[0].status).toBe("going");
 
-    // B goes again (no duplicate)
-    await request(app)
-      .post(`/api/events/${event._id}/attendance`)
-      .set("Authorization", `Bearer ${userBToken}`)
-      .send({ status: "going" });
+    // B goes again (duplicate) should return 200 with specific message
+    const resDuplicate = await request(app)
+      .post(`/api/events/${event._id}/register`)
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resDuplicate.status).toBe(200);
+    
     dbEvent = await Event.findById(event._id);
     expect(dbEvent!.attendees).toHaveLength(1); // Still 1
 
-    // B says maybe
-    await request(app)
-      .post(`/api/events/${event._id}/attendance`)
-      .set("Authorization", `Bearer ${userBToken}`)
-      .send({ status: "maybe" });
-    dbEvent = await Event.findById(event._id);
-    expect(dbEvent!.attendees).toHaveLength(1);
-    expect(dbEvent!.attendees[0].status).toBe("maybe");
-
-    // B leaves (none)
-    await request(app)
-      .post(`/api/events/${event._id}/attendance`)
-      .set("Authorization", `Bearer ${userBToken}`)
-      .send({ status: "none" });
+    // B leaves (cancels registration)
+    const resLeave = await request(app)
+      .delete(`/api/events/${event._id}/register`)
+      .set("Authorization", `Bearer ${userBToken}`);
+    expect(resLeave.status).toBe(200);
+    
     dbEvent = await Event.findById(event._id);
     expect(dbEvent!.attendees).toHaveLength(0);
   });
