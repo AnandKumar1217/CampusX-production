@@ -18,7 +18,7 @@ const mapListing = (item: any): Listing => ({
   id: item._id || item.id,
   seller: mapUser(item.seller),
   images: (item.images && item.images.length > 0) ? item.images : (item.coverImage ? [item.coverImage] : (item.image ? [item.image] : [])),
-  views: item.views || 0,
+  views: item.viewedBy ? item.viewedBy.length : (item.views || 0),
 });
 
 export const marketplaceService = {
@@ -30,8 +30,8 @@ export const marketplaceService = {
     };
   },
 
-  getMyListings: async () => {
-    const res = await api.get<{ data: { items: any[] } }>("/marketplace/mine");
+  getMyListings: async (status?: string) => {
+    const res = await api.get<{ data: { items: any[] } }>("/marketplace/mine", { params: { status: status || "all" } });
     return res.data.data.items.map(mapListing);
   },
 
