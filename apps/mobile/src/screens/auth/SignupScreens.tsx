@@ -92,14 +92,26 @@ export function SignupAccountScreen({
   const [verifyingOtp, setVerifyingOtp] = React.useState(false);
 
   const [sendingOtp, setSendingOtp] = React.useState(false);
+  const [resendCountdown, setResendCountdown] = React.useState(0);
 
   const lastAttemptedOtpRef = React.useRef<string>("");
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCountdown > 0) {
+      timer = setInterval(() => {
+        setResendCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   React.useEffect(() => {
     setOtpVerified(false);
     setValue("otp", "");
     setShowOtp(false);
     lastAttemptedOtpRef.current = "";
+    setResendCountdown(0);
   }, [emailValue, setValue]);
 
   React.useEffect(() => {
@@ -251,13 +263,14 @@ export function SignupAccountScreen({
                     lastAttemptedOtpRef.current = "";
                     await api.post("/auth/send-verification-otp", { email });
                     setShowOtp(true);
+                    setResendCountdown(30);
                   } catch (err: any) {
                     setError("email", { message: getApiErrorMessage(err) });
                   } finally {
                     setSendingOtp(false);
                   }
                 }}
-                disabled={sendingOtp}
+                disabled={sendingOtp || resendCountdown > 0}
                 style={{
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 6,
@@ -267,7 +280,7 @@ export function SignupAccountScreen({
                 }}
               >
                 <CXText variant="smallStrong" color={colors.primary}>
-                  {sendingOtp ? "Sending..." : showOtp ? "Resend" : "Verify"}
+                  {sendingOtp ? "Sending..." : resendCountdown > 0 ? `Resend in ${resendCountdown}s` : showOtp ? "Resend" : "Verify"}
                 </CXText>
               </Pressable>
             }

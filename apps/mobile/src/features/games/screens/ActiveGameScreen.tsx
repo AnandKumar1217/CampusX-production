@@ -14,7 +14,7 @@ import { MancalaScreen } from "../games/mancala/MancalaScreen";
 import { SnakeScreen } from "../games/snake/SnakeScreen";
 import { FootballScreen } from "../games/football/FootballScreen";
 
-import { MemoryScreen } from "../games/memory/MemoryScreen";
+
 import { ReactionScreen } from "../games/reaction/ReactionScreen";
 import { QuizScreen } from "../games/quiz/QuizScreen";
 import { MazeScreen } from "../games/maze/MazeScreen";
@@ -38,7 +38,7 @@ export function ActiveGameScreen(props: Props) {
     case "snake": return <SnakeScreen {...props} />;
     case "football": return <FootballScreen {...props} />;
 
-    case "memory": return <MemoryScreen {...props} />;
+
     case "reaction": return <ReactionScreen {...props} />;
     case "quiz": return <QuizScreen {...props} />;
     case "maze": return <MazeScreen {...props} />;

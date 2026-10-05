@@ -10,7 +10,7 @@ import { DotsAndBoxesEngine } from "../src/features/games/games/dotsAndBoxes/Dot
 import { SnakeEngine } from "../src/features/games/games/snake/SnakeEngine";
 import { FootballEngine } from "../src/features/games/games/football/FootballEngine";
 
-import { MemoryEngine } from "../src/features/games/games/memory/MemoryEngine";
+
 import { ReactionEngine } from "../src/features/games/games/reaction/ReactionEngine";
 import { QuizEngine } from "../src/features/games/games/quiz/QuizEngine";
 import { MazeEngine } from "../src/features/games/games/maze/MazeEngine";
@@ -270,13 +270,6 @@ describe("FootballEngine", () => {
 
 
 
-describe("MemoryEngine", () => {
-  it("initializes cards", () => {
-    const engine = new MemoryEngine("1P", () => {}, () => {}, () => {});
-    engine.startLevel(1);
-    expect(engine.cards.length).toBeGreaterThan(0);
-  });
-});
 
 describe("ReactionEngine", () => {
   it("initializes state", () => {

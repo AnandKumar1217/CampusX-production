@@ -59,10 +59,16 @@ export function EventsScreen({ navigation }: any) {
   React.useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
-    const onUpdated = () => refetch();
-    socket.on("event:updated", onUpdated);
+    const refreshEvents = () => refetch();
+    socket.on("event:created", refreshEvents);
+    socket.on("event:updated", refreshEvents);
+    socket.on("event:deleted", refreshEvents);
+    socket.on("event:cancelled", refreshEvents);
     return () => {
-      socket.off("event:updated", onUpdated);
+      socket.off("event:created", refreshEvents);
+      socket.off("event:updated", refreshEvents);
+      socket.off("event:deleted", refreshEvents);
+      socket.off("event:cancelled", refreshEvents);
     };
   }, [refetch]);
 

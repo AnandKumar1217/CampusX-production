@@ -90,12 +90,12 @@ describe("Auth Service Tests", () => {
   });
 
   describe("sendVerificationOtp", () => {
-    it("60-second cooldown", async () => {
+    it("30-second cooldown", async () => {
       vi.mocked(User.exists).mockResolvedValue(null);
       vi.mocked(EmailOtp.findOne).mockResolvedValue({ lastSentAt: new Date() } as any);
       
       await expect(authService.sendVerificationOtp("test@example.com"))
-        .rejects.toThrowError(new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT"));
+        .rejects.toThrowError(new AppError(429, "Please wait 30 seconds before requesting another code", "RATE_LIMIT"));
     });
 
     it("5 successful sends per rolling hour", async () => {
@@ -172,6 +172,13 @@ describe("Auth Service Tests", () => {
       
       const res = await authService.createPasswordReset("known@example.com");
       expect(res.message).toBe("If that account exists, we have sent a password reset email.");
+    });
+
+    it("60-second cooldown for password reset", async () => {
+      vi.mocked(EmailOtp.findOne).mockResolvedValue({ lastSentAt: new Date() } as any);
+      
+      await expect(authService.createPasswordReset("known@example.com"))
+        .rejects.toThrowError(new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT"));
     });
   });
 

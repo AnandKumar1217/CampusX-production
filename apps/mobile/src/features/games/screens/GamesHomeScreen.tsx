@@ -25,7 +25,6 @@ const GAMES = [
   { id: "mancala", title: "Mancala", players: "2P", icon: "ellipse-outline", bg: "#FEF3C7", color: "#D97706", category: "Board" },
   { id: "snake", title: "Snake Battle", players: "2P", icon: "analytics", bg: "#DCFCE7", color: "#16A34A", category: "Arcade" },
   { id: "football", title: "Finger Football", players: "2P", icon: "football", bg: "#E0F2FE", color: "#0284C7", category: "Arcade" },
-  { id: "memory", title: "Memory Battle", players: "2P", icon: "albums", bg: "#FCE7F3", color: "#DB2777", category: "Brain" },
   { id: "reaction", title: "Reaction Tap", players: "1P", icon: "flash", bg: "#FEF3C7", color: "#D97706", category: "Brain" },
   { id: "quiz", title: "Quick Quiz", players: "1P", icon: "help-circle", bg: "#EAE9FE", color: "#6A5BE2", category: "Brain" },
   { id: "maze", title: "Maze Paint", players: "1P", icon: "color-palette", bg: "#E0F2FE", color: "#0284C7", category: "Brain" },

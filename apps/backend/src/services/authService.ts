@@ -277,8 +277,9 @@ export async function revokeRefreshToken(rawToken: string) {
 
 async function enforceSendLimits(email: string, purpose: "password_reset" | "signup_verification") {
   const recent = await EmailOtp.findOne({ email, purpose });
-  if (recent && recent.lastSentAt > new Date(Date.now() - 60_000)) {
-    throw new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT");
+  const cooldownSeconds = purpose === "signup_verification" ? 30 : 60;
+  if (recent && recent.lastSentAt > new Date(Date.now() - cooldownSeconds * 1000)) {
+    throw new AppError(429, `Please wait ${cooldownSeconds} seconds before requesting another code`, "RATE_LIMIT");
   }
 
   const oneHourAgo = new Date(Date.now() - 60 * 60_000);

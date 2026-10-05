@@ -27,7 +27,7 @@ export function GameSetupScreen({ navigation, route }: Props) {
     snake: "Snake Battle",
     football: "Finger Football",
 
-    memory: "Memory Battle",
+
     reaction: "Reaction Tap",
     quiz: "Quick Quiz Battle",
     maze: "Color Maze"
@@ -47,7 +47,7 @@ export function GameSetupScreen({ navigation, route }: Props) {
   let modes = ["1P", "2P"];
   if (["checkers", "chess", "dotsandboxes"].includes(gameId)) {
     modes = ["2P"];
-  } else if (["memory", "quiz"].includes(gameId)) {
+  } else if (["quiz"].includes(gameId)) {
     modes = ["1P", "2P", "3P", "4P"];
   } else if (["reaction"].includes(gameId)) {
     modes = ["2P", "3P", "4P"];
