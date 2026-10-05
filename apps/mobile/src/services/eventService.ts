@@ -40,6 +40,11 @@ export function mapEvent(backendEvent: any): EventItem & { attendees: any[], ima
     public: !backendEvent.draft,
     attendees: backendEvent.attendees || [],
     imagePublicId: backendEvent.imagePublicId,
+    capacity: backendEvent.capacity,
+    registrationDeadline: backendEvent.registrationDeadline,
+    status: backendEvent.status || (backendEvent.draft ? "draft" : "active"),
+    startsAt: backendEvent.startsAt,
+    endsAt: backendEvent.endsAt,
   };
 }
 
@@ -92,7 +97,17 @@ export const eventService = {
   },
 
   setAttendance: async (id: string, status: "none" | "maybe" | "going") => {
-    const res = await api.post(`/events/${id}/attendance`, { status });
+    if (status === "going") {
+      const res = await api.post(`/events/${id}/register`);
+      return res.data;
+    } else {
+      const res = await api.delete(`/events/${id}/register`);
+      return res.data;
+    }
+  },
+
+  getRegistrations: async (id: string) => {
+    const res = await api.get<{ data: any[] }>(`/events/${id}/registrations`);
     return res.data.data;
   }
 };

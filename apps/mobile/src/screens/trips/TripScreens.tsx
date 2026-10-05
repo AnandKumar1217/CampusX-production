@@ -2,11 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useState, useEffect } from "react";
-import { Pressable, ScrollView, StyleSheet, View, Alert } from "react-native";
+import React, { useState, useEffect , useCallback } from "react";
+import { Pressable, ScrollView, StyleSheet, View, Alert, Linking } from "react-native";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { CXTripCard } from "@/components/cards";
+import { CXTripCard, CXUserRow } from "@/components/cards";
 import {
   CXAvatar,
   CXButton,
@@ -22,6 +22,7 @@ import {
   CXSearchBar,
   CXSectionHeader,
   CXText,
+  CXActionSheet,
 } from "@/components/ui";
 
 import { api, getApiErrorMessage } from "@/services/api";
@@ -32,7 +33,6 @@ import type { Trip, TripMember } from "@/types/domain";
 import { useAppStore } from "@/store/appStore";
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, Name>;
 const entityId = (value: any): string | undefined =>
@@ -98,6 +98,21 @@ export function TripsScreen({ navigation }: StackProps<"Trips">) {
   const displayTrips = (filter === "Upcoming" ? upcomingTrips : pastTrips).filter(trip =>
     `${trip.title} ${trip.destination}`.toLowerCase().includes(search.trim().toLowerCase()),
   );
+  const deleteMutation = useMutation({
+    mutationFn: (tripId: string) => api.delete(`/trips/${tripId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
+    },
+    onError: (err) => Alert.alert("Error", getApiErrorMessage(err))
+  });
+
+  const [actionSheetTrip, setActionSheetTrip] = useState<Trip | null>(null);
+
+  const handleLongPress = (trip: Trip) => {
+    if (filter === "Past" && entityId(trip.createdBy) === user?.id) {
+      setActionSheetTrip(trip);
+    }
+  };
 
   return (
     <CXScreen edges={["top", "right", "left", "bottom"]}>
@@ -126,6 +141,7 @@ export function TripsScreen({ navigation }: StackProps<"Trips">) {
             key={trip._id}
             trip={trip}
             onPress={() => navigation.navigate("TripDetails", { tripId: trip._id })}
+            onLongPress={() => handleLongPress(trip)}
           />
         ))}
         {displayTrips.length === 0 && !isLoading && (
@@ -139,6 +155,24 @@ export function TripsScreen({ navigation }: StackProps<"Trips">) {
           onPress={() => navigation.navigate("CreateTrip")}
         />
       </View>
+      <CXActionSheet
+        visible={!!actionSheetTrip}
+        onClose={() => setActionSheetTrip(null)}
+        title="Trip actions"
+        actions={[
+          {
+            label: "Delete trip",
+            icon: "trash-outline",
+            destructive: true,
+            onPress: () => {
+              if (actionSheetTrip) {
+                deleteMutation.mutate(actionSheetTrip._id);
+                setActionSheetTrip(null);
+              }
+            },
+          },
+        ]}
+      />
     </CXScreen>
   );
 }
@@ -266,8 +300,13 @@ export function TripDetailsScreen({ navigation, route }: StackProps<"TripDetails
               {new Date(trip.startDate).toLocaleDateString()} {trip.endDate ? `– ${new Date(trip.endDate).toLocaleDateString()}` : ""}
             </CXText>
             <CXText variant="small" color={colors.borderSoft}>|</CXText>
-            <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-            <CXText variant="smallStrong" color={colors.textMuted}>{trip.destination}</CXText>
+            <Pressable 
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}
+              onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trip.destination)}`)}
+            >
+              <Ionicons name="location-outline" size={16} color={colors.textMuted} />
+              <CXText variant="smallStrong" color={colors.primary} style={{ textDecorationLine: 'underline' }}>{trip.destination}</CXText>
+            </Pressable>
           </CXRow>
 
           {myMember?.status === "invited" && trip.status !== "cancelled" && (
@@ -690,14 +729,13 @@ export function InviteToTripScreen({ navigation, route }: StackProps<"InviteToTr
       <CXScrollScreen padded>
         <CXSectionHeader title="Current Members" />
         {tripData.members.map((m: any) => (
-          <CXListRow
+          <CXUserRow
             key={entityId(m.user)}
-            icon="person-outline"
-            title={m.user.name}
+            user={m.user}
             subtitle={`${m.role} • ${m.status}`}
-            right={isOrganizer && entityId(m.user) !== user?.id ? (
-              <CXIconButton icon="trash-outline" label="Remove" onPress={() => removeMutation.mutate(entityId(m.user)!)} />
-            ) : undefined}
+            onRemove={isOrganizer && entityId(m.user) !== user?.id ? () => removeMutation.mutate(entityId(m.user)!) : undefined}
+            onPress={() => navigation.navigate("UserProfile" as any, { userId: entityId(m.user) })}
+            action=""
           />
         ))}
         
@@ -790,7 +828,7 @@ const styles = StyleSheet.create({
   },
   section: { marginTop: spacing.xl },
   flex: { flex: 1 },
-  filters: { gap: spacing.sm, marginTop: -spacing.sm },
+  filters: { gap: spacing.sm },
   statsGrid: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderSoft, paddingVertical: spacing.md, marginTop: spacing.md },
   statBox: { flex: 1, alignItems: "center", paddingHorizontal: spacing.sm },
   statBoxBorder: { borderLeftWidth: 1, borderColor: colors.borderSoft },

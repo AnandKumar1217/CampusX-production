@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Pressable, ScrollView, StyleSheet, View, Keyboard, BackHandler, Linking } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, Keyboard, BackHandler, Linking , TextInput, Text } from "react-native";
 import MapView, { Marker, Callout } from "@/components/map/MapView";
 
 import {
   CXAvatar,
   CXText,
 } from "@/components/ui";
-import { TextInput, Text } from "react-native";
+
 import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useOpenChat } from "@/hooks/useOpenChat";
 import { useFocusEffect } from "@react-navigation/native";
@@ -22,6 +22,23 @@ const categories = [
   ["Groups", "school-outline"],
   ["Places", "location-outline"],
 ] as const;
+
+function getLocationFreshness(updatedAt: number) {
+  const diffMin = (Date.now() - updatedAt) / 60000;
+  if (diffMin <= 2) return "LIVE";
+  if (diffMin <= 15) return "RECENT";
+  return "STALE";
+}
+
+function formatTimeAgo(updatedAt: number) {
+  const diffSec = Math.floor((Date.now() - updatedAt) / 1000);
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} min ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} hr ago`;
+  return `${Math.floor(diffHour / 24)} days ago`;
+}
 
 export function DiscoverScreen() {
   const navigation = useRootNavigation();
@@ -43,7 +60,7 @@ export function DiscoverScreen() {
   const [activeMode, setActiveMode] = useState<"places" | "friends">("places");
   const friends = useAppStore(state => state.friends);
   const friendLocations = useAppStore(state => state.friendLocations);
-  const activeOnlineFriends = Object.values(friendLocations).filter(loc => ["active", "stale"].includes(loc.status || ""));
+  const activeOnlineFriends = Object.values(friendLocations); // Shows everyone sharing location, offline or online
   const user = useAppStore(state => state.user);
   const setLocationCoords = useAppStore(state => state.setLocationCoords);
   const [userLocation, setUserLocation] = useState<{lat: number, lon: number} | null>(null);
@@ -468,7 +485,7 @@ export function DiscoverScreen() {
       {!isSearchFocused && (
         <View style={styles.modeSwitcherContainer}>
           <Pressable 
-            style={[styles.fabSmall, activeMode === "friends" && { backgroundColor: colors.primary }]}
+            style={[styles.modeSwitcherBtn, activeMode === "friends" && { backgroundColor: colors.primary }]}
             onPress={() => {
               setActiveMode((prev: any) => prev === "places" ? "friends" : "places");
               setSelectedPlace(null);
@@ -479,7 +496,15 @@ export function DiscoverScreen() {
               Keyboard.dismiss();
             }}
           >
-            <Ionicons name={activeMode === "places" ? "people" : "location"} size={20} color={activeMode === "friends" ? colors.white : colors.primary} />
+            <Ionicons name={activeMode === "places" ? "people" : "location"} size={18} color={activeMode === "friends" ? colors.white : colors.primary} />
+            <Text style={{ 
+              color: activeMode === "friends" ? colors.white : colors.primary, 
+              fontWeight: "bold", 
+              fontSize: 13,
+              marginLeft: 6
+            }}>
+              {activeMode === "places" ? "Track Friends" : "Explore Map"}
+            </Text>
           </Pressable>
         </View>
       )}
@@ -582,13 +607,14 @@ export function DiscoverScreen() {
                   .filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
                   .map((item, index) => {
                     const liveLoc = friendLocations[item.id];
-                    const isOnline = liveLoc?.status === "active" && liveLoc?.lat && liveLoc?.lon;
+                    const freshness = liveLoc ? getLocationFreshness(liveLoc.updatedAt) : null;
+                    const isLive = freshness === "LIVE" || freshness === "RECENT";
                     return (
                       <Pressable 
                         key={`friend-search-${item.id}`} 
-                        style={[styles.searchResultItem, { gap: 12, opacity: isOnline ? 1 : 0.5 }]} 
+                        style={[styles.searchResultItem, { gap: 12, opacity: freshness ? 1 : 0.5 }]} 
                         onPress={() => {
-                          if (isOnline) {
+                          if (freshness && liveLoc?.lat && liveLoc?.lon) {
                             setRegion((prev: any) => ({ ...prev, latitude: liveLoc.lat, longitude: liveLoc.lon, latitudeDelta: 0.02, longitudeDelta: 0.02 }));
                             cameraRef.current?.easeTo({ center: [liveLoc.lon, liveLoc.lat], zoom: 15, duration: 600 });
                             setIsSearchFocused(false);
@@ -598,11 +624,11 @@ export function DiscoverScreen() {
                         <CXAvatar source={item.avatar || item.avatarUrl || undefined} size={32} name={item.name} />
                         <View style={styles.flex}>
                           <CXText variant="bodyStrong">{item.name}</CXText>
-                          <CXText variant="caption" color={isOnline ? colors.primary : colors.textMuted}>
-                            {isOnline ? "Online" : "Offline"}
+                          <CXText variant="caption" color={isLive ? colors.primary : colors.textMuted}>
+                            {freshness ? `${freshness} - ${formatTimeAgo(liveLoc?.updatedAt || 0)}` : "Location Hidden"}
                           </CXText>
                         </View>
-                        {isOnline && <Ionicons name="navigate-circle" size={24} color={colors.primary} />}
+                        {freshness && <Ionicons name="navigate-circle" size={24} color={isLive ? colors.primary : colors.textMuted} />}
                       </Pressable>
                     );
                   })}
@@ -782,23 +808,10 @@ export function DiscoverScreen() {
                 const displayName = friendObj?.name || friend.name || "User";
                 const avatar = friendObj?.avatar || friendObj?.avatarUrl || friend.avatarUrl;
                 
-                let freshnessStatus = "Live now";
-                if (friend.status === "active") {
-                  const updatedAt = friend.updatedAt || Date.now();
-                  const diffMin = Math.floor((Date.now() - updatedAt) / 60000);
-                  if (diffMin > 1) {
-                    freshnessStatus = `Updated ${diffMin} min ago`;
-                  } else if (diffMin === 1) {
-                    freshnessStatus = `Updated 1 min ago`;
-                  } else {
-                    const diffSec = Math.floor((Date.now() - updatedAt) / 1000);
-                    if (diffSec > 10) {
-                      freshnessStatus = `Updated ${diffSec} sec ago`;
-                    }
-                  }
-                } else if (friend.status === "stale") {
-                  freshnessStatus = "Updated a while ago";
-                }
+                const freshness = getLocationFreshness(friend.updatedAt);
+                let freshnessStatus = formatTimeAgo(friend.updatedAt);
+                const isLive = freshness === "LIVE" || freshness === "RECENT";
+                const dotColor = freshness === "LIVE" ? colors.success : freshness === "RECENT" ? colors.warning : colors.textMuted;
 
                 return (
                   <Pressable 
@@ -819,17 +832,17 @@ export function DiscoverScreen() {
                     }}
                   >
                     {avatar ? (
-                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: friend.status === "active" ? colors.success : colors.warning, alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: dotColor, alignItems: "center", justifyContent: "center" }}>
                         <CXAvatar source={avatar} size={50} name={displayName} />
                       </View>
                     ) : (
-                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: friend.status === "active" ? colors.success : colors.warning, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }}>
+                      <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: dotColor, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" }}>
                         <Ionicons name="person" size={24} color={colors.textMuted} />
                       </View>
                     )}
                     <View style={{ alignItems: "center", marginTop: spacing.xs }}>
                       <CXText variant="caption" numberOfLines={1} align="center">{displayName.split(" ")[0]}</CXText>
-                      <CXText color={friend.status === "active" ? colors.success : colors.warning} align="center" numberOfLines={1} style={{ fontSize: 9 }}>
+                      <CXText color={dotColor} align="center" numberOfLines={1} style={{ fontSize: 9 }}>
                         {freshnessStatus}
                       </CXText>
                     </View>
@@ -1069,6 +1082,20 @@ const styles = StyleSheet.create({
   fabSmall: {
     width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  modeSwitcherBtn: {
+    flexDirection: "row",
+    height: 44,
+    paddingHorizontal: 16,
     borderRadius: 22,
     backgroundColor: colors.white,
     alignItems: "center",

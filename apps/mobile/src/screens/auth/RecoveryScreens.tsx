@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { z } from "zod";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   CXButton,
@@ -17,25 +18,36 @@ import { api, getApiErrorMessage } from "@/services/api";
 import { colors, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 
+import React from "react";
+
 const logo = require("../../../assets/branding/campusx-logo-new-transparent.png");
 const aura = require("../../../assets/branding/bottom-aura.png");
 
 type ForgotProps = NativeStackScreenProps<RootStackParamList, "ForgotPassword">;
 
 export function ForgotPasswordScreen({ navigation }: ForgotProps) {
-  const [method, setMethod] = React.useState<"email" | "username" | "phone">(
-    "email",
-  );
+  const [isOtpSent, setIsOtpSent] = React.useState(false);
   const schema = z.object({
-    value: z.string().min(3, `Enter your registered ${method}`),
+    email: z.string().email("Enter a valid email address"),
+    otp: z.string().optional(),
   });
-  const { control, handleSubmit, setError, formState } = useForm<{
-    value: string;
-  }>({ resolver: zodResolver(schema), defaultValues: { value: "" } });
-  const submit = handleSubmit(async ({ value }) => {
+  const { control, handleSubmit, setError, formState } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", otp: "" },
+  });
+
+  const submit = handleSubmit(async (values) => {
     try {
-      await api.post("/auth/forgot-password", { method, value });
-      navigation.navigate("ResetPassword");
+      if (!isOtpSent) {
+        await api.post("/auth/forgot-password", { method: "email", value: values.email });
+        setIsOtpSent(true);
+      } else {
+        if (!values.otp || values.otp.length < 4) {
+          setError("otp", { message: "Please enter the OTP" });
+          return;
+        }
+        navigation.navigate("ResetPassword", { token: values.otp } as any);
+      }
     } catch (error) {
       setError("root", { message: getApiErrorMessage(error) });
     }
@@ -44,42 +56,23 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
   return (
     <AuthShell>
       <CXHeader title="" onBack={navigation.goBack} />
-      <AuthLogo />
       <CXText variant="h2">Forgot Password?</CXText>
       <CXText color={colors.textMuted}>
-        Don’t worry! Enter your registered email, username, or phone number and
-        we’ll send instructions to reset your password.
+        Don’t worry! Enter your registered email and
+        we’ll send an OTP to reset your password.
       </CXText>
-      <CXRow style={styles.methods}>
-        {(["email", "username", "phone"] as const).map((item) => (
-          <Pressable
-            key={item}
-            onPress={() => setMethod(item)}
-            style={[styles.method, method === item && styles.methodActive]}
-          >
-            <CXText
-              variant="smallStrong"
-              color={method === item ? colors.white : colors.textMuted}
-            >
-              {item[0]!.toUpperCase() + item.slice(1)}
-            </CXText>
-          </Pressable>
-        ))}
-      </CXRow>
+      
       <Controller
         control={control}
-        name="value"
+        name="email"
         render={({ field, fieldState }) => (
           <CXInput
-            label={`Registered ${method[0]!.toUpperCase() + method.slice(1)}`}
-            icon={
-              method === "email"
-                ? "mail-outline"
-                : method === "phone"
-                  ? "call-outline"
-                  : "person-outline"
-            }
-            placeholder={`Enter your ${method}`}
+            label="Registered Email"
+            icon="mail-outline"
+            placeholder="Enter your email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!isOtpSent}
             value={field.value}
             onBlur={field.onBlur}
             onChangeText={field.onChange}
@@ -87,17 +80,36 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
           />
         )}
       />
+      
+      {isOtpSent && (
+        <Controller
+          control={control}
+          name="otp"
+          render={({ field, fieldState }) => (
+            <CXInput
+              label="Verification Code (OTP)"
+              icon="keypad-outline"
+              placeholder="Enter the OTP sent to email"
+              keyboardType="number-pad"
+              value={field.value}
+              onBlur={field.onBlur}
+              onChangeText={field.onChange}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+      )}
+
       <View style={styles.infoBox}>
         <CXText variant="small" color={colors.inkSoft}>
-          ⓘ We will send a password reset link or one-time code to your
-          registered account.
+          ⓘ We will send a one-time code to your registered email account.
         </CXText>
       </View>
       {formState.errors.root?.message ? (
         <CXText color={colors.danger}>{formState.errors.root.message}</CXText>
       ) : null}
       <CXButton
-        label="Send Reset Link"
+        label={isOtpSent ? "Verify & Reset" : "Send OTP"}
         loading={formState.isSubmitting}
         onPress={submit}
       />
@@ -129,6 +141,7 @@ const resetSchema = z
   });
 
 export function ResetPasswordScreen({ navigation, route }: ResetProps) {
+  const [isSuccess, setIsSuccess] = React.useState(false);
   const { control, handleSubmit, setError, formState } = useForm<
     z.infer<typeof resetSchema>
   >({
@@ -138,19 +151,42 @@ export function ResetPasswordScreen({ navigation, route }: ResetProps) {
   const submit = handleSubmit(async (values) => {
     try {
       await api.post("/auth/reset-password", {
-        token: route.params?.token,
+        token: (route.params as any)?.token,
         password: values.password,
       });
-      navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+      }, 3000);
     } catch (error) {
       setError("root", { message: getApiErrorMessage(error) });
     }
   });
 
+  if (isSuccess) {
+    return (
+      <AuthShell>
+        <CXHeader title="" onBack={() => navigation.navigate("Login")} />
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40, gap: 24 }}>
+          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: colors.primary + "20", justifyContent: "center", alignItems: "center" }}>
+            <Ionicons name="checkmark-circle" size={50} color={colors.primary} />
+          </View>
+          <CXText variant="h1" align="center">Password Changed!</CXText>
+          <CXText color={colors.textMuted} align="center" style={{ paddingHorizontal: 20 }}>
+            Your password has been successfully updated.
+          </CXText>
+          <Pressable onPress={() => navigation.reset({ index: 0, routes: [{ name: "Login" }] })}>
+             <CXText variant="bodyStrong" color={colors.primary}>Click here to login</CXText>
+          </Pressable>
+          <CXText variant="small" color={colors.textFaint}>Redirecting in 3 seconds...</CXText>
+        </View>
+      </AuthShell>
+    );
+  }
+
   return (
     <AuthShell>
       <CXHeader title="" onBack={navigation.goBack} />
-      <AuthLogo />
       <CXText variant="h2">Reset Password</CXText>
       <CXText color={colors.textMuted}>
         Create a new secure password for your account.
@@ -219,7 +255,6 @@ export function ResetPasswordScreen({ navigation, route }: ResetProps) {
 function AuthShell({ children }: React.PropsWithChildren) {
   return (
     <CXKeyboardScreen edges={[]} backgroundColor={colors.white}>
-      <Image source={aura} contentFit="fill" style={styles.aura} />
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.content}
@@ -269,5 +304,3 @@ const styles = StyleSheet.create({
   },
   centerLink: { alignSelf: "center", padding: spacing.sm },
 });
-
-import React from "react";

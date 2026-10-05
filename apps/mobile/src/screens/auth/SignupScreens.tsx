@@ -21,6 +21,8 @@ import { colors, radius, spacing } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { colleges, departments, years } from "@/constants/academic";
 
+import React from "react";
+
 function StepHeader({
   step,
   title,
@@ -59,6 +61,7 @@ const accountSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   username: z.string().min(3, "Use at least 3 characters").max(30, "Too long").regex(/^[a-z0-9_.]+$/, "Only lowercase letters, numbers, dots, and underscores"),
   email: z.string().min(5, "Enter a valid email or phone number"),
+  otp: z.string().optional(),
   password: z
     .string()
     .min(8, "Use at least 8 characters")
@@ -76,10 +79,12 @@ export function SignupAccountScreen({
       fullName: draft.fullName,
       username: draft.username,
       email: draft.email,
+      otp: "",
       password: draft.password,
     },
   });
   const [usernameSuggestions, setUsernameSuggestions] = React.useState<string[]>([]);
+  const [showOtp, setShowOtp] = React.useState(false);
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -190,9 +195,43 @@ export function SignupAccountScreen({
             onBlur={field.onBlur}
             onChangeText={field.onChange}
             error={fieldState.error?.message}
+            trailing={
+              <Pressable
+                onPress={() => setShowOtp(true)}
+                style={{
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: 6,
+                  backgroundColor: colors.primaryTint,
+                  borderRadius: radius.pill,
+                }}
+              >
+                <CXText variant="smallStrong" color={colors.primary}>
+                  Verify
+                </CXText>
+              </Pressable>
+            }
           />
         )}
       />
+      {showOtp && (
+        <Controller
+          control={control}
+          name="otp"
+          render={({ field, fieldState }) => (
+            <CXInput
+              label="Verification Code"
+              icon="keypad-outline"
+              placeholder="Enter 6-digit code"
+              keyboardType="number-pad"
+              maxLength={6}
+              value={field.value}
+              onBlur={field.onBlur}
+              onChangeText={field.onChange}
+              error={fieldState.error?.message}
+            />
+          )}
+        />
+      )}
       <Controller
         control={control}
         name="password"
@@ -502,5 +541,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceLavender,
   },
 });
-
-import React from "react";

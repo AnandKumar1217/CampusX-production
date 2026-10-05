@@ -70,3 +70,13 @@ export const marketplaceService = {
     return res.data.data.map(mapListing);
   }
 };
+
+export const marketplaceKeys = {
+  all: ["marketplace"] as const,
+  feed: (filters?: any) => ["marketplace", "feed", filters] as const,
+  detail: (listingId: string) => ["marketplace", "detail", listingId] as const,
+  myListings: (status?: string) => ["marketplace", "myListings", status] as const,
+  saved: () => ["marketplace", "saved"] as const,
+  search: (query: string, filters?: any) => ["marketplace", "search", query, filters] as const,
+};
+

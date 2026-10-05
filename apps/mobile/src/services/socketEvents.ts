@@ -5,6 +5,7 @@ import { api } from "@/services/api";
 export interface SocketEventDependencies {
   removeFriendLocation: (userId: string) => void;
   updateFriendIdentity: (userId: string, name?: string, avatarUrl?: string, username?: string) => void;
+  updateFriendPresence: (userId: string, online: boolean, lastSeenAt?: string) => void;
   fetchInitialFriendLocations: () => void;
   getCurrentUserId: () => string | undefined;
 }
@@ -13,7 +14,8 @@ export function setupSocketInvalidations(socket: Socket, deps: SocketEventDepend
   socket.on("message:new", (message: any) => {
     const conversationId = String(message?.conversationId ?? message?.conversation?._id ?? message?.conversation ?? "");
     const senderId = String(message?.senderId ?? message?.sender?._id ?? message?.sender ?? "");
-    if (conversationId && senderId && senderId !== deps.getCurrentUserId()) {
+    const currentUserId = deps.getCurrentUserId();
+    if (conversationId && senderId && senderId !== currentUserId) {
       void api.post(`/chats/${conversationId}/delivered`).catch(() => {});
     }
     queryClient.invalidateQueries({ queryKey: ["chats"] });
@@ -21,6 +23,7 @@ export function setupSocketInvalidations(socket: Socket, deps: SocketEventDepend
   // --- PRESENCE & IDENTITY ---
 
   socket.on("presence:changed", (data: { userId: string, status: "online" | "offline", lastSeenAt?: string }) => {
+    deps.updateFriendPresence(data.userId, data.status === "online", data.lastSeenAt);
     queryClient.invalidateQueries({ queryKey: ["friends"] });
     queryClient.invalidateQueries({ queryKey: ["user", data.userId] });
   });
@@ -124,6 +127,9 @@ export function setupSocketInvalidations(socket: Socket, deps: SocketEventDepend
   socket.on("event:updated", invalidateEvents);
 
   socket.on("event:deleted", invalidateEvents);
+  socket.on("event:cancelled", invalidateEvents);
+  socket.on("event:registration_added", invalidateEvents);
+  socket.on("event:registration_cancelled", invalidateEvents);
   socket.on("event:saved", () => queryClient.invalidateQueries({ queryKey: ["savedEvents"] }));
 
   // --- MARKETPLACE ---

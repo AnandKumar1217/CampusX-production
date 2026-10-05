@@ -17,10 +17,37 @@ export function connectSocket(token: string) {
     return socket;
   }
   socket = io(configuredSocketUrl, {
-    transports: ["websocket"],
     auth: { token },
     reconnection: true,
   });
+
+  if (__DEV__) {
+    console.info("[SOCKET_INIT]", {
+      url: configuredSocketUrl,
+      hasToken: !!token,
+    });
+    
+    socket.on("connect", () => {
+      console.info("[SOCKET_CONNECTED]", { socketId: socket?.id });
+    });
+    
+    socket.on("connect_error", (error) => {
+      console.error("[SOCKET_CONNECT_ERROR]", { message: error.message });
+    });
+    
+    socket.on("disconnect", (reason) => {
+      console.warn("[SOCKET_DISCONNECTED]", { reason });
+    });
+    
+    socket.io.on("reconnect_attempt", () => {
+      console.info("[SOCKET_RECONNECT_ATTEMPT]");
+    });
+    
+    socket.io.on("reconnect", () => {
+      console.info("[SOCKET_RECONNECTED]", { socketId: socket?.id });
+    });
+  }
+
   for (const [event, handlers] of subscriptions) {
     for (const handler of handlers) socket.on(event, handler);
   }

@@ -6,6 +6,8 @@ import Constants from "expo-constants";
 import { api } from "../services/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { navigationRef, setPendingRoute, handleNotification } from "../navigation/PushRoutingManager";
+
 export const PUSH_TOKEN_KEY = "campusx.push.token";
 
 // Set how foreground notifications are handled
@@ -18,8 +20,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-import { navigationRef, setPendingRoute, handleNotification } from "../navigation/PushRoutingManager";
-
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
   const notificationListener = useRef<any>(null);
@@ -27,6 +27,11 @@ export function usePushNotifications() {
 
   async function registerForPushNotificationsAsync() {
     let token;
+
+    if (__DEV__) {
+      console.log("Development mode: skipping push notification registration to avoid FirebaseApp init error.");
+      return;
+    }
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {

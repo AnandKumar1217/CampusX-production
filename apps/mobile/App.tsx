@@ -1,12 +1,10 @@
-import "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider , focusManager } from "@tanstack/react-query";
 import { StatusBar } from "expo-status-bar";
 import { LogBox, AppState, AppStateStatus, Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { focusManager } from "@tanstack/react-query";
 
 import { AppNavigator } from "@/navigation/AppNavigator";
 import { AudioCallOverlay } from "@/components/calls/AudioCallOverlay";

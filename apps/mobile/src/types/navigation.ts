@@ -36,6 +36,7 @@ export type RootStackParamList = {
   ChatInfo: { conversationId: string };
   CreateChatGroup: undefined;
   CreateChatGroupDetails: { selectedIds: string[] };
+  ArchivedChats: undefined;
   AIChat: { conversationId?: string } | undefined;
   AIHistory: undefined;
   CreateStory: undefined;
@@ -62,7 +63,7 @@ export type RootStackParamList = {
     mode?: "base" | "special";
     date?: string;
   } | undefined;
-  RescheduleClass: { classId: string; date: string };
+  MoveClass: { classId: string; date: string; mode: "base" | "occurrence" };
   StudyGroups: { initialCategory?: "My Groups" | "Joined" } | undefined;
   GroupDetails: { groupId: string };
   GroupMembers: { groupId: string };
@@ -75,6 +76,8 @@ export type RootStackParamList = {
   EditGroup: { groupId: string };
   Events: undefined;
   EventDetails: { eventId: string };
+  EventRegistrations: { eventId: string };
+  CreateEvent: { eventId?: string } | undefined;
   EditEvent: { eventId?: string } | undefined;
   Marketplace: undefined;
   ListingDetails: { listingId: string };
@@ -96,16 +99,9 @@ export type RootStackParamList = {
   QRScanner: undefined;
   Settings: undefined;
   GamesHub: undefined;
-  Game2048: undefined;
-  Sudoku: undefined;
-  TicTacToe: undefined;
-  Snake: undefined;
-  MemoryMatch: undefined;
-  WordGame: undefined;
-  ChessPuzzles: undefined;
-  AirHockey: undefined;
-  ReactionBattle: undefined;
-  TicTacToeGlow: undefined;
+  GameSetup: { gameId: string };
+  ActiveGame: { gameId: string; mode: "1P" | "2P" | "3P" | "4P"; difficulty: string; matchLength: number };
+  GameResult: { gameId: string; status: string; scoreText?: string; nextLevel?: number };
 };
 
 export type MainTabsParamList = {

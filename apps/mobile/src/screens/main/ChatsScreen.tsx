@@ -1,7 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Pressable, FlatList, StyleSheet, View, Alert, RefreshControl, ActivityIndicator, BackHandler } from "react-native";
 import { useState, useEffect, useDeferredValue, useMemo, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 
 import {
   CXAvatar,
@@ -21,6 +23,19 @@ import { colors, radius, spacing } from "@/theme";
 import { api, getApiErrorMessage } from "@/services/api";
 import { getSocket } from "@/services/socket";
 import { groupService } from "@/services/groupService";
+import { getUserAvatar } from "@/utils/user";
+import { queryClient } from "@/query/queryClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+function AnimatedAIIcon() {
+  return (
+    <View style={[styles.storyRing, { padding: 3, backgroundColor: 'transparent' }]}>
+      <View style={[styles.add, { backgroundColor: colors.white, borderStyle: 'solid', borderColor: colors.primary }]}>
+        <Ionicons name="sparkles" size={24} color={colors.primary} />
+      </View>
+    </View>
+  );
+}
 
 export function ChatsScreen() {
   const navigation = useRootNavigation();
@@ -45,6 +60,23 @@ export function ChatsScreen() {
       ]);
       setConversations(chatsRes.data.data);
       setGroups(groupsRes.data || []);
+
+      const chats = chatsRes.data.data;
+      if (chats && chats.length > 0) {
+        setTimeout(() => {
+          chats.slice(0, 5).forEach((chat) => {
+            const id = chat._id || chat.id;
+            if (id) {
+              api.get(`/chats/${id}/messages?limit=30`).then(res => {
+                if (res.data?.data?.items) {
+                  queryClient.setQueryData(["chatMessages", id], res.data.data.items);
+                  AsyncStorage.setItem(`chatMessages_${id}`, JSON.stringify(res.data.data.items)).catch(() => {});
+                }
+              }).catch(() => {});
+            }
+          });
+        }, 500);
+      }
     } catch (err) {
       console.log("Failed to fetch chats:", getApiErrorMessage(err));
     } finally {
@@ -83,7 +115,7 @@ export function ChatsScreen() {
             };
             
             if (senderId !== currentUser?.id) {
-               const myMetaIdx = updated.participantMetadata?.findIndex((m: any) => m.user === currentUser?.id);
+               const myMetaIdx = updated.participantMetadata?.findIndex((m: any) => String(m.user?._id ?? m.user) === currentUser?.id);
                if (myMetaIdx !== undefined && myMetaIdx !== -1) {
                  const newMeta = [...updated.participantMetadata];
                  newMeta[myMetaIdx] = { ...newMeta[myMetaIdx], unreadCount: (newMeta[myMetaIdx].unreadCount || 0) + 1 };
@@ -137,6 +169,16 @@ export function ChatsScreen() {
     await api.delete(`/chats/${id}`);
   };
 
+  const leaveGroup = async () => {
+    if (!selectedChat) return;
+    const id = selectedChat.id;
+    setGroups((current) => current.filter((g) => (g._id || g.id) !== id));
+    await groupService.leaveGroup(id);
+    void fetchChats();
+  };
+
+  const archivedChatsCount = conversations.filter(c => c.participantMetadata?.find((m: any) => String(m.user?._id ?? m.user) === currentUser?.id)?.archived).length;
+
   const formattedConversations = useMemo(() => {
     const list: any[] = [];
     const seen = new Set();
@@ -144,7 +186,7 @@ export function ChatsScreen() {
     if (filter === "All" || filter === "Unread") {
       conversations.forEach(c => {
         const otherParticipant = c.participants.find((p: any) => p._id !== currentUser?.id) || c.participants[0];
-        const meta = c.participantMetadata?.find((m: any) => m.user === currentUser?.id);
+        const meta = c.participantMetadata?.find((m: any) => String(m.user?._id ?? m.user) === currentUser?.id);
         const unreadCount = meta?.unreadCount || 0;
         
         if (filter === "Unread" && unreadCount === 0) return;
@@ -159,7 +201,7 @@ export function ChatsScreen() {
             id: c._id,
             type: c.type,
             title,
-            avatarUrl: c.type === "group" ? c.avatarUrl : otherParticipant?.avatarUrl,
+            avatarUrl: c.type === "group" ? c.avatarUrl : getUserAvatar(otherParticipant),
             online: otherParticipant?.online,
             unread: unreadCount,
             pinned: Boolean(meta?.pinned),
@@ -212,12 +254,7 @@ export function ChatsScreen() {
         <CXText variant="h2" style={styles.flex}>
           Chats
         </CXText>
-        <CXIconButton
-          icon="videocam-outline"
-          label="Start video call"
-          backgroundColor={colors.white}
-          onPress={() => navigation.navigate("VideoCall" as any)}
-        />
+
         <CXIconButton
           icon="create-outline"
           label="New chat"
@@ -235,6 +272,7 @@ export function ChatsScreen() {
         contentContainerStyle={styles.stories}
         data={[
           { id: 'new', isNew: true }, 
+          { id: 'ai', isAI: true },
           ...globalFriends
             .filter(f => f.online)
             .filter((f, index, self) => self.findIndex(t => t.id === f.id) === index)
@@ -251,13 +289,21 @@ export function ChatsScreen() {
               </Pressable>
             );
           }
+          if ((item as any).isAI) {
+            return (
+              <Pressable onPress={() => navigation.navigate("AIChat" as any)} style={styles.story}>
+                <AnimatedAIIcon />
+                <CXText variant="caption" style={{ fontWeight: '600' }}>CampusAI</CXText>
+              </Pressable>
+            );
+          }
           return (
             <Pressable
               onPress={() => startChat(item)}
               style={styles.story}
             >
               <View style={styles.storyRing}>
-                <CXAvatar name={(item as any).name} source={(item as any).avatar} size={48} online={(item as any).online} />
+                <CXAvatar name={(item as any).name} source={getUserAvatar(item)} size={48} online={(item as any).online} />
               </View>
               <CXText variant="caption" numberOfLines={1}>
                 {(item as any).name.split(" ")[0]}
@@ -271,6 +317,17 @@ export function ChatsScreen() {
         <CXChip label="Unread" active={filter === "Unread"} onPress={() => setFilter("Unread")} />
         <CXChip label="Groups" active={filter === "Groups"} onPress={() => setFilter("Groups")} />
       </CXRow>
+      
+      {archivedChatsCount > 0 && (
+        <Pressable
+          style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16, backgroundColor: colors.backgroundLavender, borderRadius: 12, marginTop: 8 }}
+          onPress={() => navigation.navigate("ArchivedChats" as any)}
+        >
+          <Ionicons name="archive-outline" size={20} color={colors.primary} />
+          <CXText variant="bodyStrong" style={{ marginLeft: 12, flex: 1 }}>Archived chats</CXText>
+          <CXText variant="bodyStrong" color={colors.primary}>{archivedChatsCount}</CXText>
+        </Pressable>
+      )}
     </View>
   );
 
@@ -296,18 +353,20 @@ export function ChatsScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} /> : renderEmpty}
+        ListHeaderComponent={renderHeader()}
+        ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} /> : renderEmpty()}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         renderItem={({ item }) => {
           if (item.type === "group" || item.type === "community_group") {
             return (
               <Pressable
-                onLongPress={item.type === "community_group" ? undefined : () => handleLongPress(item)}
+                onLongPress={() => handleLongPress(item)}
                 onPress={() => {
                   if (item.type === "community_group") {
                     navigation.navigate("GroupConversation" as any, { groupId: item.id, name: item.name });
                   } else {
+                    const fullChat = conversations.find(c => c._id === item.id);
+                    if (fullChat) queryClient.setQueryData(["chat", item.id], fullChat);
                     navigation.navigate("Conversation", { conversationId: item.id, name: item.name, source: "chat_list" });
                   }
                 }}
@@ -326,9 +385,14 @@ export function ChatsScreen() {
                     <CXText variant="caption" color={colors.textMuted}>{item.updatedAt}</CXText>
                   </CXRow>
                   <CXRow>
-                    <CXText variant="small" color={colors.textMuted} numberOfLines={1} style={styles.flex}>
-                      {item.type === "community_group" ? (item.subtitle || "No description") : `You: ${item.subtitle || ""}`}
+                    <CXText variant="small" color={item.unread ? colors.ink : colors.textMuted} numberOfLines={1} style={styles.flex}>
+                      {item.type === "community_group" ? (item.subtitle || "No description") : (item.lastMessage || "No messages yet")}
                     </CXText>
+                    {item.type === "group" && item.unread ? (
+                      <View style={styles.unread}>
+                        <CXText variant="caption" color={colors.white}>{item.unread}</CXText>
+                      </View>
+                    ) : null}
                   </CXRow>
                 </View>
               </Pressable>
@@ -338,7 +402,11 @@ export function ChatsScreen() {
           return (
             <Pressable
               onLongPress={() => handleLongPress(item)}
-              onPress={() => navigation.navigate("Conversation", { conversationId: item.id, name: item.title, source: "chat_list" })}
+              onPress={() => {
+                const fullChat = conversations.find(c => c._id === item.id);
+                if (fullChat) queryClient.setQueryData(["chat", item.id], fullChat);
+                navigation.navigate("Conversation", { conversationId: item.id, name: item.title, source: "chat_list" });
+              }}
               style={({ pressed }) => [styles.chat, pressed && styles.pressed]}
             >
               <CXAvatar name={item.title} source={item.avatarUrl} size={50} online={item.online} />
@@ -363,49 +431,51 @@ export function ChatsScreen() {
             </Pressable>
           );
         }}
-        ListFooterComponent={
-          <Pressable onPress={() => navigation.navigate("AIChat" as any)} style={styles.aiRow}>
-            <View style={styles.aiIcon}>
-              <Ionicons name="sparkles" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.flex}>
-              <CXText variant="bodyStrong">CampusAI</CXText>
-              <CXText variant="caption" color={colors.textMuted}>Your personal campus and study assistant</CXText>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-          </Pressable>
-        }
       />
       <CXActionSheet
         visible={Boolean(selectedChat)}
         onClose={() => setSelectedChat(null)}
-        title="Chat options"
-        actions={selectedChat ? [
-          {
-            label: selectedChat.pinned ? "Unpin chat" : "Pin chat",
-            icon: selectedChat.pinned ? "pin-outline" : "pin",
-            onPress: () => void updatePreference("pinned", !selectedChat.pinned),
-          },
-          {
-            label: selectedChat.muted ? "Unmute notifications" : "Mute notifications",
-            icon: selectedChat.muted ? "notifications-outline" : "notifications-off-outline",
-            onPress: () => void updatePreference("muted", !selectedChat.muted),
-          },
-          {
-            label: selectedChat.archived ? "Unarchive chat" : "Archive chat",
-            icon: selectedChat.archived ? "arrow-undo-outline" : "archive-outline",
-            onPress: () => void updatePreference("archived", !selectedChat.archived),
-          },
-          {
-            label: "Delete chat",
-            icon: "trash-outline",
-            destructive: true,
-            confirmationTitle: "Delete this chat?",
-            confirmationMessage: "This hides the conversation only for you. It can reappear if a new message arrives.",
-            confirmationButtonText: "Delete chat",
-            onPress: () => void deleteChat(),
-          },
-        ] : []}
+        title={selectedChat?.type === "community_group" ? "Group options" : "Chat options"}
+        actions={
+          selectedChat ? 
+            selectedChat.type === "community_group" ? [
+              {
+                label: "Leave group",
+                icon: "exit-outline",
+                destructive: true,
+                confirmationTitle: "Leave this group?",
+                confirmationMessage: "You will no longer receive messages or updates from this group.",
+                confirmationButtonText: "Leave group",
+                onPress: () => void leaveGroup(),
+              },
+            ] : [
+              {
+                label: selectedChat.pinned ? "Unpin chat" : "Pin chat",
+                icon: selectedChat.pinned ? "pin-outline" : "pin",
+                onPress: () => void updatePreference("pinned", !selectedChat.pinned),
+              },
+              {
+                label: selectedChat.muted ? "Unmute notifications" : "Mute notifications",
+                icon: selectedChat.muted ? "notifications-outline" : "notifications-off-outline",
+                onPress: () => void updatePreference("muted", !selectedChat.muted),
+              },
+              {
+                label: selectedChat.archived ? "Unarchive chat" : "Archive chat",
+                icon: selectedChat.archived ? "arrow-undo-outline" : "archive-outline",
+                onPress: () => void updatePreference("archived", !selectedChat.archived),
+              },
+              {
+                label: "Delete chat",
+                icon: "trash-outline",
+                destructive: true,
+                confirmationTitle: "Delete this chat?",
+                confirmationMessage: "This hides the conversation only for you. It can reappear if a new message arrives.",
+                confirmationButtonText: "Delete chat",
+                onPress: () => void deleteChat(),
+              },
+            ] 
+          : []
+        }
       />
     </CXScreen>
   );
@@ -507,3 +577,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   }
 });
+

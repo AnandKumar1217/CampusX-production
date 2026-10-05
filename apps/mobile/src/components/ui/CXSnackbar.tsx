@@ -9,6 +9,7 @@ interface CXSnackbarProps {
   message: string;
   onDismiss: () => void;
   duration?: number;
+  type?: 'success' | 'error';
 }
 
 export function CXSnackbar({
@@ -16,6 +17,7 @@ export function CXSnackbar({
   message,
   onDismiss,
   duration = 3000,
+  type = 'success',
 }: CXSnackbarProps) {
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -66,8 +68,8 @@ export function CXSnackbar({
       ]}
       pointerEvents="none"
     >
-      <View style={styles.content}>
-        <Ionicons name="checkmark-circle" size={20} color={colors.white} />
+      <View style={[styles.content, type === 'error' && styles.errorContent]}>
+        <Ionicons name={type === 'error' ? "alert-circle" : "checkmark-circle"} size={20} color={colors.white} />
         <CXText variant="bodyStrong" color={colors.white} style={styles.text}>
           {message}
         </CXText>
@@ -102,6 +104,12 @@ const styles = StyleSheet.create({
     borderColor: '#987BFC', // Lighter purple for a top-edge highlight effect
     borderBottomWidth: 3, // Thicker bottom border for 3D depth
     borderBottomColor: colors.primaryDark,
+  },
+  errorContent: {
+    backgroundColor: colors.danger,
+    shadowColor: colors.danger,
+    borderColor: '#ef4444',
+    borderBottomColor: '#b91c1c',
   },
   text: {
     marginLeft: spacing.md,

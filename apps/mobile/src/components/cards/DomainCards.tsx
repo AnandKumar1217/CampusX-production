@@ -112,15 +112,18 @@ export function CXListingCard({
 export function CXTripCard({
   trip,
   onPress,
+  onLongPress,
   featured,
 }: {
   trip: Trip;
   onPress?: () => void;
+  onLongPress?: () => void;
   featured?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
       style={({ pressed }) => pressed && styles.pressed}
     >

@@ -1,22 +1,19 @@
 import { Platform } from "react-native";
 import * as Location from "expo-location";
-import type { TimetableEntry, EventItem, Listing, StudyGroup } from "@/types/domain";
+import type { TimetableEntry, EventItem, Listing, StudyGroup , TimeSlot } from "@/types/domain";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { setupSocketInvalidations } from "@/services/socketEvents";
-const { persist, createJSONStorage } = require("zustand/middleware") as typeof import("zustand/middleware");
 import { type ChatMessage } from "@/services/ai";
 import { connectSocket, disconnectSocket, getSocket } from "@/services/socket";
 import { queryClient } from "@/query/queryClient";
 import { api, queueCredentialOperation, resetApiSession, setApiSessionToken } from "@/services/api";
 import { consumePendingRoute } from "@/navigation/PushRoutingManager";
-import type { TimeSlot } from "@/types/domain";
 
 import type { MainTabName } from "@/types/navigation";
-
 const ONBOARDING_KEY = "campusx.onboarding.complete";
 const ACCESS_TOKEN_KEY = "campusx.auth.access-token";
 const REFRESH_TOKEN_KEY = "campusx.auth.refresh-token";
@@ -35,13 +32,14 @@ const DEFAULT_GRID_TIME_SLOTS: TimeSlot[] = [
   { id: "slot-1400", label: "14:00 - 15:00", start: "14:00" },
 ];
 
-type PersonalState = Pick<AppState, "gridTimeSlots" | "savedListings" | "savedPosts" | "savedEvents" | "aiConversations">;
+type PersonalState = Pick<AppState, "gridTimeSlots" | "savedListings" | "savedPosts" | "savedEvents" | "aiConversations" | "sgpas">;
 export const emptyPersonalState = (): PersonalState => ({
   gridTimeSlots: DEFAULT_GRID_TIME_SLOTS,
   savedListings: [],
   savedPosts: [],
   savedEvents: [],
   aiConversations: [],
+  sgpas: {},
 });
 const personalKey = (userId: string) => `${PERSONAL_KEY_PREFIX}${encodeURIComponent(userId)}`;
 let sessionGeneration = 0;
@@ -57,6 +55,7 @@ async function loadPersonalState(userId: string): Promise<PersonalState> {
       savedPosts: saved.savedPosts ?? [],
       savedEvents: saved.savedEvents ?? [],
       aiConversations: saved.aiConversations ?? [],
+      sgpas: saved.sgpas ?? {},
     };
   } catch (error) {
     console.warn("Failed to load personal state", error);
@@ -72,6 +71,7 @@ function savePersonalState(state: AppState) {
     savedPosts: state.savedPosts,
     savedEvents: state.savedEvents,
     aiConversations: state.aiConversations,
+    sgpas: state.sgpas,
   };
   AsyncStorage.setItem(personalKey(state.user.id), JSON.stringify(personal)).catch(console.error);
 }
@@ -103,6 +103,10 @@ export type FriendLiveLocation = {
   avatarUrl?: string;
   lat: number;
   lon: number;
+  accuracy?: number;
+  heading?: number;
+  speed?: number;
+  source?: "foreground" | "background" | "manual";
   updatedAt: number;
   status?: string;
 };
@@ -153,6 +157,11 @@ type AppState = {
   fetchFriends: () => Promise<void>;
   addFriend: (user: User) => void;
   removeFriend: (id: string) => void;
+
+  sentRequests: string[];
+  addSentRequest: (id: string) => void;
+  removeSentRequest: (id: string) => void;
+  setSentRequests: (ids: string[]) => void;
   aiConversations: { id: string; title: string; messages: ChatMessage[]; updatedAt: number }[];
   saveAIConversation: (id: string, title: string, messages: ChatMessage[]) => void;
   deleteAIConversation: (id: string) => void;
@@ -165,9 +174,12 @@ type AppState = {
   setFriendLocation: (userId: string, data: Partial<FriendLiveLocation> & { lat: number; lon: number; updatedAt: number }) => void;
   removeFriendLocation: (userId: string) => void;
   updateFriendIdentity: (userId: string, name?: string, avatarUrl?: string, username?: string) => void;
+  updateFriendPresence: (userId: string, online: boolean, lastSeenAt?: string) => void;
   fetchInitialFriendLocations: () => Promise<void>;
   fetchLocationSettings: () => Promise<void>;
   boundSocketInstance: any;
+  activeConversationId: string | null;
+  setActiveConversationId: (id: string | null) => void;
 
   setupSocketListeners: () => void;
 };
@@ -175,8 +187,7 @@ type AppState = {
 
 
 export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
   hydrated: false,
   onboardingComplete: false,
   accessToken: null,
@@ -191,12 +202,20 @@ export const useAppStore = create<AppState>()(
   sgpas: {},
   updateSgpa: async (semester, sgpa) => {
     set((state) => {
-      const newSgpas = { ...state.sgpas, [semester]: sgpa };
+      const newSgpas = { ...state.sgpas };
+      if (sgpa === undefined) {
+        delete newSgpas[semester];
+      } else {
+        newSgpas[semester] = sgpa;
+      }
       const api = require("../services/api").api;
       api.patch("/users/me", { sgpas: newSgpas }).catch(console.error);
       return { sgpas: newSgpas };
     });
+    savePersonalState(get());
   },
+  activeConversationId: null,
+  setActiveConversationId: (id) => set({ activeConversationId: id }),
   activeTab: "Home",
   setActiveTab: (activeTab) => set({ activeTab }),
   unreadNotifications: 0,
@@ -221,6 +240,10 @@ export const useAppStore = create<AppState>()(
         user: null,
         ...emptyPersonalState(),
       });
+      if (accessToken) {
+        connectSocket(accessToken);
+        get().setupSocketListeners();
+      }
       // A cached profile is not proof of the account represented by the token.
       // Splash verifies /users/me before showing any private state.
       await Promise.all([
@@ -245,7 +268,7 @@ export const useAppStore = create<AppState>()(
         const canonicalUser = { ...res.data.data, id: String(res.data.data.id ?? res.data.data._id) } as User;
         const personal = await loadPersonalState(canonicalUser.id);
         if (generation !== sessionGeneration || !get().accessToken) return;
-        set({ user: canonicalUser, sgpas: (canonicalUser as any).sgpas || {}, ...personal });
+        set({ user: canonicalUser, ...personal });
         connectSocket(get().accessToken!);
         get().setupSocketListeners();
         get().fetchFriends().catch(console.error);
@@ -346,6 +369,16 @@ export const useAppStore = create<AppState>()(
       console.error("Failed to remove friend", e);
     }
   },
+
+  sentRequests: [],
+  addSentRequest: (id) => set((state) => {
+    if (state.sentRequests.includes(id)) return state;
+    return { sentRequests: [...state.sentRequests, id] };
+  }),
+  removeSentRequest: (id) => set((state) => ({
+    sentRequests: state.sentRequests.filter(reqId => reqId !== id)
+  })),
+  setSentRequests: (ids) => set({ sentRequests: ids }),
     saveAIConversation: (id: string, title, messages) => {
       set((state) => {
         const existingIndex = state.aiConversations.findIndex((c) => c.id === id);
@@ -547,6 +580,22 @@ export const useAppStore = create<AppState>()(
 
     return { friendLocations, friends, user };
   }),
+  updateFriendPresence: (userId, online, lastSeenAt) => set((state) => {
+    const friends = state.friends.map(f => {
+      if (f.id === userId) {
+        return { ...f, online, lastSeenAt: lastSeenAt ?? (f as any).lastSeenAt };
+      }
+      return f;
+    });
+
+    const user = state.user?.id === userId ? {
+      ...state.user,
+      online,
+      lastSeenAt: lastSeenAt ?? (state.user as any).lastSeenAt,
+    } : state.user;
+
+    return { friends, user };
+  }),
   fetchInitialFriendLocations: async () => {
     const generation = sessionGeneration;
     const userId = get().user?.id;
@@ -570,6 +619,10 @@ export const useAppStore = create<AppState>()(
                   avatarUrl: loc.user.avatar || loc.user.avatarUrl,
                   lat: loc.latitude,
                   lon: loc.longitude,
+                  accuracy: loc.accuracy,
+                  heading: loc.heading,
+                  speed: loc.speed,
+                  source: loc.source,
                   updatedAt,
                   status: loc.status,
                 };
@@ -616,6 +669,7 @@ export const useAppStore = create<AppState>()(
     setupSocketInvalidations(socket, {
       removeFriendLocation: get().removeFriendLocation,
       updateFriendIdentity: get().updateFriendIdentity,
+      updateFriendPresence: get().updateFriendPresence,
       fetchInitialFriendLocations: get().fetchInitialFriendLocations,
       getCurrentUserId: () => get().user?.id,
     });
@@ -627,8 +681,11 @@ export const useAppStore = create<AppState>()(
         avatarUrl: payload.user.avatar || payload.user.avatarUrl,
         lat: payload.latitude,
         lon: payload.longitude,
+        accuracy: payload.accuracy,
+        heading: payload.heading,
+        speed: payload.speed,
+        source: payload.source,
         updatedAt: payload.updatedAt ? new Date(payload.updatedAt).getTime() : Date.now(),
-        status: "active",
       });
     });
 
@@ -660,16 +717,4 @@ export const useAppStore = create<AppState>()(
   },
 
     }),
-    {
-      name: "campusx-storage",
-      version: 2,
-      storage: createJSONStorage(() => AsyncStorage),
-      // Version 1 included the cached user and private arrays in one device-wide key.
-      // Drop that record; personal data is now stored under an authenticated user key.
-      migrate: () => ({}),
-      partialize: (state) => ({
-        sgpas: state.sgpas,
-      }),
-    }
-  )
 );

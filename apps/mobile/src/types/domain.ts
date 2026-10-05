@@ -146,6 +146,10 @@ export type EventItem = {
   description?: string;
   public?: boolean;
   attendance?: "none" | "maybe" | "going";
+  capacity?: number;
+  registrationDeadline?: string;
+  status?: "draft" | "active" | "cancelled";
+  draft?: boolean;
 };
 
 export type Listing = {

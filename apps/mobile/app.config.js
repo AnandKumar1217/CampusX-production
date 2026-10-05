@@ -1,3 +1,4 @@
+/* eslint-env node */
 const RELEASE_PROFILES = new Set(["production", "production-apk", "release-apk"]);
 const DEVELOPMENT_VARIANT = "development";
 
@@ -102,6 +103,7 @@ export default ({ config }) => {
   try {
     const fs = require("fs");
     const path = require("path");
+    // eslint-disable-next-line no-undef
     const buildGradlePath = path.join(__dirname, "android", "app", "build.gradle");
     if (fs.existsSync(buildGradlePath)) {
       let buildGradle = fs.readFileSync(buildGradlePath, "utf8");

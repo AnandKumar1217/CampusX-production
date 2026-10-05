@@ -39,12 +39,12 @@ import type { RootStackParamList } from "@/types/navigation";
 import type { Notification } from "@/types/domain";
 import { handleNotification } from "@/navigation/PushRoutingManager";
 
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
   Name
 >;
-
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 
 export function NotificationsScreen({
   navigation,

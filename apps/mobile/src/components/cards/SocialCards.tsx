@@ -12,12 +12,14 @@ import { CXAvatar, CXButton, CXCard, CXRow, CXText, CXIconButton, CXActionSheet 
 export function CXUserRow({
   user,
   action = "Message",
+  subtitle,
   onPress,
   onAction,
   onRemove,
 }: {
   user: User;
   action?: string;
+  subtitle?: string;
   onPress?: () => void;
   onAction?: () => void;
   onRemove?: () => void;
@@ -44,7 +46,7 @@ export function CXUserRow({
             ) : null}
           </CXRow>
           <CXText variant="caption" color={colors.textMuted} numberOfLines={1}>
-            {[user.department, user.academicYear || user.year].filter(Boolean).join(" · ")}
+            {subtitle ?? [user.department, user.academicYear || user.year].filter(Boolean).join(" · ")}
           </CXText>
         </View>
       </Pressable>
@@ -60,7 +62,8 @@ export function CXUserRow({
           <CXButton
             label={action}
             size="sm"
-            variant="outline"
+            variant={action === "Add Friend" ? "primary" : "outline"}
+            disabled={action === "Requested" || action === "Friends"}
             fullWidth={false}
             style={{ alignSelf: "center" }}
             onPress={onAction}

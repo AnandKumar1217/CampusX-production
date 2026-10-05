@@ -7,6 +7,12 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { navigationRef, consumePendingRoute } from "./PushRoutingManager";
 
 import { CXBottomNav } from "@/components/navigation/CXBottomNav";
+import { EventsScreen } from '@/screens/events/EventsScreen';
+import { EventDetailsScreen } from '@/screens/events/EventDetailsScreen';
+import { CreateEventScreen } from '@/screens/events/CreateEventScreen';
+import { MyEventsScreen } from '@/screens/events/MyEventsScreen';
+import { EventRegistrationsScreen } from '@/screens/events/EventRegistrationsScreen';
+
 import {
   AIChatScreen,
   AIHistoryScreen,
@@ -16,41 +22,25 @@ import {
   CreateChatGroupScreen,
   CreateChatGroupDetailsScreen,
 } from "@/screens/chat/ChatScreens";
+import { ArchivedChatsScreen } from "@/screens/chat/ArchivedChatsScreen";
 import { LocationSettingsScreen } from "@/screens/campus/CampusScreens";
 import {
   CalendarScreen,
   EditClassScreen,
-  RescheduleClassScreen,
+  MoveClassScreen,
   TimetableReviewScreen,
   TimetableScreen,
   TimetableSettingsScreen,
 } from "@/screens/campus/TimetableScreens";
+import { CreateListingScreen, ListingDetailsScreen, ManageListingsScreen, MarketplaceScreen, WeatherDetailsScreen, WeatherScreen } from "@/screens/commerce/CommerceScreens";
+
+
 import {
-  CreateListingScreen,
-  EditEventScreen,
-  EventDetailsScreen,
-  EventsScreen,
-  ListingDetailsScreen,
-  ManageListingsScreen,
-  MarketplaceScreen,
-  WeatherDetailsScreen,
-  WeatherScreen,
-} from "@/screens/commerce/CommerceScreens";
-import {
-  GamesHubScreen,
-  AirHockeyScreen,
-  ReactionBattleScreen,
-  TicTacToeGlowScreen,
-} from "@/screens/games";
-import {
-  ChessPuzzlesScreen,
-  Game2048Screen,
-  MemoryMatchScreen,
-  SnakeScreen,
-  SudokuScreen,
-  TicTacToeScreen,
-  WordGameScreen,
-} from "@/screens/games/GameScreens";
+  GamesHomeScreen,
+  GameSetupScreen,
+  ActiveGameScreen,
+  GameResultScreen,
+} from "@/features/games/screens";
 import {
   GroupDetailsScreen,
   GroupFilesScreen,
@@ -78,11 +68,10 @@ import {
   CreatePostScreen,
   MutualFriendsScreen,
   MyPostsScreen,
-  MyEventsScreen,
   PeopleSuggestionsScreen,
   PostDetailsScreen,
   ReactionsScreen,
-  SavedScreen,
+
   UserProfileScreen,
 } from "@/screens/social/SocialScreens";
 import {
@@ -117,6 +106,8 @@ import {
 import { SplashScreen } from "@/screens/auth/SplashScreen";
 import { colors } from "@/theme";
 import type { MainTabsParamList, RootStackParamList } from "@/types/navigation";
+
+import { useLiveLocationWatcher } from "@/hooks/useLiveLocationWatcher";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabsParamList>();
@@ -155,8 +146,6 @@ const linking: LinkingOptions<RootStackParamList> = {
     },
   },
 };
-
-import { useLiveLocationWatcher } from "@/hooks/useLiveLocationWatcher";
 
 export function AppNavigator() {
   useLiveLocationWatcher();
@@ -249,7 +238,7 @@ export function AppNavigator() {
           component={PeopleSuggestionsScreen}
         />
         <Stack.Screen name="GlobalUsers" component={GlobalUsersScreen} />
-        <Stack.Screen name="Saved" component={SavedScreen} />
+
         <Stack.Screen name="MyPosts" component={MyPostsScreen} />
         <Stack.Screen name="MyEvents" component={MyEventsScreen} />
         <Stack.Screen name="CreatePost" component={CreatePostScreen} />
@@ -259,6 +248,7 @@ export function AppNavigator() {
         <Stack.Screen name="GroupConversation" component={ConversationScreen as any} />
         <Stack.Screen name="NewChat" component={NewChatScreen} />
         <Stack.Screen name="ChatInfo" component={ChatInfoScreen} />
+        <Stack.Screen name="ArchivedChats" component={ArchivedChatsScreen} />
         <Stack.Screen name="CreateChatGroup" component={CreateChatGroupScreen} />
         <Stack.Screen name="CreateChatGroupDetails" component={CreateChatGroupDetailsScreen} />
         <Stack.Screen name="AIChat" component={AIChatScreen} />
@@ -273,7 +263,7 @@ export function AppNavigator() {
         <Stack.Screen name="TimetableSettings" component={TimetableSettingsScreen} />
         <Stack.Screen name="TimetableReview" component={TimetableReviewScreen} />
         <Stack.Screen name="EditClass" component={EditClassScreen} />
-        <Stack.Screen name="RescheduleClass" component={RescheduleClassScreen} />
+        <Stack.Screen name="MoveClass" component={MoveClassScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="StudyGroups" component={StudyGroupsScreen} />
         <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
@@ -287,7 +277,10 @@ export function AppNavigator() {
         <Stack.Screen name="EditGroup" component={EditGroupScreen} />
         <Stack.Screen name="Events" component={EventsScreen} />
         <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
-        <Stack.Screen name="EditEvent" component={EditEventScreen} />
+        <Stack.Screen name="EventRegistrations" component={EventRegistrationsScreen} />
+        
+        <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+        <Stack.Screen name="EditEvent" component={CreateEventScreen} />
         <Stack.Screen name="Marketplace" component={MarketplaceScreen} />
         <Stack.Screen name="ListingDetails" component={ListingDetailsScreen} />
         <Stack.Screen name="CreateListing" component={CreateListingScreen} />
@@ -312,18 +305,14 @@ export function AppNavigator() {
           options={{ animation: "fade" }}
         />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="GamesHub" component={GamesHubScreen} />
-        <Stack.Screen name="Game2048" component={Game2048Screen} />
-        <Stack.Screen name="Sudoku" component={SudokuScreen} />
-        <Stack.Screen name="TicTacToe" component={TicTacToeScreen} />
-        <Stack.Screen name="Snake" component={SnakeScreen} />
-        <Stack.Screen name="MemoryMatch" component={MemoryMatchScreen} />
-        <Stack.Screen name="WordGame" component={WordGameScreen} />
-        <Stack.Screen name="ChessPuzzles" component={ChessPuzzlesScreen} />
-        <Stack.Screen name="AirHockey" component={AirHockeyScreen} />
-        <Stack.Screen name="ReactionBattle" component={ReactionBattleScreen} />
-        <Stack.Screen name="TicTacToeGlow" component={TicTacToeGlowScreen} />
+        <Stack.Screen name="GamesHub" component={GamesHomeScreen} />
+                                                                                        
+
+        <Stack.Screen name="GameSetup" component={GameSetupScreen} />
+        <Stack.Screen name="ActiveGame" component={ActiveGameScreen} options={{ gestureEnabled: false, animation: "fade" }} />
+        <Stack.Screen name="GameResult" component={GameResultScreen} options={{ animation: "slide_from_bottom" }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+

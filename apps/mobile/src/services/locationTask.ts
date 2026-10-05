@@ -34,7 +34,14 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         }
 
         if (token) {
-          await api.post("/location/position", { latitude, longitude }, {
+          await api.post("/location/position", { 
+            latitude, 
+            longitude,
+            accuracy: latestLocation.coords.accuracy,
+            heading: latestLocation.coords.heading,
+            speed: latestLocation.coords.speed,
+            source: "background"
+          }, {
             headers: { Authorization: token }
           });
           console.log(`[BACKGROUND TASK] Pushed location: ${latitude}, ${longitude}`);

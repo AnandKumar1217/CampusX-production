@@ -131,7 +131,14 @@ export function CXSearchBar({
         {...props}
       />
       {!!value && (
-        <Pressable onPress={onClear} hitSlop={10} style={{ paddingHorizontal: 4 }}>
+        <Pressable 
+          onPress={() => {
+            props.onChangeText?.("");
+            onClear?.();
+          }} 
+          hitSlop={10} 
+          style={{ paddingHorizontal: 4 }}
+        >
           <Ionicons name="close-circle" size={18} color={colors.textMuted} />
         </Pressable>
       )}

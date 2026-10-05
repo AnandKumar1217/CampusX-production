@@ -32,7 +32,7 @@ export function ProfileScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const user = useAppStore((state) => state.user);
-  
+
   const { data: stats } = useQuery({
     queryKey: ["profile-summary", user?.id],
     enabled: Boolean(user?.id),
@@ -103,6 +103,12 @@ export function ProfileScreen() {
         <CXRow style={styles.header}>
           <View style={styles.flex} />
           <CXIconButton
+            icon="scan-outline"
+            label="Scan QR code"
+            backgroundColor={colors.white}
+            onPress={() => navigation.navigate("QRScanner")}
+          />
+          <CXIconButton
             icon="qr-code-outline"
             label="My QR code"
             backgroundColor={colors.white}
@@ -167,9 +173,9 @@ export function ProfileScreen() {
         </CXRow>
         <CXCard style={styles.stats}>
           {[
-            [String(eventsCount), "EVENTS", "MyEvents"],
-            [String(connectionsCount), "CONNECTIONS", "Friends"],
-            [String(groupsCount), "GROUPS", "StudyGroups"],
+            [String(eventsCount), "Events", "MyEvents"],
+            [String(connectionsCount), "Connections", "Friends"],
+            [String(groupsCount), "Groups", "StudyGroups"],
           ].map(([value, label, target], index) => (
             <Pressable
               key={label}
@@ -195,13 +201,6 @@ export function ProfileScreen() {
             title="Edit Profile"
             subtitle="Update your info and preferences"
             onPress={() => navigation.navigate("EditProfile")}
-          />
-
-          <CXListRow
-            icon="bookmark-outline"
-            title="Saved Items"
-            subtitle="Events and listings"
-            onPress={() => navigation.navigate("Saved")}
           />
           <CXListRow
             icon="people-outline"

@@ -13,7 +13,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
   RefreshControl,
-} from "react-native";
+ ActivityIndicator } from "react-native";
 
 import { CXUserRow } from "@/components/cards";
 import {
@@ -39,8 +39,7 @@ import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { RootStackParamList } from "@/types/navigation";
 import { groupService, Group } from "@/services/groupService";
-import { useFocusEffect } from "@react-navigation/native";
-import { ActivityIndicator } from "react-native";
+import { useFocusEffect, CommonActions } from "@react-navigation/native";
 import { getSocket } from "@/services/socket";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -1234,7 +1233,15 @@ export function CreateGroupScreen({ navigation }: StackProps<"CreateGroup">) {
         avatarUrl: finalAvatarUrl,
         avatarPublicId: finalAvatarPublicId
       });
-      navigation.navigate("GroupDetails", { groupId: res.data._id });
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 1,
+          routes: [
+            { name: "Main", params: { screen: "Chats" } },
+            { name: "GroupDetails", params: { groupId: res.data._id } },
+          ],
+        })
+      );
     } catch (err: any) {
       Alert.alert("Error", err.response?.data?.message || "Failed to create group");
     } finally {

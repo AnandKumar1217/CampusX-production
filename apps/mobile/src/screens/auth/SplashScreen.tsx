@@ -292,7 +292,7 @@ export function SplashScreen({ navigation }: Props) {
         {retryState ? (
           <View style={styles.retryContainer}>
             <Text style={styles.retryText}>CampusX services are temporarily unavailable.</Text>
-            <CXButton label="Retry" onPress={() => setRetryTrigger(prev => prev + 1)} variant="primary" style={styles.retryButton} />
+            <CXButton label="Try Again" onPress={() => setRetryTrigger(prev => prev + 1)} variant="primary" style={styles.retryButton} />
           </View>
         ) : wakingSlow ? (
           <View style={styles.wakingContainer}>

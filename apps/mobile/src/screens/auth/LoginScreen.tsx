@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Alert } from "react-native";
 import { z } from "zod";
 import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
@@ -14,6 +15,7 @@ import {
   CXKeyboardScreen,
   CXRow,
   CXText,
+  CXSnackbar,
 } from "@/components/ui";
 import { api, getApiErrorMessage } from "@/services/api";
 import { useAppStore } from "@/store/appStore";
@@ -49,6 +51,7 @@ export function LoginScreen({ navigation }: Props) {
     resolver: zodResolver(schema),
     defaultValues: { identity: "", password: "" },
   });
+  const [showComingSoon, setShowComingSoon] = React.useState(false);
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -157,9 +160,9 @@ export function LoginScreen({ navigation }: Props) {
           <View style={styles.line} />
         </View>
         <CXRow style={styles.socialRow}>
-          <SocialButton label="Google" iconName="logo-google" color="#DB4437" />
-          <SocialButton label="Apple" iconName="logo-apple" color="#000000" />
-          <SocialButton label="Phone" iconName="call" color="#6D28D9" />
+          <SocialButton label="Google" iconName="logo-google" color="#DB4437" onPress={() => setShowComingSoon(true)} />
+          <SocialButton label="Apple" iconName="logo-apple" color="#000000" onPress={() => setShowComingSoon(true)} />
+          <SocialButton label="Phone" iconName="call" color="#6D28D9" onPress={() => setShowComingSoon(true)} />
         </CXRow>
         <CXRow style={styles.signup}>
           <CXText color={colors.textMuted}>Don’t have an account? </CXText>
@@ -170,16 +173,22 @@ export function LoginScreen({ navigation }: Props) {
           </Pressable>
         </CXRow>
       </ScrollView>
+      <CXSnackbar
+        visible={showComingSoon}
+        message="This feature will be coming soon!"
+        onDismiss={() => setShowComingSoon(false)}
+      />
     </CXKeyboardScreen>
   );
 }
 
-function SocialButton({ label, iconName, color }: { label: string; iconName: keyof typeof Ionicons.glyphMap; color: string }) {
+function SocialButton({ label, iconName, color, onPress }: { label: string; iconName: keyof typeof Ionicons.glyphMap; color: string; onPress?: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Continue with ${label}`}
       style={styles.socialButton}
+      onPress={onPress}
     >
       <Ionicons name={iconName} size={18} color={color} style={{ marginRight: 6 }} />
       <CXText variant="smallStrong" style={{ color: "#111827", fontSize: 11 }}>{label}</CXText>

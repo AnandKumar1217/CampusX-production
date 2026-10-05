@@ -18,14 +18,13 @@ import {
 import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useAppStore } from "@/store/appStore";
 import { eventService } from "@/services/eventService";
-import { EventItem } from "@/types/domain";
+import { EventItem , TimetableEntry } from "@/types/domain";
 import { timetableService } from "@/services/timetableService";
 import { toLocalDateKey } from "@/services/scheduleService";
 import { useActualSchedule } from "@/hooks/useActualSchedule";
 import { fetchWeatherForLocation } from "@/services/weatherService";
 import * as Location from "expo-location";
 import { useQuery } from "@tanstack/react-query";
-import { TimetableEntry } from "@/types/domain";
 
 import { colors, gradients, radius, spacing } from "@/theme";
 
@@ -533,11 +532,6 @@ export function HomeScreen() {
                   {featured.date} · {featured.location}
                 </CXText>
               </View>
-              <Ionicons
-                name="bookmark-outline"
-                size={18}
-                color={colors.primary}
-              />
             </CXCard>
           </Pressable>
         ) : (
@@ -566,24 +560,20 @@ export function HomeScreen() {
           </CXCard>
         </Pressable>
 
-        <LinearGradient colors={["#F4EEFF", "#FFFFFF"]} style={styles.aiCard}>
-          <View style={styles.aiIcon}>
-            <Ionicons name="sparkles" size={24} color={colors.primary} />
-          </View>
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong">AI Study Assistant</CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              Need help with assignments or revision?
-            </CXText>
-          </View>
-          <CXButton
-            label="Ask now"
-            variant="outline"
-            size="sm"
-            fullWidth={false}
-            onPress={() => navigation.navigate("AIChat")}
-          />
-        </LinearGradient>
+        <Pressable onPress={() => navigation.navigate("AIChat")}>
+          <CXCard style={[styles.classCard, { marginBottom: spacing.xxl }]}>
+            <View style={styles.classIcon}>
+              <Ionicons name="sparkles" size={23} color={colors.primary} />
+            </View>
+            <View style={styles.flex}>
+              <CXText variant="bodyStrong">CampusAI</CXText>
+              <CXText variant="caption" color={colors.textMuted}>
+                Your smart study assistant
+              </CXText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </CXCard>
+        </Pressable>
         </View>
         )}
       </ScrollView>

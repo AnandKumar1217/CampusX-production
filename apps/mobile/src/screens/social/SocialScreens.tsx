@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ActivityIndicator,
   Pressable,
@@ -291,14 +292,14 @@ export function UserProfileScreen({
     Promise.all([
       api.get<{data: any}>(`/users/${route.params.userId}`),
       api.get<{data: { received: any[], sent: any[]}}>("/friends/requests"),
-      api.get<{data: any}>(`/users/${route.params.userId}/profile-summary`).catch(() => ({ data: { data: { eventsCount: 0, friendsCount: 0, groupsCount: 0 } } }))
+      api.get<{data: any}>(`/users/${route.params.userId}/profile-summary`).catch(() => ({ data: { data: { stats: { eventsCount: 0, friendsCount: 0, groupsCount: 0 } } } }))
     ])
     .then(([userRes, reqRes, statsRes]) => {
       const u = userRes.data.data;
       if (u.avatarUrl) u.avatar = u.avatarUrl;
       u.id = u._id || route.params.userId;
       setUser(u);
-      if (statsRes?.data?.data) setStats(statsRes.data.data);
+      if (statsRes?.data?.data?.stats) setStats(statsRes.data.data.stats);
 
       const isFriend = useAppStore.getState().friends.some(f => f.id === u.id);
       if (isFriend) {
@@ -363,10 +364,12 @@ export function UserProfileScreen({
   const add = async () => {
     if (friendState === "friends") return; // already friends
     setFriendState("pending");
+    useAppStore.getState().addSentRequest(user.id);
     try {
       await api.post("/friends/requests", { recipientId: user.id });
     } catch {
       setFriendState("none");
+      useAppStore.getState().removeSentRequest(user.id);
     }
   };
   return (
@@ -384,101 +387,100 @@ export function UserProfileScreen({
                 openChat(user.id, user.name)
               }
             />
-            <CXIconButton
-              icon="ellipsis-horizontal"
-              label="More"
-              backgroundColor={colors.transparent}
-            />
           </CXRow>
         }
       />
-      <View style={styles.profileHero}>
-        <View style={styles.profileAvatar}>
+      <View style={{ alignItems: "center", paddingHorizontal: spacing.md, paddingBottom: spacing.xxl }}>
+        <View style={[styles.profileAvatar, { marginTop: spacing.md }]}>
           <CXAvatar
             source={user.avatar}
             name={user.name}
-            size={96}
+            size={110}
             online={user.online}
           />
         </View>
-        <CXRow style={styles.nameLine}>
-          <CXText variant="h3">{user.name}</CXText>
+        <CXRow style={{ marginTop: spacing.md, alignItems: "center", gap: 4 }}>
+          <CXText variant="h2">{user.name}</CXText>
           {user.verified ? (
-            <Ionicons
-              name="checkmark-circle"
-              size={17}
-              color={colors.primary}
-            />
+            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
           ) : null}
         </CXRow>
-        <CXText variant="small" color={colors.textMuted}>
+        
+        <CXText variant="body" color={colors.textMuted} style={{ marginTop: 2 }}>
           @{user.username}
         </CXText>
-        {user.department || user.year ? (
-          <CXText variant="small" color={colors.textMuted}>
-            {[user.department, user.year].filter(Boolean).join(" · ")}
-          </CXText>
-        ) : null}
-        {user.college ? (
-          <CXText variant="small" color={colors.textMuted}>
-            {user.college}
-          </CXText>
-        ) : null}
+
+        <View style={{ marginTop: spacing.md, alignItems: "center", gap: 6 }}>
+          {user.department || user.year ? (
+            <CXRow style={{ gap: spacing.xs, alignItems: "center" }}>
+              <Ionicons name="school-outline" size={16} color={colors.textMuted} />
+              <CXText variant="body" color={colors.textMuted}>
+                {[user.department, user.year].filter(Boolean).join(" · ")}
+              </CXText>
+            </CXRow>
+          ) : null}
+          {user.college ? (
+            <CXRow style={{ gap: spacing.xs, alignItems: "center" }}>
+              <Ionicons name="business-outline" size={16} color={colors.textMuted} />
+              <CXText variant="body" color={colors.textMuted}>
+                {user.college}
+              </CXText>
+            </CXRow>
+          ) : null}
+        </View>
+
         {user.bio ? (
-          <CXText variant="body" color={colors.ink} style={{ marginTop: spacing.sm, textAlign: "center", paddingHorizontal: spacing.lg }}>
+          <CXText variant="body" color={colors.ink} style={{ marginTop: spacing.lg, textAlign: "center", paddingHorizontal: spacing.lg, lineHeight: 22 }}>
             {user.bio}
           </CXText>
         ) : null}
+
+        <View style={{ flexDirection: "row", width: "100%", marginTop: spacing.xl, paddingVertical: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+          {[
+            [String(eventsCount), "Events"],
+            [String(connectionsCount), "Friends"],
+            [String(groupsCount), "Groups"],
+          ].map(([value, label], index) => (
+            <View key={label} style={[styles.stat, index > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border }]}>
+              <CXText variant="h3" color={colors.ink}>{value}</CXText>
+              <CXText variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>{label}</CXText>
+            </View>
+          ))}
+        </View>
+
+        <CXRow style={{ width: "100%", marginTop: spacing.xl, gap: spacing.md }}>
+          <CXButton
+            label={
+              friendState === "none"
+                ? "Add Friend"
+                : friendState === "pending"
+                  ? "Requested"
+                  : "Friends"
+            }
+            iconLeft={
+              friendState === "friends" ? "checkmark" : friendState === "pending" ? "time-outline" : "person-add-outline"
+            }
+            onPress={() => void add()}
+            disabled={friendState !== "none"}
+            variant={friendState === "none" ? "primary" : "outline"}
+            fullWidth={false}
+            style={{ flex: 1 }}
+          />
+          <CXButton
+            label="Message"
+            iconLeft="chatbubble-outline"
+            variant="outline"
+            fullWidth={false}
+            style={{ flex: 1 }}
+            onPress={() => openChat(user.id, user.name)}
+          />
+        </CXRow>
       </View>
-      <CXRow style={[styles.actionButtons, { justifyContent: "center", gap: spacing.md }]}>
-        <CXButton
-          label={
-            friendState === "none"
-              ? "Add Friend"
-              : friendState === "pending"
-                ? "Request Sent"
-                : "Friends"
-          }
-          iconLeft={
-            friendState === "friends" ? "checkmark" : "person-add-outline"
-          }
-          onPress={() => void add()}
-          disabled={friendState !== "none"}
-          fullWidth={false}
-          style={{ minWidth: 140 }}
-        />
-        <CXButton
-          label="Message"
-          iconLeft="chatbubble-outline"
-          variant="outline"
-          fullWidth={false}
-          style={{ minWidth: 140 }}
-          onPress={() =>
-            openChat(user.id, user.name)
-          }
-        />
-      </CXRow>
-      <CXCard style={[styles.profileStats, { flexDirection: "row", paddingVertical: spacing.md }]}>
-        {[
-          [String(eventsCount), "Events"],
-          [String(connectionsCount), "Connections"],
-          [String(groupsCount), "Groups"],
-        ].map(([value, label], index) => (
-          <View key={label} style={[styles.stat, index > 0 && { borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.border }]}>
-            <CXText variant="title" color={colors.primary}>
-              {value}
-            </CXText>
-            <CXText variant="caption" color={colors.textMuted}>
-              {label}
-            </CXText>
-          </View>
-        ))}
-      </CXCard>
     </CXScrollScreen>
   );
 }
 
-function PeopleListPage({
+export function PeopleListPage({
   navigation,
   title,
   subtitle,
@@ -495,47 +497,64 @@ function PeopleListPage({
 }) {
   const { openChat, isMessaging } = useOpenChat();
   const [query, setQuery] = useState("");
+  const friends = useAppStore(state => state.friends);
+  const sentRequests = useAppStore(state => state.sentRequests);
+  const addSentRequest = useAppStore(state => state.addSentRequest);
+  const removeSentRequest = useAppStore(state => state.removeSentRequest);
   const filtered = useMemo(
     () =>
       users
         .filter((user) =>
-          user.name.toLowerCase().includes(query.toLowerCase()),
+          user.name.toLowerCase().includes(query.toLowerCase()) ||
+          (user.college && user.college.toLowerCase().includes(query.toLowerCase())) ||
+          (user.department && user.department.toLowerCase().includes(query.toLowerCase()))
         ),
     [query, users],
   );
   return (
     <CXScreen>
       <CXHeader title={title} subtitle={subtitle} onBack={navigation.goBack} />
-      <View style={styles.page}>
+      <View style={{ flex: 1, paddingHorizontal: spacing.screen }}>
         <CXSearchBar
           placeholder="Search by name, department, or college..."
           value={query}
           onChangeText={setQuery}
         />
-        {filtered.map((user) => (
-          <CXUserRow
-            key={user.id}
-            user={user}
-            action={action}
-            onRemove={onRemove ? () => onRemove(user.id) : undefined}
-            onPress={() =>
-              navigation.navigate("UserProfile", { userId: user.id })
-            }
-            onAction={() =>
-              action === "Message"
-                ? openChat(user.id, user.name)
-                : void api
-                    .post("/friends/requests", { recipientId: user.id })
-                    .catch(() => undefined)
-            }
-          />
-        ))}
+        <ScrollView contentContainerStyle={{ paddingBottom: spacing.xxxl }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {filtered.map((user) => {
+            const isFriend = friends.some(f => f.id === user.id);
+            const isRequested = sentRequests.includes(user.id) || (user as any).requested;
+            const displayAction = action === "Message" ? "Message" : isFriend ? "Friends" : isRequested ? "Requested" : "Add Friend";
+
+            return (
+              <CXUserRow
+                key={user.id}
+                user={user}
+                action={displayAction}
+                onRemove={onRemove ? () => onRemove(user.id) : undefined}
+                onPress={() =>
+                  navigation.navigate("UserProfile", { userId: user.id })
+                }
+                onAction={() => {
+                  if (displayAction === "Message") {
+                    openChat(user.id, user.name);
+                  } else if (displayAction === "Add Friend") {
+                    addSentRequest(user.id);
+                    api.post("/friends/requests", { recipientId: user.id }).catch(() => {
+                      removeSentRequest(user.id);
+                    });
+                  }
+                }}
+              />
+            );
+          })}
+        </ScrollView>
       </View>
     </CXScreen>
   );
 }
 
-function UsersDirectoryPage({
+export function UsersDirectoryPage({
   navigation,
   title,
 }: {
@@ -601,6 +620,7 @@ export function PeopleScreen({ navigation }: StackProps<"People">) {
       const friendsIds = useAppStore.getState().friends.map(f => f.id);
       const reqIds = mappedReqs.map((r: any) => r.id);
       const sentReqIds = reqRes.data.data.sent.map((req: any) => req.recipient?._id || req.recipient?.id);
+      useAppStore.getState().setSentRequests(sentReqIds);
       
       const mappedSugs = sugRes.data.data.items
         .filter((u: any) => u.id !== currentUser?.id && !friendsIds.includes(u.id) && !reqIds.includes(u.id))
@@ -657,62 +677,83 @@ export function PeopleScreen({ navigation }: StackProps<"People">) {
 
   const sendRequest = async (user: any) => {
     setSuggestions(items => items.map(u => u.id === user.id ? { ...u, requested: true } : u));
-    api.post("/friends/requests", { targetUserId: user.id }).catch(() => {
+    useAppStore.getState().addSentRequest(user.id);
+    api.post("/friends/requests", { recipientId: user.id }).catch(() => {
        setSuggestions(items => items.map(u => u.id === user.id ? { ...u, requested: false } : u));
+       useAppStore.getState().removeSentRequest(user.id);
     });
   };
 
   return (
     <CXScreen>
-      <CXHeader title="People" />
+      <CXHeader title="People" onBack={navigation.goBack} />
       <View style={{ flexDirection: "row", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm }}>
-        <CXChip label="REQUESTS" active={activeTab === "requests"} onPress={() => setActiveTab("requests")} />
-        <CXChip label="SUGGESTED PEOPLE" active={activeTab === "suggestions"} onPress={() => setActiveTab("suggestions")} />
+        <CXChip label="Requests" active={activeTab === "requests"} onPress={() => setActiveTab("requests")} />
+        <CXChip label="Suggested People" active={activeTab === "suggestions"} onPress={() => setActiveTab("suggestions")} />
       </View>
       <ScrollView contentContainerStyle={styles.page}>
         
         {activeTab === "requests" ? (
           <>
+            <CXRow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md, justifyContent: "space-between", alignItems: "center" }}>
+              <View>
+                <CXText variant="bodyStrong">Friend Requests</CXText>
+                <CXText variant="caption" color={colors.textMuted}>{requests.length} pending</CXText>
+              </View>
+              {requests.length > 0 && (
+                <CXButton 
+                  label="Accept All" 
+                  variant="primary" 
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() => requests.forEach(user => decide(user, true))} 
+                />
+              )}
+            </CXRow>
             {requests.length === 0 && !loading && (
               <CXText style={{ margin: spacing.md, textAlign: "center", color: colors.textMuted }}>No pending requests.</CXText>
             )}
             {requests.map((user) => (
               <Pressable key={user.id} onPress={() => navigation.navigate("UserProfile", { userId: user.id })}>
-                <CXRow style={styles.request}>
+                <View style={styles.request}>
                   <CXAvatar source={user.avatar} name={user.name} />
                   <View style={styles.flex}>
                     <CXText variant="bodyStrong">{user.name}</CXText>
                     <CXText variant="caption" color={colors.textMuted}>
-                      {user.department}
+                      {user.department || user.college || "Student"}
                     </CXText>
                   </View>
                   <View style={styles.requestActions}>
                     <CXButton label="Accept" size="sm" fullWidth={false} onPress={() => decide(user, true)} />
                     <CXButton label="Decline" size="sm" variant="ghost" fullWidth={false} onPress={() => decide(user, false)} />
                   </View>
-                </CXRow>
+                </View>
               </Pressable>
             ))}
           </>
         ) : (
           <>
-            <CXRow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md }}>
-              <CXButton 
-                label="Search all users" 
-                variant="secondary" 
-                iconLeft="search" 
-                onPress={() => navigation.navigate("GlobalUsers")} 
-                style={{ flex: 1 }}
-              />
+            <CXRow style={{ marginHorizontal: spacing.md, marginBottom: spacing.md, justifyContent: "space-between", alignItems: "center" }}>
+              <View>
+                <CXText variant="bodyStrong">Nearby Students</CXText>
+                <CXText variant="caption" color={colors.textMuted}>Featured based on your location</CXText>
+              </View>
+              <Pressable 
+                onPress={() => navigation.navigate("GlobalUsers")}
+                style={{ flexDirection: "row", alignItems: "center", gap: 2 }}
+              >
+                <CXText variant="bodyStrong" color={colors.primary}>See All</CXText>
+                <Ionicons name="chevron-forward" size={10} color={colors.primary} />
+              </Pressable>
             </CXRow>
             {suggestions.map((user) => (
               <Pressable key={user.id} onPress={() => navigation.navigate("UserProfile", { userId: user.id })}>
-                <CXRow style={styles.request}>
+                <View style={styles.request}>
                   <CXAvatar source={user.avatar} name={user.name} />
                   <View style={styles.flex}>
                     <CXText variant="bodyStrong">{user.name}</CXText>
                     <CXText variant="caption" color={colors.textMuted}>
-                      {user.department}
+                      {user.department || user.college || "Student"}
                     </CXText>
                   </View>
                   <View style={styles.requestActions}>
@@ -725,10 +766,9 @@ export function PeopleScreen({ navigation }: StackProps<"People">) {
                         onPress={() => sendRequest(user)} 
                      />
                   </View>
-                </CXRow>
+                </View>
               </Pressable>
             ))}
-            <CXButton label="See All" variant="ghost" onPress={() => navigation.navigate("GlobalUsers")} style={{ marginHorizontal: spacing.md, marginTop: spacing.sm }} />
           </>
         )}
 
@@ -1058,110 +1098,7 @@ export function CreateStoryScreen({ navigation }: StackProps<"CreateStory">) {
   );
 }
 
-export function SavedScreen({ navigation }: StackProps<"Saved">) {
-  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
-
-  const savedEventsState = useAppStore(state => state.savedEvents);
-  const savedListingsState = useAppStore(state => state.savedListings);
-
-  const toggleSavedEvent = useAppStore(state => state.toggleSavedEvent);
-  const toggleSavedListing = useAppStore(state => state.toggleSavedListing);
-
-  const allEvents = useAppStore(state => state.events);
-  const allListings = useAppStore(state => state.listings);
-
-  const savedEventsList = allEvents.filter(event => savedEventsState.includes(event.id));
-  const savedItems = allListings.filter(item => savedListingsState.includes(item.id));
-
-  useEffect(() => {
-    api.get<{ data: Post[] }>("/posts/saved")
-       .then(res => setSavedPosts(res.data.data))
-       .catch(err => console.log("Failed to fetch saved posts", err));
-  }, []);
-
-  return (
-    <CXScreen>
-      <CXHeader title="Saved" onBack={navigation.goBack} />
-      <ScrollView contentContainerStyle={styles.page}>
-        <CXSectionHeader title="Saved Events" action={savedEventsList.length > 0 ? "See all" : ""} />
-        {savedEventsList.length === 0 ? (
-          <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved events yet.</CXText>
-        ) : (
-          savedEventsList.map((event) => (
-            <Pressable
-              key={event.id}
-              onPress={() =>
-                navigation.navigate("EventDetails", { eventId: event.id })
-              }
-            >
-              <CXCard style={styles.savedItem}>
-                <Image
-                  source={event.image}
-                  contentFit="cover"
-                  style={styles.savedImage}
-                />
-                <View style={styles.flex}>
-                  <CXText variant="bodyStrong">{event.title}</CXText>
-                  <CXText variant="title" color={colors.primary}>
-                    {event.date}
-                  </CXText>
-                </View>
-                <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    toggleSavedEvent(event.id);
-                  }}
-                  style={({ pressed }) => pressed && { opacity: 0.5 }}
-                >
-                  <Ionicons name="bookmark" size={18} color={colors.primary} />
-                </Pressable>
-              </CXCard>
-            </Pressable>
-          ))
-        )}
-
-        <CXSectionHeader title="Saved Items" action={savedItems.length > 0 ? "See all" : ""} />
-        {savedItems.length === 0 ? (
-          <CXText style={{ marginVertical: spacing.md, textAlign: "center", color: colors.textMuted }}>No saved items yet.</CXText>
-        ) : (
-          savedItems.map((item) => (
-            <Pressable
-              key={item.id}
-              onPress={() =>
-                navigation.navigate("ListingDetails", { listingId: item.id })
-              }
-            >
-              <CXCard style={styles.savedItem}>
-                <Image
-                  source={item.image}
-                  contentFit="cover"
-                  style={styles.savedImage}
-                />
-                <View style={styles.flex}>
-                  <CXText variant="bodyStrong">{item.title}</CXText>
-                  <CXText variant="title" color={colors.primary}>
-                    ₹{item.price.toLocaleString("en-IN")}
-                  </CXText>
-                </View>
-                <Pressable
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    toggleSavedListing(item.id);
-                  }}
-                  style={({ pressed }) => pressed && { opacity: 0.5 }}
-                >
-                  <Ionicons name="bookmark" size={18} color={colors.primary} />
-                </Pressable>
-              </CXCard>
-            </Pressable>
-          ))
-        )}
-      </ScrollView>
-    </CXScreen>
-  );
-}
-
-export function MyEventsScreen({ navigation }: StackProps<"MyEvents">) {
+function OldMyEventsScreen({ navigation }: StackProps<"MyEvents">) {
   const currentUser = useAppStore(state => state.user);
   const [events, setEvents] = useState<EventItem[]>([]);
 
@@ -1244,6 +1181,7 @@ export function CreatePostScreen({ navigation }: StackProps<"CreatePost">) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
       allowsEditing: true,
+      aspect: [1, 1],
       quality: 0.8,
     });
     const selectedAsset = result.assets?.[0];
@@ -1477,7 +1415,13 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: "center" },
   mutual: { gap: spacing.xs },
   wrap: { gap: spacing.xs, flexWrap: "wrap" },
-  request: { minHeight: 76, gap: spacing.sm },
+  request: { 
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    minHeight: 66,
+    paddingHorizontal: spacing.md,
+  },
   requestActions: { gap: 2 },
   storyProgress: {
     position: "absolute",

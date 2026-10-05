@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CXRow, CXText } from "@/components/ui";
 import { colors, radius, spacing } from "@/theme";
 import type { TimeSlot } from "@/types/domain";
+import { getSubjectColor } from "@/utils/timetable";
 
 const DAYS = [
   { value: 1, short: "Mon", long: "Monday" },
@@ -35,10 +36,12 @@ export interface TimetableGridProps {
   onEmptyCellPress?: (day: number, slot: TimeSlot) => void;
   highlightedBounds?: any;
   isReview?: boolean;
+  currentDay?: number;
 }
 
-export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, highlightedBounds, isReview }: TimetableGridProps) {
+export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, highlightedBounds, isReview, currentDay }: TimetableGridProps) {
   if (!slots.length) return null;
+  const todayIndex = currentDay ?? new Date().getDay();
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator style={styles.gridScroll}>
@@ -46,12 +49,12 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
         <View style={styles.tableWrapper}>
           {/* Header Row */}
           <View style={styles.tableRow}>
-            <View style={styles.gridDayCell}>
-              <CXText variant="caption" align="center" color={colors.textFaint}>DAY</CXText>
+            <View style={styles.gridDayCellHeader}>
+              <CXText variant="caption" align="center" color={colors.primary}>Day / Time</CXText>
             </View>
             {slots.map((slot) => (
-              <View key={slot.id || slot.start} style={[styles.headerCell, slot.break && { width: 40, padding: 0 }]}>
-                <CXText variant="caption" align="center" color={colors.textMuted} style={slot.break && { transform: [{ rotate: "-90deg" }], width: 60 }}>
+              <View key={slot.id || slot.start} style={[styles.headerCell, slot.break && { width: 30, padding: 0 }]}>
+                <CXText variant="caption" align="center" color={colors.primary} style={slot.break && { transform: [{ rotate: "-90deg" }], width: 45 }}>
                   {slot.break ? "BREAK" : slot.label}
                 </CXText>
               </View>
@@ -59,10 +62,12 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
           </View>
 
           {/* Day Rows */}
-          {DAYS.map((day) => (
+          {DAYS.map((day) => {
+            const isToday = day.value === todayIndex;
+            return (
             <View style={styles.tableRow} key={day.value}>
-              <View style={styles.gridDayCell}>
-                <CXText variant="smallStrong" align="center">{day.short}</CXText>
+              <View style={[styles.gridDayCell, isToday && styles.todayDayCell]}>
+                <CXText variant={isToday ? "bodyStrong" : "smallStrong"} align="center" color={colors.ink}>{day.short}</CXText>
               </View>
               {slots.map((slot, columnIndex) => {
               const entry = entries.find(
@@ -86,9 +91,12 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
 
               const getCellWidth = (startIdx: number, endIdx: number) => {
                 let w = 0;
-                for (let i = startIdx; i <= endIdx; i++) w += slots[i]!.break ? 40 : 90;
+                for (let i = startIdx; i <= endIdx; i++) w += slots[i]!.break ? 30 : 75;
                 return w;
               };
+
+              const isCellActive = !!entry && !entry.needsReview && !isHighlighted;
+              const cellColor = entry ? getSubjectColor(entry.subject) : null;
 
               return (
                 <Pressable
@@ -103,7 +111,7 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
                     slot.break && styles.breakCell,
                     entry?.needsReview && styles.reviewCell,
                     isHighlighted && styles.highlightedCell,
-                    entry && !entry.needsReview && !isHighlighted && styles.activeCell,
+                    isCellActive && { backgroundColor: cellColor?.bg },
                     pressed && styles.pressedCell,
                   ]}
                 >
@@ -111,27 +119,35 @@ export function TimetableGrid({ slots, entries, onEntryPress, onEmptyCellPress, 
                     <View style={styles.entryContent}>
                       <CXText
                         variant="caption"
-                        numberOfLines={3}
-                        color={colors.ink}
+                        numberOfLines={(entry as any).room ? 2 : 3}
+                        color={cellColor?.text}
                         style={styles.entryText}
                       >
                         {entry.subject}
                       </CXText>
+                      {!!(entry as any).room && (
+                        <CXText numberOfLines={1} style={[styles.entrySubText, { color: cellColor?.text }]}>
+                          {(entry as any).room}
+                        </CXText>
+                      )}
                     </View>
                   ) : slot.break ? (
                     <View style={styles.breakContent}>
-                      <CXText variant="caption" color={colors.textFaint} style={{ transform: [{ rotate: "-90deg" }], width: 60, textAlign: "center" }}>BREAK</CXText>
+                      <CXText variant="caption" color={colors.ink} style={[{ textAlign: "center" }, !isReview && { transform: [{ rotate: "-90deg" }], width: 45 }]}>
+                        {isReview ? "BREAK" : "SHORT BREAK"}
+                      </CXText>
                     </View>
                   ) : (
-                    <View style={[styles.emptyContent, isReview && { borderStyle: "dashed", borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surface }]}>
-                      {isReview && <Ionicons name="add" size={20} color={colors.border} />}
+                    <View style={[styles.emptyContent, { borderColor: "rgba(0,0,0,0.4)", backgroundColor: "rgba(0,0,0,0.01)" }]}>
+                      <Ionicons name="add" size={20} color="rgba(0,0,0,0.2)" />
                     </View>
                   )}
                 </Pressable>
               );
             })}
           </View>
-        ))}
+          );
+        })}
       </View>
       </View>
     </ScrollView>
@@ -148,49 +164,66 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
   },
   tableWrapper: {
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: "#E6E1FA", // soft purple border
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.4)",
     backgroundColor: colors.surface,
   },
   tableRow: {
     flexDirection: "row",
   },
+  todayRow: {},
+  todayDayCell: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  gridDayCellHeader: {
+    width: 65,
+    height: 45,
+    justifyContent: "center",
+    backgroundColor: colors.primaryTint,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(0,0,0,0.4)",
+  },
   gridDayCell: {
-    width: 45,
-    height: 55,
+    width: 65,
+    height: 45,
     justifyContent: "center",
     backgroundColor: colors.surface,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#E6E1FA",
+    borderColor: "rgba(0,0,0,0.4)",
   },
   headerCell: {
-    width: 90,
+    width: 75,
     justifyContent: "center",
     alignItems: "center",
-    padding: 4,
-    backgroundColor: colors.surface,
+    padding: 2,
+    backgroundColor: colors.primaryTint,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#E6E1FA",
+    borderColor: "rgba(0,0,0,0.4)",
   },
   gridCell: {
-    width: 90,
-    height: 55,
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    padding: 4,
+    width: 75,
+    height: 45,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 2,
     backgroundColor: colors.surface,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#E6E1FA",
+    borderColor: "rgba(0,0,0,0.4)",
   },
   emptyContent: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
+    height: "100%",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "transparent", // only visible when applied
   },
   breakContent: {
     flex: 1,
@@ -220,14 +253,22 @@ const styles = StyleSheet.create({
   entryContent: {
     flex: 1,
     width: "100%",
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    paddingLeft: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
   entryText: {
-    textAlign: "left",
-    fontFamily: "Inter-Medium",
+    textAlign: "center",
+    fontFamily: "Inter-SemiBold",
     fontSize: 10,
     color: colors.ink,
+  },
+  entrySubText: {
+    textAlign: "center",
+    fontFamily: "Inter-Medium",
+    fontSize: 8,
+    marginTop: 2,
+    color: colors.ink,
+    opacity: 0.8,
   },
 });

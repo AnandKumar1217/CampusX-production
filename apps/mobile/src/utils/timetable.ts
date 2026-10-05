@@ -111,3 +111,23 @@ export function normalizeTimetableEntries(entries: any[], slots: { start: string
     };
   });
 }
+
+const PASTEL_PALETTE = [
+  { bg: "#F8CECC", border: "#4A6FA5", text: "#000000" }, // Soft Pink
+  { bg: "#DAE8FC", border: "#4A6FA5", text: "#000000" }, // Soft Blue
+  { bg: "#FFE6CC", border: "#4A6FA5", text: "#000000" }, // Soft Peach
+  { bg: "#D5E8D4", border: "#4A6FA5", text: "#000000" }, // Soft Green
+  { bg: "#E1D5E7", border: "#4A6FA5", text: "#000000" }, // Soft Purple
+  { bg: "#FFF2CC", border: "#4A6FA5", text: "#000000" }, // Soft Yellow
+  { bg: "#F5F5F5", border: "#4A6FA5", text: "#000000" }, // Very Light Grey
+];
+
+export function getSubjectColor(subject: string): { bg: string; border: string; text: string } {
+  if (!subject) return PASTEL_PALETTE[0]!;
+  let hash = 0;
+  for (let i = 0; i < subject.length; i++) {
+    hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % PASTEL_PALETTE.length;
+  return PASTEL_PALETTE[index]!;
+}

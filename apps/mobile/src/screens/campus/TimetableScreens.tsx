@@ -28,6 +28,8 @@ import {
   CXScreen,
   CXState,
   CXText,
+  CXActionSheet,
+  type CXAction
 } from "@/components/ui";
 import { useActualSchedule } from "@/hooks/useActualSchedule";
 import { getApiErrorMessage } from "@/services/api";
@@ -47,7 +49,7 @@ import { useAppStore } from "@/store/appStore";
 import { colors, radius, spacing } from "@/theme";
 import type { ScheduleClass, TimeSlot } from "@/types/domain";
 import type { RootStackParamList } from "@/types/navigation";
-import { normalizeTimetableEntries } from "@/utils/timetable";
+import { normalizeTimetableEntries, getSubjectColor } from "@/utils/timetable";
 import { validateReviewEntry } from "@/utils/timetableValidation";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, Name>;
@@ -108,6 +110,76 @@ function scheduleState(item: ScheduleClass, date: string) {
   return "future";
 }
 
+function getStaticHoliday(dateString: string) {
+  const d = new Date(`${dateString}T12:00:00`);
+  if (d.getDay() === 0) return { id: "static", name: "Sunday", custom: false };
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const md = `${month}-${day}`;
+
+  // Fixed annual holidays
+  switch (md) {
+    case "1-1": return { id: "static", name: "New Year's Day", custom: false };
+    case "1-14": return { id: "static", name: "Makar Sankranti / Pongal", custom: false };
+    case "1-26": return { id: "static", name: "Republic Day", custom: false };
+    case "5-1": return { id: "static", name: "Labour Day", custom: false };
+    case "8-15": return { id: "static", name: "Independence Day", custom: false };
+    case "10-2": return { id: "static", name: "Gandhi Jayanti", custom: false };
+    case "12-25": return { id: "static", name: "Christmas", custom: false };
+  }
+
+  // Movable / Lunar holidays (Festivals for 2025, 2026, 2027)
+  const festivals: Record<string, string> = {
+    // 2025
+    "2025-02-26": "Maha Shivaratri",
+    "2025-03-14": "Holi",
+    "2025-03-30": "Ugadi / Gudi Padwa",
+    "2025-03-31": "Eid ul-Fitr",
+    "2025-04-06": "Ram Navami",
+    "2025-04-18": "Good Friday",
+    "2025-06-07": "Eid al-Adha",
+    "2025-08-09": "Raksha Bandhan",
+    "2025-08-16": "Janmashtami",
+    "2025-08-27": "Ganesh Chaturthi",
+    "2025-10-02": "Dasara (Vijayadashami)",
+    "2025-10-20": "Diwali (Deepavali)",
+    // 2026
+    "2026-02-15": "Maha Shivaratri",
+    "2026-03-04": "Holi",
+    "2026-03-20": "Ugadi / Eid ul-Fitr",
+    "2026-03-28": "Ram Navami",
+    "2026-04-03": "Good Friday",
+    "2026-05-27": "Eid al-Adha",
+    "2026-06-26": "Muharram",
+    "2026-08-26": "Milad-un-Nabi",
+    "2026-08-28": "Raksha Bandhan",
+    "2026-09-04": "Janmashtami",
+    "2026-09-14": "Ganesh Chaturthi",
+    "2026-10-19": "Dasara (Vijayadashami)",
+    "2026-11-08": "Diwali (Deepavali)",
+    "2026-11-24": "Guru Nanak Jayanti",
+    // 2027
+    "2027-03-08": "Maha Shivaratri",
+    "2027-03-10": "Eid ul-Fitr",
+    "2027-03-22": "Holi",
+    "2027-03-26": "Good Friday",
+    "2027-04-08": "Ugadi",
+    "2027-04-16": "Ram Navami",
+    "2027-05-17": "Eid al-Adha",
+    "2027-08-17": "Raksha Bandhan",
+    "2027-08-25": "Janmashtami",
+    "2027-09-04": "Ganesh Chaturthi",
+    "2027-10-10": "Dasara (Vijayadashami)",
+    "2027-10-29": "Diwali (Deepavali)"
+  };
+
+  if (festivals[dateString]) {
+    return { id: "static", name: festivals[dateString], custom: false };
+  }
+
+  return null;
+}
+
 function mutationError(error: unknown, fallback: string) {
   Alert.alert("Couldn’t save", getApiErrorMessage(error) || fallback);
 }
@@ -116,7 +188,7 @@ function deriveTimeSlots(classes: any[]): TimeSlot[] {
   const times = new Set<string>();
   classes.forEach((c) => { times.add(c.startTime); times.add(c.endTime); });
   const sortedTimes = Array.from(times).sort((a, b) => timeToMinutes(a) - timeToMinutes(b));
-  
+
   if (sortedTimes.length < 2) return [];
   const slots: TimeSlot[] = [];
   for (let i = 0; i < sortedTimes.length - 1; i++) {
@@ -154,58 +226,81 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
     await invalidateScheduleData(queryClient);
   };
 
+  const [selectedEntry, setSelectedEntry] = useState<TimetableGridEntry | null>(null);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  const menuActions: CXAction[] = [
+    {
+      label: "Import Timetable",
+      icon: "cloud-upload-outline",
+      onPress: () => {
+        setMenuVisible(false);
+        navigation.navigate("TimetableSettings");
+      }
+    },
+    {
+      label: "Delete Entire Timetable",
+      icon: "trash",
+      destructive: true,
+      confirmationTitle: "Delete entire timetable?",
+      confirmationMessage: "This will remove all classes and cannot be undone.",
+      confirmationButtonText: "Delete All",
+      onPress: async () => {
+        try {
+          await timetableService.clearTimetable();
+          await invalidateScheduleData(queryClient);
+          setMenuVisible(false);
+        } catch (error) {
+          mutationError(error, "Could not clear the timetable.");
+        }
+      }
+    }
+  ];
+
+
+  const actionSheetActions: CXAction[] = selectedEntry ? [
+    {
+      label: "Edit Class",
+      icon: "pencil",
+      onPress: () => {
+        setActionSheetVisible(false);
+        navigation.navigate("EditClass", { entryId: selectedEntry.id, mode: "base", date: dateForWeekday(selectedEntry.day) });
+      }
+    },
+    {
+      label: "Move Class",
+      icon: "swap-horizontal",
+      onPress: () => {
+        setActionSheetVisible(false);
+        navigation.navigate("MoveClass", { classId: selectedEntry.id!, date: dateForWeekday(selectedEntry.day), mode: "base" });
+      }
+    },
+    {
+      label: "Delete Class",
+      icon: "trash",
+      destructive: true,
+      confirmationTitle: `Delete ${selectedEntry.subject}?`,
+      confirmationMessage: `This will remove ${selectedEntry.subject} from your weekly timetable.`,
+      confirmationButtonText: "Delete",
+      onPress: async () => {
+        try {
+          await removeBase(selectedEntry.id!);
+        } catch (error) {
+          mutationError(error, "Could not delete the class.");
+        }
+      }
+    }
+  ] : [];
+
   const showActions = (item: TimetableGridEntry) => {
     if (!item.id) return;
-    const actions: any[] = [
-      {
-        text: "Edit Class",
-        onPress: () => navigation.navigate("EditClass", { entryId: item.id, mode: "base", date: dateForWeekday(item.day) }),
-      },
-      {
-        text: "Reschedule",
-        onPress: () => navigation.navigate("RescheduleClass", { classId: item.id!, date: dateForWeekday(item.day) }),
-      },
-      {
-        text: "Cancel Class",
-        style: "destructive",
-        onPress: () => {
-          const cancel = async (scope: "one_date" | "future") => {
-            try {
-              await scheduleService.cancelOccurrence(item.id!, { date: dateForWeekday(item.day), scope });
-              await invalidateScheduleData(queryClient);
-            } catch (error) { mutationError(error, "Could not cancel this class."); }
-          };
-          Alert.alert("Cancel class", "Apply this cancellation to:", [
-            { text: "Keep Class", style: "cancel" },
-            { text: "Only This Date", onPress: () => void cancel("one_date") },
-            { text: "This & Future", style: "destructive", onPress: () => void cancel("future") },
-          ]);
-        },
-      },
-      {
-        text: "Delete Class",
-        style: "destructive",
-        onPress: () => Alert.alert(
-          "Delete this class?",
-          "This removes the recurring class from your timetable.",
-          [
-            { text: "Keep Class", style: "cancel" },
-            {
-              text: "Delete", style: "destructive", onPress: async () => {
-                try { await removeBase(item.id!); }
-                catch (error) { mutationError(error, "Could not delete the class."); }
-              },
-            },
-          ],
-        ),
-      },
-      { text: "Close", style: "cancel" }
-    ];
-    Alert.alert(item.subject, `${formatTime(item.startTime)} – ${formatTime(item.endTime)}`, actions);
+    setSelectedEntry(item);
+    setActionSheetVisible(true);
   };
 
   const hasBaseTimetable = (baseQuery.data?.length ?? 0) > 0;
-  
+
   let slots = settingsQuery.data?.gridTimeSlots ?? [];
   if (!slots.length && baseQuery.data) {
     slots = deriveTimeSlots(baseQuery.data as any);
@@ -213,19 +308,37 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
 
   const entries: TimetableGridEntry[] = normalizeTimetableEntries(baseQuery.data ?? [], slots);
 
+  const [now, setNow] = useState(new Date());
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentMins = now.getHours() * 60 + now.getMinutes();
+
   const todayTimeline: any[] = [];
-  slots.forEach(slot => {
-    const classForSlot = entries.find(e => 
-      e.day === todayVal &&
-      timeToMinutes(e.startTime) <= timeToMinutes(slot.start) && 
-      timeToMinutes(e.endTime) > timeToMinutes(slot.start)
-    );
-    if (classForSlot && !todayTimeline.find(t => t.id === classForSlot.id)) {
-      todayTimeline.push({ ...classForSlot, type: 'class' });
-    } else if (slot.break && !todayTimeline.find(t => t.startTime === slot.start)) {
-      todayTimeline.push({ id: `break-${slot.start}`, subject: "SHORT BREAK", startTime: slot.start, endTime: slot.end ?? slot.start, type: 'break' });
+  entries.forEach(e => {
+    if (e.day === todayVal) {
+      const sMins = timeToMinutes(e.startTime);
+      const eMins = timeToMinutes(e.endTime);
+
+      let status = "upcoming";
+      if (currentMins >= eMins) status = "completed";
+      else if (currentMins >= sMins && currentMins < eMins) status = "current";
+
+      todayTimeline.push({
+        ...e,
+        status,
+        sMins,
+      });
     }
   });
+
+  // Sort by start time
+  todayTimeline.sort((a, b) => a.sMins - b.sMins);
+
+  const todayDateString = toLocalDateKey(new Date());
+  const todayHoliday = getStaticHoliday(todayDateString);
 
   return (
     <CXScreen>
@@ -236,8 +349,16 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
           onBack={navigation.goBack}
           right={(
             <CXRow style={styles.headerActions}>
-              <CXIconButton icon="calendar-outline" label="Academic Calendar" onPress={() => navigation.navigate("Calendar")} />
-              <CXIconButton icon="settings-outline" label="Timetable settings" onPress={() => navigation.navigate("TimetableSettings")} />
+              <CXButton
+                size="sm"
+                variant="secondary"
+                iconLeft="calendar-outline"
+                label="Calendar"
+                fullWidth={false}
+                onPress={() => navigation.navigate("Calendar")}
+                style={{ borderRadius: 100 }}
+              />
+              <CXIconButton icon="ellipsis-vertical" label="Timetable options" onPress={() => setMenuVisible(true)} />
             </CXRow>
           )}
         />
@@ -264,50 +385,85 @@ export function TimetableScreen({ navigation }: StackProps<"Timetable">) {
           />
         ) : (
           <>
-            <TimetableGrid 
-              slots={slots} 
-              entries={entries} 
+            <TimetableGrid
+              slots={slots}
+              entries={entries}
+              currentDay={todayVal}
               onEntryPress={showActions}
               onEmptyCellPress={(day, slot) => {
-                navigation.navigate("EditClass", { 
-                  defaultDay: day, 
+                navigation.navigate("EditClass", {
+                  defaultDay: day,
                   defaultStartTime: slot.start,
                   defaultEndTime: slot.end ?? slot.start,
-                  mode: "base" 
+                  mode: "base"
                 });
               }}
             />
-            
+
             <View style={{ marginTop: spacing.xl, paddingHorizontal: spacing.screen }}>
-              <CXText variant="bodyStrong" style={{ marginBottom: spacing.lg }}>Today's Classes</CXText>
-              {todayTimeline.length === 0 ? (
+              <CXText variant="bodyStrong" style={{ marginBottom: spacing.lg }}>Today&apos;s Classes</CXText>
+
+              {todayHoliday ? (
+                <View style={{ backgroundColor: colors.surface, padding: spacing.lg, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.borderSoft, alignItems: "center" }}>
+                  <Ionicons name="partly-sunny-outline" size={32} color={colors.primary} style={{ marginBottom: spacing.sm }} />
+                  <CXText variant="h3" style={{ marginBottom: 4 }}>It's a Holiday!</CXText>
+                  <CXText variant="body" color={colors.textMuted}>{todayHoliday.name}</CXText>
+                </View>
+              ) : todayTimeline.length === 0 ? (
                 <CXText color={colors.textFaint}>No classes today.</CXText>
               ) : (
                 <View style={{ gap: spacing.md }}>
-                  {todayTimeline.map((item) => (
-                    <View key={item.id} style={{ flexDirection: "row", gap: spacing.md, alignItems: "flex-start" }}>
-                      <View style={{ width: 45, paddingTop: 4 }}>
-                        <CXText variant="smallStrong" color={colors.ink}>{item.startTime}</CXText>
-                        <CXText variant="caption" color={colors.textFaint}>{item.endTime}</CXText>
-                      </View>
-                      
-                      <View style={{ marginTop: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: item.type === "break" ? colors.border : colors.primaryTint }} />
+                  {todayTimeline.map((item, idx) => {
+                    const classColor = getSubjectColor(item.subject);
+                    const isCurrent = item.status === "current";
+                    const isDone = item.status === "completed";
 
-                      <CXCard style={{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, padding: spacing.lg, borderRadius: 16 }}>
-                        <CXText variant="bodyStrong" color={item.type === "break" ? colors.textFaint : colors.ink}>{item.subject}</CXText>
-                      </CXCard>
-                    </View>
-                  ))}
+                    return (
+                      <View key={item.id || idx} style={{ flexDirection: "row", gap: spacing.md, alignItems: "flex-start" }}>
+                        <View style={{ width: 45, paddingTop: 4 }}>
+                          <CXText variant="smallStrong" color={isCurrent ? colors.primary : (isDone ? colors.textFaint : colors.ink)}>{item.startTime}</CXText>
+                          <CXText variant="caption" color={colors.textFaint}>{item.endTime}</CXText>
+                        </View>
+
+                        <View style={{ marginTop: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: isCurrent ? colors.primary : (isDone ? colors.border : classColor.bg) }} />
+
+                        <CXCard style={[{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, padding: spacing.lg, borderRadius: 16 },
+                        isCurrent && { borderColor: classColor.border, backgroundColor: classColor.bg, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
+                        isDone && { opacity: 0.6 }
+                        ]}>
+                          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <CXText variant="caption" color={isCurrent ? classColor.text : colors.textFaint}>
+                              {isCurrent ? "NOW" : isDone ? "DONE" : "UPCOMING"}
+                            </CXText>
+                            {!!item.room && <CXText variant="caption" color={isCurrent ? classColor.text : colors.textFaint}>{item.room}</CXText>}
+                          </View>
+                          <CXText variant="bodyStrong" color={isCurrent ? classColor.text : colors.ink}>{item.subject}</CXText>
+                        </CXCard>
+                      </View>
+                    );
+                  })}
                 </View>
               )}
             </View>
-            
+
             <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.screen, alignItems: "flex-end", marginBottom: spacing.xl }}>
-               <CXButton label="Add Class" iconLeft="add" onPress={() => navigation.navigate("EditClass", { defaultDay: todayVal, mode: "base" })} fullWidth={false} />
+              <CXButton label="Add Class" iconLeft="add" onPress={() => navigation.navigate("EditClass", { defaultDay: todayVal, mode: "base" })} fullWidth={false} />
             </View>
           </>
         )}
       </ScrollView>
+      <CXActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        title={selectedEntry ? `${selectedEntry.subject}\n${DAYS.find(d => d.value === selectedEntry.day)?.short} • ${formatTime(selectedEntry.startTime)} – ${formatTime(selectedEntry.endTime)}` : undefined}
+        actions={actionSheetActions}
+      />
+      <CXActionSheet
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        title="Timetable Options"
+        actions={menuActions}
+      />
     </CXScreen>
   );
 }
@@ -335,6 +491,7 @@ export function EditClassScreen({ navigation, route }: StackProps<"EditClass">) 
   const [endTime, setEndTime] = useState(params.defaultEndTime ?? existing?.endTime ?? "10:00");
   const [picker, setPicker] = useState<"start" | "end" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [scheduleConflict, setScheduleConflict] = useState<any>(null);
 
   React.useEffect(() => {
     if (!existing) return;
@@ -379,18 +536,11 @@ export function EditClassScreen({ navigation, route }: StackProps<"EditClass">) 
     } catch (error: any) {
       if (error?.response?.status === 409) {
         const conflict = error?.response?.data?.details?.conflict;
-        Alert.alert(
-          "Schedule conflict",
-          error?.response?.data?.message ?? "This class overlaps with another class.",
-          conflict ? [
-            { text: "Choose Another Time", style: "cancel" },
-            { text: `Move ${conflict.subject}`, onPress: () => navigation.navigate("RescheduleClass", { classId: conflict.id, date: dateForWeekday(day) }) },
-            ...(!params.entryId ? [{ text: `Replace ${conflict.subject}`, style: "destructive" as const, onPress: () => Alert.alert("Replace existing class?", `${conflict.subject} will be removed from the recurring timetable.`, [
-              { text: "Keep Existing", style: "cancel" },
-              { text: "Replace", style: "destructive", onPress: () => void save("replace", conflict.id) },
-            ]) }] : []),
-          ] : [{ text: "Choose Another Time", style: "cancel" }],
-        );
+        if (conflict) {
+          setScheduleConflict(conflict);
+        } else {
+          Alert.alert("Schedule conflict", error?.response?.data?.message ?? "This class overlaps with another class.");
+        }
       } else mutationError(error, "Could not save this class.");
     } finally { setSaving(false); }
   };
@@ -409,7 +559,7 @@ export function EditClassScreen({ navigation, route }: StackProps<"EditClass">) 
       {!params.entryId || isSpecial ? <CXRow style={styles.timeFields}>
         <View style={styles.flex}><CXInput label="Start Time *" value={formatTime(startTime)} editable={false} onPress={() => setPicker("start")} icon="time-outline" /></View>
         <View style={styles.flex}><CXInput label="End Time *" value={formatTime(endTime)} editable={false} onPress={() => setPicker("end")} icon="time-outline" /></View>
-      </CXRow> : <CXCard style={styles.recurrenceCard}><Ionicons name="time-outline" size={20} color={colors.primary} /><View style={styles.flex}><CXText variant="smallStrong">{formatTime(startTime)} – {formatTime(endTime)}</CXText><CXText variant="caption" color={colors.textMuted}>Use Reschedule to change timing and choose its effective range.</CXText></View><CXButton label="Reschedule" size="sm" fullWidth={false} variant="outline" onPress={() => navigation.navigate("RescheduleClass", { classId: params.entryId!, date: params.date ?? dateForWeekday(day) })} /></CXCard>}
+      </CXRow> : <CXCard style={styles.recurrenceCard}><Ionicons name="time-outline" size={20} color={colors.primary} /><View style={styles.flex}><CXText variant="smallStrong">{formatTime(startTime)} – {formatTime(endTime)}</CXText><CXText variant="caption" color={colors.textMuted}>Use Move Class to change the permanent schedule.</CXText></View><CXButton label="Move Class" size="sm" fullWidth={false} variant="outline" onPress={() => navigation.navigate("MoveClass", { classId: params.entryId!, date: params.date ?? dateForWeekday(day), mode: isSpecial ? "occurrence" : "base" })} /></CXCard>}
       {picker ? (
         <DateTimePicker
           value={timeDate(picker === "start" ? startTime : endTime)}
@@ -426,126 +576,220 @@ export function EditClassScreen({ navigation, route }: StackProps<"EditClass">) 
       <CXInput label="Faculty Name" value={lecturer} onChangeText={setLecturer} placeholder="Prof. Ravi" />
       <CXCard style={styles.recurrenceCard}>
         <Ionicons name={isSpecial ? "calendar-outline" : "repeat-outline"} size={20} color={colors.primary} />
-        <View style={styles.flex}><CXText variant="smallStrong">{isSpecial ? "One specific date" : "Every week"}</CXText><CXText variant="caption" color={colors.textMuted}>{isSpecial ? "This will not change your weekly timetable." : "Use Reschedule for temporary or future changes."}</CXText></View>
+        <View style={styles.flex}><CXText variant="smallStrong">{isSpecial ? "One specific date" : "Every week"}</CXText><CXText variant="caption" color={colors.textMuted}>{isSpecial ? "This applies only to the selected date." : "This saves to your weekly timetable."}</CXText></View>
       </CXCard>
       <CXButton label={params.entryId ? "Save Changes" : "Add Class"} loading={saving} onPress={() => void save()} />
       <CXButton label="Cancel" variant="ghost" onPress={navigation.goBack} />
+
+      <CXActionSheet
+        visible={Boolean(scheduleConflict)}
+        onClose={() => setScheduleConflict(null)}
+        title="Schedule Conflict"
+        actions={[
+          {
+            label: "Choose Another Time",
+            icon: "time-outline",
+            onPress: () => setScheduleConflict(null)
+          },
+          {
+            label: `Move ${scheduleConflict?.subject}`,
+            icon: "swap-horizontal",
+            onPress: () => {
+              const conflict = scheduleConflict;
+              setScheduleConflict(null);
+              navigation.navigate("MoveClass", { classId: conflict.id, date: dateForWeekday(day), mode: isSpecial ? "occurrence" : "base" });
+            }
+          },
+          ...(!params.entryId ? [{
+            label: `Replace ${scheduleConflict?.subject}`,
+            icon: "trash",
+            destructive: true,
+            confirmationTitle: "Replace existing class?",
+            confirmationMessage: `${scheduleConflict?.subject} will be replaced.`,
+            confirmationButtonText: "Replace",
+            onPress: () => {
+              const conflict = scheduleConflict;
+              setScheduleConflict(null);
+              void save("replace", conflict.id);
+            }
+          } as CXAction] : [])
+        ]}
+      />
     </CXKeyboardScreen>
   );
 }
 
-export function RescheduleClassScreen({ navigation, route }: StackProps<"RescheduleClass">) {
-  const { classId, date } = route.params;
+export function MoveClassScreen({ navigation, route }: StackProps<"MoveClass">) {
+  const { classId, date, mode } = route.params;
+  const userId = useAppStore((state) => state.user?.id);
   const queryClient = useQueryClient();
   const scheduleQuery = useActualSchedule(date);
-  const item = scheduleQuery.data?.classes.find((entry) => entry.baseClassId === classId || entry.id === classId);
-  const [startTime, setStartTime] = useState(item?.startTime ?? "09:00");
-  const [endTime, setEndTime] = useState(item?.endTime ?? "10:00");
-  const [scope, setScope] = useState<ChangeScope>("one_date");
-  const [newDay, setNewDay] = useState(item?.day ?? 1);
-  const [picker, setPicker] = useState<"start" | "end" | null>(null);
+  const baseQuery = useQuery({ queryKey: ["timetable", userId], queryFn: timetableService.getTimetable, enabled: Boolean(userId) });
+  const settingsQuery = useQuery({ queryKey: ["timetableSettings", userId], queryFn: timetableService.getSettings, enabled: Boolean(userId) });
+
+  const item = mode === "occurrence"
+    ? scheduleQuery.data?.classes.find((entry) => entry.baseClassId === classId || entry.id === classId)
+    : baseQuery.data?.find((entry) => entry.id === classId);
+
+  const itemDay = (item as any)?.day ?? (item as any)?.days?.[0] ?? 1;
+  const [newDay, setNewDay] = useState(itemDay);
+  const [newDate, setNewDate] = useState(date);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [scheduleConflict, setScheduleConflict] = useState<any>(null);
-  const [moveConflict, setMoveConflict] = useState<any>(null);
-  const [moveStart, setMoveStart] = useState("08:00");
-  const [moveEnd, setMoveEnd] = useState("09:00");
-  const [movePicker, setMovePicker] = useState<"start" | "end" | null>(null);
   const [saving, setSaving] = useState(false);
 
-  React.useEffect(() => {
-    if (!item) return;
-    setStartTime(item.startTime);
-    setEndTime(item.endTime);
-    setNewDay(item.day);
-  }, [item]);
+  let slots = settingsQuery.data?.gridTimeSlots ?? [];
+  if (!slots.length && baseQuery.data) {
+    slots = deriveTimeSlots(baseQuery.data as any);
+  }
+  const availableSlots = slots.filter((s: TimeSlot) => !s.break && !s.label.toLowerCase().includes("break") && !s.label.toLowerCase().includes("lunch"));
 
-  const apply = async (
-    conflictAction: ConflictAction = "reject",
-    conflictClassId?: string,
-    moveExistingTo?: { startTime: string; endTime: string },
-  ) => {
-    if (timeToMinutes(endTime) <= timeToMinutes(startTime)) return Alert.alert("Invalid time", "End time must be after start time.");
+  let requiredPeriods = 1;
+  if (item?.startTime && item?.endTime && availableSlots.length > 0) {
+    const durationMins = timeToMinutes(item.endTime) - timeToMinutes(item.startTime);
+    const slotDurationMins = timeToMinutes(availableSlots[0]!.end ?? "") - timeToMinutes(availableSlots[0]!.start ?? "");
+    if (slotDurationMins > 0) {
+      requiredPeriods = Math.max(1, Math.round(durationMins / slotDurationMins));
+    }
+  }
+
+  const validBlocks: { id: string; start: string; end: string; label: string; }[] = [];
+  for (let i = 0; i <= availableSlots.length - requiredPeriods; i++) {
+    const startSlot = availableSlots[i]!;
+    const endSlot = availableSlots[i + requiredPeriods - 1]!;
+    const originalStartIndex = slots.findIndex((s: TimeSlot) => s.id === startSlot.id);
+    const originalEndIndex = slots.findIndex((s: TimeSlot) => s.id === endSlot.id);
+
+    if (originalEndIndex - originalStartIndex === requiredPeriods - 1) {
+      validBlocks.push({
+        id: `${startSlot.start}-${endSlot.end}`,
+        start: startSlot.start,
+        end: endSlot.end ?? startSlot.end ?? "",
+        label: `${formatTime(startSlot.start)} - ${formatTime(endSlot.end ?? startSlot.end ?? "")}`
+      });
+    }
+  }
+
+  const apply = async (conflictAction: ConflictAction = "reject", conflictClassId?: string) => {
+    if (!selectedSlot) return Alert.alert("Missing slot", "Please select a time slot.");
+    const [startTime, endTime] = selectedSlot.split("-");
+    if (!startTime || !endTime) return;
     try {
       setSaving(true);
-      await scheduleService.reschedule(classId, { scope, date, newDay: scope === "one_date" ? undefined : newDay, newStartTime: startTime, newEndTime: endTime, conflictAction, conflictClassId, moveExistingTo });
+      await scheduleService.reschedule(classId, {
+        scope: mode === "occurrence" ? "one_date" : "all",
+        date: mode === "occurrence" ? newDate : date,
+        newDay: mode === "occurrence" ? undefined : newDay,
+        newStartTime: startTime,
+        newEndTime: endTime,
+        conflictAction,
+        conflictClassId
+      });
       await invalidateScheduleData(queryClient);
       navigation.popTo("Timetable");
     } catch (error: any) {
       const conflict = error?.response?.data?.details?.conflict;
       if (error?.response?.data?.code === "SCHEDULE_CONFLICT" && conflict) {
         setScheduleConflict(conflict);
-      } else mutationError(error, "Could not reschedule this class.");
+      } else mutationError(error, "Could not move this class.");
     } finally { setSaving(false); }
   };
 
   return (
-    <CXKeyboardScreen contentContainerStyle={styles.formPage}>
-      <CXHeader title="Reschedule" subtitle={item?.subject ?? "Class schedule"} onBack={navigation.goBack} />
-      <CXCard style={styles.originalCard}>
-        <CXText variant="smallStrong">Originally</CXText>
-        <CXText>{item?.original ? `${formatTime(item.original.startTime)} – ${formatTime(item.original.endTime)}` : `${formatTime(item?.startTime ?? startTime)} – ${formatTime(item?.endTime ?? endTime)}`}</CXText>
-        <CXText variant="caption" color={colors.textMuted}>{readableDate(date)}</CXText>
-      </CXCard>
-      <CXRow style={styles.timeFields}>
-        <View style={styles.flex}><CXInput label="New Start" value={formatTime(startTime)} editable={false} onPress={() => setPicker("start")} /></View>
-        <View style={styles.flex}><CXInput label="New End" value={formatTime(endTime)} editable={false} onPress={() => setPicker("end")} /></View>
-      </CXRow>
-      {picker ? <DateTimePicker value={timeDate(picker === "start" ? startTime : endTime)} mode="time" onChange={(_event, value) => { setPicker(null); if (!value) return; if (picker === "start") setStartTime(timeKey(value)); else setEndTime(timeKey(value)); }} /> : null}
-      <View style={styles.fieldGroup}>
-        <CXText variant="smallStrong">Apply this change to</CXText>
-        <CXChip label="Only this date" active={scope === "one_date"} onPress={() => setScope("one_date")} />
-        <CXChip label="This date and future weeks" active={scope === "future"} onPress={() => setScope("future")} />
-        <CXChip label="Every occurrence" active={scope === "all"} onPress={() => setScope("all")} />
-      </View>
-      {scope !== "one_date" ? <View style={styles.fieldGroup}><CXText variant="smallStrong">Day from this change onward</CXText><CXRow style={styles.chipWrap}>{DAYS.map((day) => <CXChip key={day.value} label={day.short} active={newDay === day.value} onPress={() => setNewDay(day.value)} />)}</CXRow></View> : null}
-      <CXButton label="Check & Apply Change" loading={saving} onPress={() => void apply()} />
-      {item?.changed ? <CXButton label="Restore Original Schedule" variant="outline" onPress={async () => { try { await scheduleService.restoreOriginal(classId, { overrideId: item.overrideId, date }); await invalidateScheduleData(queryClient); navigation.goBack(); } catch (error) { mutationError(error, "Could not restore this class."); } }} /> : null}
-      <Modal visible={Boolean(scheduleConflict)} transparent animationType="fade" onRequestClose={() => setScheduleConflict(null)}>
-        <View style={styles.modalBackdrop}>
-          <CXCard style={styles.modalCard}>
-            <CXText variant="h3">Schedule conflict</CXText>
-            <CXText color={colors.textMuted}>{item?.subject ?? "This class"} {formatTime(startTime)} – {formatTime(endTime)} overlaps with {scheduleConflict?.subject} {formatTime(scheduleConflict?.startTime ?? "")} – {formatTime(scheduleConflict?.endTime ?? "")}.</CXText>
-            <CXButton label="Choose Another Time" variant="outline" onPress={() => setScheduleConflict(null)} />
-            <CXButton label="Swap Classes" variant="secondary" onPress={() => { const conflict = scheduleConflict; setScheduleConflict(null); void apply("swap", conflict.baseClassId ?? conflict.id); }} />
-            <CXButton label={`Move ${scheduleConflict?.subject ?? "Existing Class"}`} variant="secondary" onPress={() => {
-              const conflict = scheduleConflict;
-              setScheduleConflict(null);
-              if (!conflict.baseClassId) return Alert.alert("Special class", "Edit the special class directly to move it.");
-              setMoveConflict(conflict);
-              setMoveStart(item?.startTime ?? "08:00");
-              setMoveEnd(item?.endTime ?? "09:00");
-            }} />
-            <CXButton label={`Replace ${scheduleConflict?.subject ?? "Existing Class"}`} variant="danger" onPress={() => {
-              const conflict = scheduleConflict;
-              setScheduleConflict(null);
-              Alert.alert("Replace existing class?", `${conflict.subject} will be cancelled for the selected range.`, [
-                { text: "Keep Existing", style: "cancel" },
-                { text: "Replace", style: "destructive", onPress: () => void apply("replace", conflict.baseClassId ?? conflict.id) },
-              ]);
-            }} />
-          </CXCard>
-        </View>
-      </Modal>
-      <Modal visible={Boolean(moveConflict)} transparent animationType="fade" onRequestClose={() => setMoveConflict(null)}>
-        <View style={styles.modalBackdrop}>
-          <CXCard style={styles.modalCard}>
-            <CXText variant="h3">Move {moveConflict?.subject}</CXText>
-            <CXText color={colors.textMuted}>Choose a free destination for the existing class. Both changes will be saved together.</CXText>
-            <CXRow style={styles.timeFields}>
-              <View style={styles.flex}><CXInput label="New Start" value={formatTime(moveStart)} editable={false} onPress={() => setMovePicker("start")} /></View>
-              <View style={styles.flex}><CXInput label="New End" value={formatTime(moveEnd)} editable={false} onPress={() => setMovePicker("end")} /></View>
+    <CXScreen>
+      <CXHeader title="Move Class" subtitle={item?.subject ?? "Select new time"} onBack={navigation.goBack} />
+      <ScrollView contentContainerStyle={styles.formPage}>
+        <CXCard style={styles.originalCard}>
+          <CXRow style={{ alignItems: "center", gap: spacing.md }}>
+            <Ionicons name="calendar" size={24} color={colors.primary} />
+            <View style={styles.flex}>
+              <CXText variant="smallStrong" color={colors.primary}>Currently Scheduled</CXText>
+              <CXText variant="bodyStrong">
+                {item ? `${DAYS.find(d => d.value === itemDay)?.short} • ${formatTime(item.startTime)} – ${formatTime(item.endTime)}` : "Loading..."}
+              </CXText>
+            </View>
+          </CXRow>
+        </CXCard>
+
+        {mode === "base" ? (
+          <View style={styles.fieldGroup}>
+            <CXText variant="smallStrong">Move to Day</CXText>
+            <CXRow style={styles.chipWrap}>
+              {DAYS.map((day) => (
+                <CXChip key={day.value} label={day.short} active={newDay === day.value} onPress={() => setNewDay(day.value)} />
+              ))}
             </CXRow>
-            {movePicker ? <DateTimePicker value={timeDate(movePicker === "start" ? moveStart : moveEnd)} mode="time" onChange={(_event, value) => { setMovePicker(null); if (!value) return; if (movePicker === "start") setMoveStart(timeKey(value)); else setMoveEnd(timeKey(value)); }} /> : null}
-            <CXButton label="Move Existing & Apply" onPress={() => {
-              if (timeToMinutes(moveEnd) <= timeToMinutes(moveStart)) return Alert.alert("Invalid time", "End time must be after start time.");
-              const conflict = moveConflict;
-              setMoveConflict(null);
-              void apply("move_existing", conflict.baseClassId, { startTime: moveStart, endTime: moveEnd });
-            }} />
-            <CXButton label="Choose Another Time" variant="ghost" onPress={() => setMoveConflict(null)} />
-          </CXCard>
+          </View>
+        ) : (
+          <View style={styles.fieldGroup}>
+            <CXText variant="smallStrong">Move to Date (Occurrence)</CXText>
+            <CXText color={colors.textMuted}>{readableDate(newDate)}</CXText>
+          </View>
+        )}
+
+        <View style={styles.fieldGroup}>
+          <CXText variant="smallStrong">Available Periods {requiredPeriods > 1 ? `(${requiredPeriods} consecutive)` : ""}</CXText>
+          <View style={styles.slotList}>
+            {validBlocks.length === 0 ? (
+              <CXText color={colors.textMuted}>No suitable periods available on this day.</CXText>
+            ) : validBlocks.map(block => (
+              <Pressable
+                key={block.id}
+                onPress={() => setSelectedSlot(block.id)}
+                style={[styles.slotItem, selectedSlot === block.id && styles.slotItemSelected]}
+              >
+                <CXRow style={{ gap: spacing.sm, flex: 0 }}>
+                  <Ionicons name="time-outline" size={20} color={selectedSlot === block.id ? colors.primary : colors.textMuted} />
+                  <CXText variant={selectedSlot === block.id ? "bodyStrong" : "body"} color={selectedSlot === block.id ? colors.primary : colors.ink}>
+                    {block.label}
+                  </CXText>
+                </CXRow>
+                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: selectedSlot === block.id ? colors.primary : colors.border, alignItems: "center", justifyContent: "center" }}>
+                  {selectedSlot === block.id && <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: colors.primary }} />}
+                </View>
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </Modal>
-    </CXKeyboardScreen>
+
+        <CXButton label="Move Class" loading={saving} disabled={!selectedSlot} onPress={() => void apply()} />
+      </ScrollView>
+
+      <CXActionSheet
+        visible={Boolean(scheduleConflict)}
+        onClose={() => setScheduleConflict(null)}
+        title="Schedule Conflict"
+        actions={[
+          {
+            label: "Choose Another Time",
+            icon: "time-outline",
+            onPress: () => setScheduleConflict(null)
+          },
+          {
+            label: `Swap with ${scheduleConflict?.subject}`,
+            icon: "swap-horizontal",
+            onPress: () => {
+              const conflict = scheduleConflict;
+              setScheduleConflict(null);
+              void apply("swap", conflict.baseClassId ?? conflict.id);
+            }
+          },
+          {
+            label: `Replace ${scheduleConflict?.subject}`,
+            icon: "trash",
+            destructive: true,
+            confirmationTitle: "Replace existing class?",
+            confirmationMessage: `${scheduleConflict?.subject} will be replaced.`,
+            confirmationButtonText: "Replace",
+            onPress: () => {
+              const conflict = scheduleConflict;
+              setScheduleConflict(null);
+              void apply("replace", conflict.baseClassId ?? conflict.id);
+            }
+          }
+        ]}
+      />
+    </CXScreen>
   );
 }
 
@@ -580,7 +824,8 @@ export function CalendarScreen({ navigation }: StackProps<"Calendar">) {
     queryFn: () => scheduleService.getScheduleRange(bounds.start, bounds.end),
     enabled: Boolean(userId),
   });
-  const selected = rangeQuery.data?.find((item) => item.date === selectedDate);
+  const selectedBackend = rangeQuery.data?.find((item) => item.date === selectedDate);
+  const selectedHoliday = selectedBackend?.holiday ?? getStaticHoliday(selectedDate);
   const cells = calendarCells(month);
 
   const showMonth = (nextMonth: Date) => {
@@ -599,51 +844,203 @@ export function CalendarScreen({ navigation }: StackProps<"Calendar">) {
     } catch (error) { mutationError(error, "Could not save the no-class day."); }
   };
 
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [holidayActionSheetVisible, setHolidayActionSheetVisible] = useState(false);
+
+  const holiday = selectedBackend?.holiday;
+
   const openHolidayActions = () => {
-    const holiday = selected?.holiday;
     if (!holiday?.custom) return;
-    Alert.alert(holiday.name, readableDate(selectedDate), [
-      { text: "Edit", onPress: () => { setHolidayName(holiday.name); setEditingHolidayId(holiday.id); setHolidayModal(true); } },
-      { text: "Remove", style: "destructive", onPress: async () => { try { await scheduleService.deleteHoliday(holiday.id); await invalidateScheduleData(queryClient); } catch (error) { mutationError(error, "Could not remove this no-class day."); } } },
-      { text: "Close", style: "cancel" },
-    ]);
+    setHolidayActionSheetVisible(true);
   };
+
+  const holidayActionSheetActions: CXAction[] = holiday?.custom ? [
+    {
+      label: "Edit",
+      icon: "pencil",
+      onPress: () => {
+        setHolidayActionSheetVisible(false);
+        setHolidayName(holiday.name);
+        setEditingHolidayId(holiday.id);
+        setHolidayModal(true);
+      }
+    },
+    {
+      label: "Remove",
+      icon: "trash",
+      onPress: async () => {
+        setHolidayActionSheetVisible(false);
+        try {
+          await scheduleService.deleteHoliday(holiday.id);
+          await invalidateScheduleData(queryClient);
+        } catch (error) {
+          mutationError(error, "Could not remove this no-class day.");
+        }
+      }
+    }
+  ] : [];
+
+  const actionSheetActions: CXAction[] = selectedEntry ? [
+    ...(selectedEntry.source === "special" ? [{
+      label: "Edit Class",
+      icon: "pencil",
+      onPress: () => {
+        setActionSheetVisible(false);
+        navigation.navigate("EditClass", { entryId: selectedEntry.id, mode: "special", date: selectedDate });
+      }
+    } as CXAction] : []),
+    {
+      label: selectedEntry.source === "special" ? "Move Class" : "Move this class",
+      icon: "swap-horizontal",
+      onPress: () => {
+        setActionSheetVisible(false);
+        navigation.navigate("MoveClass", { classId: selectedEntry.id, date: selectedDate, mode: "occurrence" });
+      }
+    },
+    {
+      label: selectedEntry.source === "special" ? "Delete Class" : "Cancel this class",
+      icon: "close-circle-outline",
+      destructive: true,
+      confirmationTitle: selectedEntry.source === "special" ? `Delete ${selectedEntry.subject}?` : `Cancel ${selectedEntry.subject} for ${readableDate(selectedDate)}?`,
+      confirmationMessage: selectedEntry.source === "special" ? "This will remove the special class." : "",
+      confirmationButtonText: selectedEntry.source === "special" ? "Delete" : "Cancel Class",
+      onPress: async () => {
+        try {
+          if (selectedEntry.source === "special") {
+            await scheduleService.deleteSpecialClass(selectedEntry.id!);
+          } else {
+            await scheduleService.cancelOccurrence(selectedEntry.id!, { date: selectedDate, scope: "one_date" });
+          }
+          await invalidateScheduleData(queryClient);
+        } catch (error) { mutationError(error, "Could not cancel this class."); }
+      }
+    }
+  ] : [];
 
   return (
     <CXScreen>
-      <View style={styles.headerPad}><CXHeader title="Academic Calendar" subtitle="Classes, changes and holidays" onBack={navigation.goBack} /></View>
       <ScrollView contentContainerStyle={styles.calendarPage}>
-        <CXRow style={styles.monthHeader}>
-          <CXIconButton icon="chevron-back" label="Previous month" onPress={() => showMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} />
-          <CXText variant="title">{month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</CXText>
-          <CXIconButton icon="chevron-forward" label="Next month" onPress={() => showMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} />
-        </CXRow>
-        <View style={styles.weekHeader}>{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <CXText key={day} variant="caption" align="center" color={colors.textMuted} style={styles.calendarCell}>{day}</CXText>)}</View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xl, marginTop: spacing.md }}>
+          <CXText variant="h3" style={{ fontSize: 24, letterSpacing: -0.5 }}>{month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</CXText>
+          <View style={{ flexDirection: "row", gap: spacing.xl }}>
+            <Pressable onPress={() => showMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+              <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            </Pressable>
+            <Pressable onPress={() => showMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+              <Ionicons name="chevron-forward" size={24} color={colors.primary} />
+            </Pressable>
+            <Pressable onPress={navigation.goBack}>
+              <Ionicons name="close" size={26} color={colors.primary} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.weekHeader}>
+          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+            <CXText key={i} variant="smallStrong" align="center" color={(i === 0) ? colors.danger : colors.textMuted} style={styles.calendarCell}>
+              {day}
+            </CXText>
+          ))}
+        </View>
+
         <View style={styles.monthGrid}>
           {cells.map((cell) => {
             const schedule = rangeQuery.data?.find((item) => item.date === cell.date);
+            const staticHoliday = getStaticHoliday(cell.date);
+            const holiday = schedule?.holiday ?? staticHoliday;
             const selectedCell = cell.date === selectedDate;
+            const isRed = holiday;
+
             return (
               <Pressable key={cell.date} onPress={() => { setSelectedDate(cell.date); if (!cell.currentMonth) setMonth(new Date(`${cell.date}T12:00:00`)); }} style={[styles.calendarCell, styles.dateCell, selectedCell && styles.dateCellSelected]}>
-                <CXText variant="smallStrong" color={selectedCell ? colors.white : cell.currentMonth ? colors.ink : colors.textFaint}>{cell.day}</CXText>
-                {schedule?.holiday ? <View style={[styles.calendarDot, { backgroundColor: selectedCell ? colors.white : colors.warning }]} /> : schedule?.classes.length ? <View style={[styles.calendarDot, { backgroundColor: selectedCell ? colors.white : colors.primary }]} /> : null}
+                <CXText variant={selectedCell ? "smallStrong" : "body"} color={selectedCell ? colors.white : (isRed ? colors.danger : (cell.currentMonth ? colors.ink : colors.textFaint))}>{cell.day}</CXText>
               </Pressable>
             );
           })}
         </View>
+
+        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: spacing.xl, marginTop: spacing.lg, marginBottom: spacing.xl }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.danger }} />
+            <CXText variant="caption" color={colors.ink}>Holiday / Sunday</CXText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary }} />
+            <CXText variant="caption" color={colors.ink}>Selected / Today</CXText>
+          </View>
+        </View>
         <CXCard style={styles.agendaCard}>
-          <CXRow><View style={styles.flex}><CXText variant="title">{readableDate(selectedDate)}</CXText><CXText variant="caption" color={colors.textMuted}>{selected?.holiday ? "No classes today" : `${selected?.classes.length ?? 0} ${(selected?.classes.length ?? 0) === 1 ? "Class" : "Classes"}`}</CXText></View><CXButton label="Special Class" size="sm" fullWidth={false} variant="outline" disabled={Boolean(selected?.holiday)} onPress={() => navigation.navigate("EditClass", { mode: "special", date: selectedDate })} /></CXRow>
-          {selected?.holiday ? (
-            <Pressable onPress={openHolidayActions} style={styles.holidayRow}><Ionicons name="sunny-outline" size={22} color={colors.warning} /><View style={styles.flex}><CXText variant="bodyStrong">{selected.holiday.name}</CXText><CXText variant="caption" color={colors.textMuted}>Holiday · No classes today{selected.holiday.custom ? " · Tap to edit" : ""}</CXText></View></Pressable>
-          ) : selected?.classes.length ? selected.classes.map((item) => (
-            <CXRow key={`${item.source}-${item.id}`} style={styles.agendaRow}><CXText variant="smallStrong" style={styles.agendaTime}>{formatTime(item.startTime)}</CXText><View style={styles.flex}><CXText variant="bodyStrong">{item.subject}</CXText><CXText variant="caption" color={colors.textMuted}>{item.room ?? (item.changed ? "Changed schedule" : "Class")}</CXText></View>{item.changed ? <CXText variant="caption" color={colors.primary}>Changed</CXText> : null}</CXRow>
-          )) : <CXText color={colors.textMuted}>No classes scheduled.</CXText>}
+          <CXRow><View style={styles.flex}><CXText variant="title">{readableDate(selectedDate)}</CXText><CXText variant="caption" color={colors.textMuted}>{selectedHoliday ? "No classes today" : `${selectedBackend?.classes.length ?? 0} ${(selectedBackend?.classes.length ?? 0) === 1 ? "Class" : "Classes"}`}</CXText></View><CXButton label="Special Class" size="sm" fullWidth={false} variant="outline" disabled={Boolean(selectedHoliday)} onPress={() => navigation.navigate("EditClass", { mode: "special", date: selectedDate })} /></CXRow>
+          {selectedHoliday ? (
+            <Pressable onPress={openHolidayActions} style={styles.holidayRow}><Ionicons name="sunny-outline" size={22} color={colors.danger} /><View style={styles.flex}><CXText variant="bodyStrong">{selectedHoliday.name}</CXText><CXText variant="caption" color={colors.textMuted}>Holiday · No classes today{selectedHoliday.custom ? " · Tap to edit" : ""}</CXText></View></Pressable>
+          ) : selectedBackend?.classes.length ? (
+            <View style={{ gap: spacing.md, marginTop: spacing.md }}>
+              {selectedBackend.classes.map((item, idx) => {
+                const classColor = getSubjectColor(item.subject);
+                const isSelectedDateToday = selectedDate === toLocalDateKey();
+
+                const now = new Date();
+                const currentMins = now.getHours() * 60 + now.getMinutes();
+                const sMins = timeToMinutes(item.startTime);
+                const eMins = timeToMinutes(item.endTime);
+
+                let isCurrent = false;
+                let isDone = false;
+
+                if (isSelectedDateToday) {
+                  if (currentMins >= eMins) isDone = true;
+                  else if (currentMins >= sMins && currentMins < eMins) isCurrent = true;
+                } else if (new Date(`${selectedDate}T12:00:00`) < new Date()) {
+                  isDone = true;
+                }
+
+                return (
+                  <Pressable key={`${item.source}-${item.id}`} onPress={() => { setSelectedEntry(item); setActionSheetVisible(true); }}>
+                    <View style={{ flexDirection: "row", gap: spacing.md, alignItems: "flex-start" }}>
+                      <View style={{ width: 45, paddingTop: 4 }}>
+                        <CXText variant="smallStrong" color={isCurrent ? colors.primary : (isDone ? colors.textFaint : colors.ink)}>{formatTime(item.startTime)}</CXText>
+                        <CXText variant="caption" color={colors.textFaint}>{formatTime(item.endTime)}</CXText>
+                      </View>
+
+                      <View style={{ marginTop: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: isCurrent ? colors.primary : (isDone ? colors.border : classColor.bg) }} />
+
+                      <CXCard style={[{ flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, padding: spacing.lg, borderRadius: 16 },
+                      isCurrent && { borderColor: classColor.border, backgroundColor: classColor.bg, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
+                      isDone && { opacity: 0.6 }
+                      ]}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                          <CXText variant="caption" color={isCurrent ? classColor.text : colors.textFaint}>
+                            {item.changed ? "CHANGED" : (isCurrent ? "NOW" : isDone ? "DONE" : "UPCOMING")}
+                          </CXText>
+                          {!!item.room && <CXText variant="caption" color={isCurrent ? classColor.text : colors.textFaint}>{item.room}</CXText>}
+                        </View>
+                        <CXText variant="bodyStrong" color={isCurrent ? classColor.text : colors.ink}>{item.subject}</CXText>
+                      </CXCard>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : <CXText color={colors.textMuted}>No classes scheduled.</CXText>}
         </CXCard>
-        {!selected?.holiday ? <CXButton label="Add Holiday / No Class Day" iconLeft="calendar-clear-outline" variant="outline" onPress={() => { setHolidayName(""); setEditingHolidayId(null); setHolidayModal(true); }} /> : null}
+        {!selectedHoliday ? <CXButton label="Add Holiday / No Class Day" iconLeft="calendar-clear-outline" variant="outline" onPress={() => { setHolidayName(""); setEditingHolidayId(null); setHolidayModal(true); }} /> : null}
       </ScrollView>
       <Modal visible={holidayModal} transparent animationType="fade" onRequestClose={() => setHolidayModal(false)}>
         <View style={styles.modalBackdrop}><CXCard style={styles.modalCard}><CXText variant="h3">{editingHolidayId ? "Edit no-class day" : "Add no-class day"}</CXText><CXText color={colors.textMuted}>{readableDate(selectedDate)}</CXText><CXInput label="Name / Reason" value={holidayName} onChangeText={setHolidayName} placeholder="College holiday" autoFocus /><CXButton label="Save" onPress={() => void saveHoliday()} /><CXButton label="Cancel" variant="ghost" onPress={() => setHolidayModal(false)} /></CXCard></View>
       </Modal>
+      <CXActionSheet
+        visible={actionSheetVisible}
+        onClose={() => setActionSheetVisible(false)}
+        title={selectedEntry ? `${selectedEntry.subject}\n${formatTime(selectedEntry.startTime)} - ${formatTime(selectedEntry.endTime)}` : undefined}
+        actions={actionSheetActions}
+      />
+      <CXActionSheet
+        visible={holidayActionSheetVisible}
+        onClose={() => setHolidayActionSheetVisible(false)}
+        title={holiday?.custom ? `${holiday.name}\n${readableDate(selectedDate)}` : undefined}
+        actions={holidayActionSheetActions}
+      />
     </CXScreen>
   );
 }
@@ -658,7 +1055,7 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
       setScanning(true);
       let localOcrJson;
       let ocrWords: any[] = [];
-      
+
       try {
         const ocr = await processTimetableImageLocal(uri);
         ocrWords = ocr.words || [];
@@ -676,11 +1073,11 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
         // Silently ignore Cloud Vision failure as requested. Fallback to local
         console.warn("Cloud vision failed", e);
       }
-      
+
       const parsed = parseTimetableImage(ocrWords);
-      
+
       if (!parsed.isTimetable) {
-         Alert.alert("Notice", "We couldn't read every part of this timetable. Check the schedule below and fill in anything missing.");
+        Alert.alert("Notice", "We couldn't read every part of this timetable. Check the schedule below and fill in anything missing.");
       }
 
       navigation.navigate("TimetableReview", {
@@ -716,7 +1113,7 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
       <ScrollView contentContainerStyle={styles.settingsPage}>
         <CXCard style={styles.scanHero}>
           <View style={{ ...styles.scanIcon, backgroundColor: colors.surface }}>
-             <Ionicons name="sparkles" size={28} color={colors.primary} />
+            <Ionicons name="sparkles" size={28} color={colors.primary} />
           </View>
           <CXText variant="h3" align="center">Smart Timetable Import</CXText>
           <CXText align="center" color={colors.textMuted}>Upload your college timetable. CampusX uses advanced vision to accurately extract classes, labs, and breaks.</CXText>
@@ -728,9 +1125,9 @@ export function TimetableSettingsScreen({ navigation }: StackProps<"TimetableSet
         <CXCard>
           <CXText variant="bodyStrong">What happens next?</CXText>
           {[
-            "We reconstruct the grid automatically", 
-            "All gaps and breaks are preserved", 
-            "You review and edit before saving", 
+            "We reconstruct the grid automatically",
+            "All gaps and breaks are preserved",
+            "You review and edit before saving",
             "Nothing is saved without your approval"
           ].map((line) => (
             <CXRow key={line} style={styles.checkRow}>
@@ -748,13 +1145,13 @@ type ReviewTab = "original" | "extracted" | "compare";
 
 export function TimetableReviewScreen({ navigation, route }: StackProps<"TimetableReview">) {
   const queryClient = useQueryClient();
-  const [entries, setEntries] = useState<TimetableGridEntry[]>(route.params.entries.map((e: any) => ({...e, id: Math.random().toString()})));
+  const [entries, setEntries] = useState<TimetableGridEntry[]>(route.params.entries.map((e: any) => ({ ...e, id: Math.random().toString() })));
 
   const [importing, setImporting] = useState(false);
-  
+
   // OCR Edit Draft state
   const [editDraft, setEditDraft] = useState<TimetableGridEntry | null>(null);
-  
+
   const slots: TimeSlot[] = route.params.gridTimeSlots ?? [];
   const invalidEntries = entries.filter((entry) => !validateReviewEntry(entry).valid);
 
@@ -784,7 +1181,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
         mutationError(error, "Could not import the timetable.");
       } finally { setImporting(false); }
     };
-    
+
     if (route.params.hasExistingTimetable !== false) {
       Alert.alert("Replace current timetable?", "Importing this timetable will replace your existing schedule.", [
         { text: "Cancel", style: "cancel" },
@@ -792,7 +1189,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
       ]);
     } else await execute();
   };
-  
+
   const handleSaveDraft = (draft: TimetableGridEntry) => {
     const normalizedDraft = normalizeTimetableEntries([draft], slots)[0];
 
@@ -808,7 +1205,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
     });
     setEditDraft(null);
   };
-  
+
   const handleDeleteDraft = (id: string) => {
     setEntries(curr => curr.filter(e => e.id !== id));
     setEditDraft(null);
@@ -827,20 +1224,20 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
         </View>
 
         <CXText variant="h3" style={{ marginTop: spacing.md }}>Extracted Timetable</CXText>
-        <TimetableGrid 
+        <TimetableGrid
           isReview
-          slots={slots} 
-          entries={entries.map(e => ({ ...e, needsReview: e.needsReview || !validateReviewEntry(e).valid }))} 
+          slots={slots}
+          entries={entries.map(e => ({ ...e, needsReview: e.needsReview || !validateReviewEntry(e).valid }))}
           onEntryPress={(entry) => setEditDraft(entry)}
           onEmptyCellPress={(day, slot) => {
-             setEditDraft({
-               id: Math.random().toString(),
-               day,
-               startTime: slot.start,
-               endTime: slot.end ?? slot.start,
-               subject: "",
-               needsReview: true
-             });
+            setEditDraft({
+              id: Math.random().toString(),
+              day,
+              startTime: slot.start,
+              endTime: slot.end ?? slot.start,
+              subject: "",
+              needsReview: true
+            });
           }}
         />
 
@@ -849,23 +1246,23 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
             <View style={styles.flex}>
               <CXText variant="bodyStrong">{entries.length} classes found</CXText>
               {entries.some(e => e.needsReview) && (
-                 <CXText variant="small" color={colors.warning}>{entries.filter(e => e.needsReview).length} may need review</CXText>
+                <CXText variant="small" color={colors.warning}>{entries.filter(e => e.needsReview).length} may need review</CXText>
               )}
             </View>
             <CXButton label="Add Class" size="sm" iconLeft="add" fullWidth={false} onPress={() => setEditDraft({ id: Math.random().toString(), day: 1, startTime: "09:00", endTime: "10:00", subject: "", needsReview: false })} />
           </CXRow>
         </CXCard>
-        
+
         {route.params.warnings?.map((warning: string) => <CXText key={warning} variant="caption" color={colors.warning}>⚠ {warning}</CXText>)}
         {orphansCount > 0 && <CXText variant="caption" color={colors.textMuted} style={{ marginTop: spacing.sm }}>{orphansCount} unreadable items will be excluded.</CXText>}
 
 
-        
-        <CXButton 
+
+        <CXButton
           label="Import Timetable"
-          disabled={validEntries.length === 0} 
-          loading={importing} 
-          onPress={() => void importNow()} 
+          disabled={validEntries.length === 0}
+          loading={importing}
+          onPress={() => void importNow()}
         />
       </ScrollView>
 
@@ -874,31 +1271,31 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
           <CXCard style={styles.modalCard}>
             <CXText variant="h3">{entries.find(e => e.id === editDraft?.id) ? "Edit OCR Draft Class" : "Add to Review"}</CXText>
             {editDraft ? <>
-              <CXInput label="Subject Name *" value={editDraft.subject} onChangeText={(t) => setEditDraft({...editDraft, subject: t})} />
+              <CXInput label="Subject Name *" value={editDraft.subject} onChangeText={(t) => setEditDraft({ ...editDraft, subject: t })} />
               <CXRow style={styles.timeFields}>
-                <View style={styles.flex}><CXInput label="Start (HH:MM)" value={editDraft.startTime} onChangeText={(t) => setEditDraft({...editDraft, startTime: t})} /></View>
-                <View style={styles.flex}><CXInput label="End (HH:MM)" value={editDraft.endTime} onChangeText={(t) => setEditDraft({...editDraft, endTime: t})} /></View>
+                <View style={styles.flex}><CXInput label="Start (HH:MM)" value={editDraft.startTime} onChangeText={(t) => setEditDraft({ ...editDraft, startTime: t })} /></View>
+                <View style={styles.flex}><CXInput label="End (HH:MM)" value={editDraft.endTime} onChangeText={(t) => setEditDraft({ ...editDraft, endTime: t })} /></View>
               </CXRow>
               <CXRow style={styles.chipWrap}>
-                {DAYS.map((day) => <CXChip key={day.value} label={day.short} active={editDraft.day === day.value} onPress={() => setEditDraft({...editDraft, day: day.value})} />)}
+                {DAYS.map((day) => <CXChip key={day.value} label={day.short} active={editDraft.day === day.value} onPress={() => setEditDraft({ ...editDraft, day: day.value })} />)}
               </CXRow>
-              
+
               {!validateReviewEntry(editDraft as any).valid ? (
-                 <CXText variant="caption" color={colors.warning}>{validateReviewEntry(editDraft as any).errors.join(" · ")}</CXText>
+                <CXText variant="caption" color={colors.warning}>{validateReviewEntry(editDraft as any).errors.join(" · ")}</CXText>
               ) : null}
 
               <CXRow style={{ gap: 8, marginTop: 16 }}>
-                 <View style={styles.flex}><CXButton label="Save" onPress={() => {
-                    if (validateReviewEntry(editDraft as any).valid) {
-                      handleSaveDraft(editDraft);
-                    } else {
-                      Alert.alert("Invalid Data", validateReviewEntry(editDraft as any).errors.join("\n"));
-                    }
-                 }} /></View>
-                 <View style={styles.flex}><CXButton label="Cancel" variant="outline" onPress={() => setEditDraft(null)} /></View>
+                <View style={styles.flex}><CXButton label="Save" onPress={() => {
+                  if (validateReviewEntry(editDraft as any).valid) {
+                    handleSaveDraft(editDraft);
+                  } else {
+                    Alert.alert("Invalid Data", validateReviewEntry(editDraft as any).errors.join("\n"));
+                  }
+                }} /></View>
+                <View style={styles.flex}><CXButton label="Cancel" variant="outline" onPress={() => setEditDraft(null)} /></View>
               </CXRow>
               {entries.find(e => e.id === editDraft.id) ? (
-                 <CXButton label="Delete" variant="ghost" onPress={() => handleDeleteDraft(editDraft.id!)} />
+                <CXButton label="Delete" variant="ghost" onPress={() => handleDeleteDraft(editDraft.id!)} />
               ) : null}
             </> : null}
           </CXCard>
@@ -936,14 +1333,16 @@ const styles = StyleSheet.create({
   chipWrap: { gap: spacing.xs, flexWrap: "wrap" },
   timeFields: { gap: spacing.sm, alignItems: "flex-start" },
   recurrenceCard: { flexDirection: "row", gap: spacing.sm, alignItems: "center", backgroundColor: colors.backgroundLavender },
-  originalCard: { gap: spacing.xs, backgroundColor: colors.backgroundLavender },
+  originalCard: { gap: spacing.xs, backgroundColor: colors.primaryTint, borderColor: "rgba(99, 102, 241, 0.2)", borderWidth: 1 },
+  slotList: { gap: spacing.sm },
+  slotItem: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderSoft, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  slotItemSelected: { backgroundColor: colors.primaryTint, borderColor: colors.primary },
   calendarPage: { padding: spacing.screen, gap: spacing.md, paddingBottom: spacing.xxxl },
-  monthHeader: { justifyContent: "space-between" },
-  weekHeader: { flexDirection: "row" },
-  monthGrid: { flexDirection: "row", flexWrap: "wrap", borderWidth: StyleSheet.hairlineWidth, borderColor: colors.borderSoft, borderRadius: radius.md, overflow: "hidden", backgroundColor: colors.surface },
+  weekHeader: { flexDirection: "row", marginBottom: spacing.md },
+  monthGrid: { flexDirection: "row", flexWrap: "wrap", paddingBottom: spacing.sm },
   calendarCell: { width: "14.2857%" },
-  dateCell: { aspectRatio: 1, alignItems: "center", justifyContent: "center", gap: 3 },
-  dateCellSelected: { backgroundColor: colors.primary, borderRadius: radius.sm },
+  dateCell: { aspectRatio: 1, alignItems: "center", justifyContent: "center" },
+  dateCellSelected: { backgroundColor: colors.primary, borderRadius: 100 },
   calendarDot: { width: 4, height: 4, borderRadius: 2 },
   agendaCard: { gap: spacing.md },
   agendaRow: { gap: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.borderSoft },

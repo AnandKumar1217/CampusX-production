@@ -16,10 +16,10 @@ import {
   View,
   ActivityIndicator,
   Image,
-  Linking,
   Keyboard,
   InteractionManager,
   Animated,
+  Text,
 } from "react-native";
 import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import Reanimated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
@@ -52,9 +52,10 @@ import { useAppStore } from "@/store/appStore";
 import { generateChatResponse, type ChatMessage } from "@/services/ai";
 import { api, getApiErrorMessage } from "@/services/api";
 import { groupService } from "@/services/groupService";
-import { connectSocket, getSocket } from "@/services/socket";
+import { connectSocket, getSocket, subscribeSocketEvent, emitSocketEvent } from "@/services/socket";
 import { startAudioCall } from "@/services/audioCall";
 import { getChatDateLabel, mergeChatMessages } from "@/services/chatLogic";
+import { queryClient } from "@/query/queryClient";
 import { colors, radius, spacing, typography } from "@/theme";
 import type { Message } from "@/types/domain";
 import type { RootStackParamList } from "@/types/navigation";
@@ -82,7 +83,7 @@ const CHAT_OUTBOX_KEY = "campusx.chat.outbox.v2";
 export function ConversationScreen({ navigation, route }: StackProps<"Conversation" | "GroupConversation">) {
   const isStudyGroup = route.name === "GroupConversation";
   const conversationId = isStudyGroup ? (route.params as any).groupId : (route.params as any).conversationId;
-  
+
   const currentUser = useAppStore((state) => state.user);
   const accessToken = useAppStore((state) => state.accessToken);
   const friends = useAppStore((state) => state.friends);
@@ -128,6 +129,7 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
   const [attachmentSheetVisible, setAttachmentSheetVisible] = useState(false);
   const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
   const [mediaPreviewVisible, setMediaPreviewVisible] = useState(false);
+  const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
@@ -139,14 +141,16 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
 
   const fetchMessages = async (cursor: MessageCursor = null, replace = false, groupPageNumber = 1) => {
     try {
-      const endpoint = isStudyGroup 
+      const endpoint = isStudyGroup
         ? `/groups/${conversationId}/messages?page=${groupPageNumber}&limit=30`
         : `/chats/${conversationId}/messages?limit=30${cursor ? `&beforeCreatedAt=${encodeURIComponent(cursor.createdAt)}&beforeId=${cursor.id}` : ""}`;
-      
+
       const res = await api.get<{ data: { items: any[], hasMore: boolean, nextCursor?: MessageCursor } }>(endpoint);
       if (useAppStore.getState().user?.id !== currentUser?.id) return;
       if (replace) {
         setMessages(res.data.data.items);
+        queryClient.setQueryData(["chatMessages", conversationId], res.data.data.items);
+        AsyncStorage.setItem(`chatMessages_${conversationId}`, JSON.stringify(res.data.data.items)).catch(() => {});
         setDataOwnerId(currentUser?.id || null);
       } else {
         setMessages(prev => mergeChatMessages(prev, res.data.data.items));
@@ -157,8 +161,8 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
 
       if (replace && !isStudyGroup) {
         // Mark as delivered and read for DMs only
-        api.post(`/chats/${conversationId}/delivered`).catch(() => {});
-        api.post(`/chats/${conversationId}/read`).catch(() => {});
+        api.post(`/chats/${conversationId}/delivered`).catch(() => { });
+        api.post(`/chats/${conversationId}/read`).catch(() => { });
       }
     } catch (err) {
       if (useAppStore.getState().user?.id === currentUser?.id) setMessageError(getApiErrorMessage(err));
@@ -168,21 +172,46 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
   };
 
   useEffect(() => {
-    setMessages([]);
-    setDataOwnerId(null);
-    setConversation(null);
-    setLoading(true);
+    let active = true;
+    const cachedConversation = queryClient.getQueryData(["chat", conversationId]);
+    const cachedMessages = queryClient.getQueryData(["chatMessages", conversationId]);
+
+    setConversation(cachedConversation || null);
+    if (cachedMessages) {
+      setMessages(cachedMessages as any[]);
+      setDataOwnerId(currentUser?.id || null);
+      setLoading(false);
+    } else {
+      setMessages([]);
+      setDataOwnerId(currentUser?.id || null);
+      setLoading(true);
+      // Load from disk for instant UI
+      AsyncStorage.getItem(`chatMessages_${conversationId}`).then(val => {
+        if (active && val) {
+          const parsed = JSON.parse(val);
+          if (parsed.length > 0) {
+            setMessages(parsed);
+            setDataOwnerId(currentUser?.id || null);
+            setLoading(false);
+            queryClient.setQueryData(["chatMessages", conversationId], parsed);
+          }
+        }
+      }).catch(() => {});
+    }
+    
     setGroupPage(1);
     setNextCursor(null);
     setInitialUnreadCount(0);
     setNewMessageCount(0);
     setHasMore(true);
+
     const refreshConversation = () => {
       const endpoint = isStudyGroup ? `/groups/${conversationId}` : `/chats/${conversationId}`;
       return api.get<{ data: any }>(endpoint)
         .then((response) => {
           if (useAppStore.getState().user?.id !== currentUser?.id) return;
           setConversation(response.data.data);
+          queryClient.setQueryData(["chat", conversationId], response.data.data);
           if (!isStudyGroup) {
             const metadata = response.data.data.participantMetadata?.find(
               (entry: any) => String(entry.user?._id ?? entry.user) === currentUser?.id,
@@ -193,9 +222,10 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         .catch((error) => { if (useAppStore.getState().user?.id === currentUser?.id) setMessageError(getApiErrorMessage(error)); });
     };
 
-    void refreshConversation().finally(() => {
-      void fetchMessages(null, true).then(() => retryOutbox());
-    });
+    Promise.allSettled([
+      refreshConversation(),
+      fetchMessages(null, true)
+    ]).then(() => retryOutbox());
 
     const socket = accessToken ? connectSocket(accessToken) : getSocket();
     if (__DEV__) {
@@ -206,6 +236,9 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         socketId: socket?.id,
       });
     }
+
+    useAppStore.getState().setActiveConversationId(String(conversationId));
+
     const onProfileUpdated = (payload: any) => {
       refreshConversation();
       setMessages(prev => prev.map(m => {
@@ -215,185 +248,191 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
         return m;
       }));
     };
-    socket?.on("profile:updated", onProfileUpdated);
-    socket?.on("presence:changed", refreshConversation);
-    socket?.on("group:updated", refreshConversation);
-    socket?.on("chat:updated", refreshConversation);
-    if (socket) {
-      const joinEvent = isStudyGroup ? "group:join" : "conversation:join";
-      const leaveEvent = isStudyGroup ? "group:leave" : "conversation:leave";
-      const newMsgEvent = isStudyGroup ? "group:message:new" : "message:new";
 
-      socket.emit(joinEvent, conversationId);
+    const unsubProfile = subscribeSocketEvent("profile:updated", onProfileUpdated);
+    const unsubPresence = subscribeSocketEvent("presence:changed", refreshConversation);
+    const unsubGroupUpdated = subscribeSocketEvent("group:updated", refreshConversation);
+    const unsubChatUpdated = subscribeSocketEvent("chat:updated", refreshConversation);
+
+    const joinEvent = isStudyGroup ? "group:join" : "conversation:join";
+    const leaveEvent = isStudyGroup ? "group:leave" : "conversation:leave";
+    const newMsgEvent = isStudyGroup ? "group:message:new" : "message:new";
+
+    emitSocketEvent(joinEvent, conversationId);
+    if (!isStudyGroup && isFocusedRef.current && appStateRef.current === "active") {
+      emitSocketEvent("conversation:active", { conversationId });
+    }
+
+    const onReconnect = () => {
+      emitSocketEvent(joinEvent, conversationId);
       if (!isStudyGroup && isFocusedRef.current && appStateRef.current === "active") {
-        socket.emit("conversation:active", { conversationId });
+        emitSocketEvent("conversation:active", { conversationId });
       }
-      const onReconnect = () => {
-        socket.emit(joinEvent, conversationId);
-        if (!isStudyGroup && isFocusedRef.current && appStateRef.current === "active") {
-          socket.emit("conversation:active", { conversationId });
+      void fetchMessages();
+      void refreshConversation();
+      void retryOutbox();
+    };
+    const unsubConnect = subscribeSocketEvent("connect", onReconnect);
+
+    const onNewMessage = (msg: any) => {
+      // Robust ID extraction handling Mongoose populated or unpopulated paths
+      const rawConvId = msg.conversation?._id || msg.conversation || msg.group?._id || msg.group || msg.conversationId;
+      const msgConvId = rawConvId ? String(rawConvId) : null;
+
+      if (__DEV__) {
+        console.info("[CHAT_MESSAGE_NEW_RECEIVED]", {
+          messageId: msg._id,
+          conversationId: msgConvId,
+          activeConversationId: String(conversationId),
+        });
+      }
+      if (msgConvId === String(conversationId)) {
+        setMessages(prev => {
+          const exists = prev.some(m =>
+            (m._id && msg._id && String(m._id) === String(msg._id)) ||
+            (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))
+          );
+
+          if (exists) {
+            if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", false);
+            return prev.map(m =>
+              ((m._id && msg._id && String(m._id) === String(msg._id)) ||
+                (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))) ? { ...m, ...msg } : m
+            );
+          }
+          if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", true);
+          if (nearBottomRef.current) {
+            requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }));
+          } else {
+            setNewMessageCount((count) => count + 1);
+          }
+          return [msg, ...prev];
+        });
+
+        // WhatsApp-style: If user receives a message while screen is active, mark it delivered AND read immediately
+        if (!isStudyGroup) {
+          const msgId = msg._id;
+          const senderId = msg.senderId || msg.sender?._id || msg.sender;
+          if (
+            msgId &&
+            senderId !== currentUser?.id &&
+            isFocusedRef.current &&
+            appStateRef.current === "active"
+          ) {
+            api.post(`/chats/${conversationId}/read`).catch(() => { });
+          }
         }
+      }
+    };
+
+    const onMessageRead = (data: { conversationId: string, userId: string }) => {
+      if (data.conversationId?.toString() === conversationId.toString()) {
+        setMessages(prev => prev.map(m => {
+          if (m.sender?._id === currentUser?.id || m.senderId === currentUser?.id) {
+            const readBy = m.readBy || [];
+            if (!readBy.find((r: any) => r.user === data.userId)) {
+              return { ...m, readBy: [...readBy, { user: data.userId, readAt: new Date().toISOString() }] };
+            }
+          }
+          return m;
+        }));
+      }
+    };
+
+    const onMessageDelivered = (data: { conversationId: string, userId: string }) => {
+      if (data.conversationId?.toString() === conversationId.toString()) {
+        setMessages(prev => prev.map(m => {
+          if (m.sender?._id === currentUser?.id || m.senderId === currentUser?.id) {
+            const deliveredTo = m.deliveredTo || [];
+            if (!deliveredTo.find((r: any) => r.user === data.userId)) {
+              return { ...m, deliveredTo: [...deliveredTo, { user: data.userId, deliveredAt: new Date().toISOString() }] };
+            }
+          }
+          return m;
+        }));
+      }
+    };
+
+    const onTypingStart = (data: { conversationId: string, userId: string }) => {
+      if (data.conversationId?.toString() === conversationId.toString() && data.userId !== currentUser?.id) {
+        setRemoteTyping(true);
+      }
+    };
+
+    const onTypingStop = (data: { conversationId: string, userId: string }) => {
+      if (data.conversationId?.toString() === conversationId.toString() && data.userId !== currentUser?.id) {
+        setRemoteTyping(false);
+      }
+    };
+
+    const unsubNewMsg = subscribeSocketEvent(newMsgEvent, onNewMessage);
+    const unsubMsgRead = subscribeSocketEvent("message:read", onMessageRead);
+    const unsubMsgDelivered = subscribeSocketEvent("message:delivered", onMessageDelivered);
+    const unsubTypingStart = subscribeSocketEvent("typing:start", onTypingStart);
+    const unsubTypingStop = subscribeSocketEvent("typing:stop", onTypingStop);
+
+    const onMessageDeleted = (data: { messageId: string, conversationId: string, deletedForEveryoneAt?: string }) => {
+      if (data.conversationId?.toString() === conversationId.toString()) {
+        setMessages(prev => prev.map(m => String(m._id) === String(data.messageId)
+          ? { ...m, text: "", attachments: [], deletedForEveryoneAt: data.deletedForEveryoneAt ?? new Date().toISOString() }
+          : m));
+      }
+    };
+    const unsubMsgDeleted = subscribeSocketEvent("message:deleted", onMessageDeleted);
+
+    const onMessageReaction = (data: { messageId: string, reactions: any[] }) => {
+      setMessages(prev => prev.map(m => m._id === data.messageId ? { ...m, reactions: data.reactions } : m));
+    };
+    const unsubMsgReaction = subscribeSocketEvent("message:reaction_updated", onMessageReaction);
+    const onMessageEdited = (message: any) => {
+      if (String(message.conversationId) !== String(conversationId)) return;
+      setMessages((current) => current.map((item) => String(item._id) === String(message._id) ? { ...item, ...message } : item));
+    };
+    const unsubMsgEdited = subscribeSocketEvent("message:edited", onMessageEdited);
+
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      appStateRef.current = nextState;
+      if (nextState === "active") {
+        const currentSocket = getSocket();
+        if (currentSocket && !currentSocket.connected) currentSocket.connect();
+        emitSocketEvent(joinEvent, conversationId);
+        if (!isStudyGroup) emitSocketEvent("conversation:active", { conversationId });
         void fetchMessages();
         void refreshConversation();
         void retryOutbox();
-      };
-      socket.on("connect", onReconnect);
-
-      const onNewMessage = (msg: any) => {
-        // Robust ID extraction handling Mongoose populated or unpopulated paths
-        const rawConvId = msg.conversation?._id || msg.conversation || msg.group?._id || msg.group || msg.conversationId;
-        const msgConvId = rawConvId ? String(rawConvId) : null;
-
-        if (__DEV__) {
-          console.info("[CHAT_MESSAGE_NEW_RECEIVED]", {
-            messageId: msg._id,
-            conversationId: msgConvId,
-            activeConversationId: String(conversationId),
-          });
+        if (!isStudyGroup && isFocusedRef.current) {
+          void api.post(`/chats/${conversationId}/delivered`);
+          void api.post(`/chats/${conversationId}/read`);
         }
-        if (msgConvId === String(conversationId)) {
-          setMessages(prev => {
-            const exists = prev.some(m => 
-              (m._id && msg._id && String(m._id) === String(msg._id)) ||
-              (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))
-            );
+      } else if (!isStudyGroup) {
+        emitSocketEvent("conversation:inactive", { conversationId });
+      }
+    });
 
-            if (exists) {
-              if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", false);
-              return prev.map(m => 
-                ((m._id && msg._id && String(m._id) === String(msg._id)) ||
-                 (m.nonce && msg.nonce && String(m.nonce) === String(msg.nonce))) ? { ...m, ...msg } : m
-              );
-            }
-            if (__DEV__) console.info("[CHAT_MESSAGE_INSERTED]", true);
-            if (nearBottomRef.current) {
-              requestAnimationFrame(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }));
-            } else {
-              setNewMessageCount((count) => count + 1);
-            }
-            return [msg, ...prev];
-          });
+    return () => {
+      unsubProfile();
+      unsubPresence();
+      unsubGroupUpdated();
+      unsubChatUpdated();
+      unsubConnect();
+      unsubNewMsg();
+      unsubMsgRead();
+      unsubMsgDelivered();
+      unsubTypingStart();
+      unsubTypingStop();
+      unsubMsgDeleted();
+      unsubMsgReaction();
+      unsubMsgEdited();
 
-          // WhatsApp-style: If user receives a message while screen is active, mark it delivered AND read immediately
-          if (!isStudyGroup) {
-            const msgId = msg._id;
-            const senderId = msg.senderId || msg.sender?._id || msg.sender;
-            if (
-              msgId &&
-              senderId !== currentUser?.id &&
-              isFocusedRef.current &&
-              appStateRef.current === "active"
-            ) {
-              api.post(`/chats/${conversationId}/read`).catch(() => {});
-            }
-          }
-        }
-      };
-
-      const onMessageRead = (data: { conversationId: string, userId: string }) => {
-        if (data.conversationId?.toString() === conversationId.toString()) {
-          setMessages(prev => prev.map(m => {
-            if (m.sender?._id === currentUser?.id || m.senderId === currentUser?.id) {
-              const readBy = m.readBy || [];
-              if (!readBy.find((r: any) => r.user === data.userId)) {
-                return { ...m, readBy: [...readBy, { user: data.userId, readAt: new Date().toISOString() }] };
-              }
-            }
-            return m;
-          }));
-        }
-      };
-
-      const onMessageDelivered = (data: { conversationId: string, userId: string }) => {
-        if (data.conversationId?.toString() === conversationId.toString()) {
-          setMessages(prev => prev.map(m => {
-            if (m.sender?._id === currentUser?.id || m.senderId === currentUser?.id) {
-              const deliveredTo = m.deliveredTo || [];
-              if (!deliveredTo.find((r: any) => r.user === data.userId)) {
-                return { ...m, deliveredTo: [...deliveredTo, { user: data.userId, deliveredAt: new Date().toISOString() }] };
-              }
-            }
-            return m;
-          }));
-        }
-      };
-
-      const onTypingStart = (data: { conversationId: string, userId: string }) => {
-        if (data.conversationId?.toString() === conversationId.toString() && data.userId !== currentUser?.id) {
-          setRemoteTyping(true);
-        }
-      };
-
-      const onTypingStop = (data: { conversationId: string, userId: string }) => {
-        if (data.conversationId?.toString() === conversationId.toString() && data.userId !== currentUser?.id) {
-          setRemoteTyping(false);
-        }
-      };
-
-      socket.on(newMsgEvent, onNewMessage);
-      socket.on("message:read", onMessageRead);
-      socket.on("message:delivered", onMessageDelivered);
-      socket.on("typing:start", onTypingStart);
-      socket.on("typing:stop", onTypingStop);
-
-      const onMessageDeleted = (data: { messageId: string, conversationId: string, deletedForEveryoneAt?: string }) => {
-        if (data.conversationId?.toString() === conversationId.toString()) {
-          setMessages(prev => prev.map(m => String(m._id) === String(data.messageId)
-            ? { ...m, text: "", attachments: [], deletedForEveryoneAt: data.deletedForEveryoneAt ?? new Date().toISOString() }
-            : m));
-        }
-      };
-      socket.on("message:deleted", onMessageDeleted);
-
-      const onMessageReaction = (data: { messageId: string, reactions: any[] }) => {
-        setMessages(prev => prev.map(m => m._id === data.messageId ? { ...m, reactions: data.reactions } : m));
-      };
-      socket.on("message:reaction_updated", onMessageReaction);
-      const onMessageEdited = (message: any) => {
-        if (String(message.conversationId) !== String(conversationId)) return;
-        setMessages((current) => current.map((item) => String(item._id) === String(message._id) ? { ...item, ...message } : item));
-      };
-      socket.on("message:edited", onMessageEdited);
-
-      const appStateSubscription = AppState.addEventListener("change", (nextState) => {
-        appStateRef.current = nextState;
-        if (nextState === "active") {
-          if (!socket.connected) socket.connect();
-          socket.emit(joinEvent, conversationId);
-          if (!isStudyGroup) socket.emit("conversation:active", { conversationId });
-          void fetchMessages();
-          void refreshConversation();
-          void retryOutbox();
-          if (!isStudyGroup && isFocusedRef.current) {
-            void api.post(`/chats/${conversationId}/delivered`);
-            void api.post(`/chats/${conversationId}/read`);
-          }
-        } else if (!isStudyGroup) socket.emit("conversation:inactive", { conversationId });
-      });
-
-      return () => {
-        socket.off("profile:updated", onProfileUpdated);
-        socket.off("presence:changed", refreshConversation);
-        socket.off("group:updated", refreshConversation);
-        socket.off("chat:updated", refreshConversation);
-        socket.off("connect", onReconnect);
-        socket.off(newMsgEvent, onNewMessage);
-        socket.off("message:read", onMessageRead);
-        socket.off("message:delivered", onMessageDelivered);
-        socket.off("typing:start", onTypingStart);
-        socket.off("typing:stop", onTypingStop);
-        socket.off("message:deleted", onMessageDeleted);
-        socket.off("message:reaction_updated", onMessageReaction);
-        socket.off("message:edited", onMessageEdited);
-        appStateSubscription.remove();
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          socket.emit("typing:stop", { conversationId });
-        }
-        socket.emit(leaveEvent, conversationId);
-        if (!isStudyGroup) socket.emit("conversation:inactive", { conversationId });
-      };
-    }
+      appStateSubscription.remove();
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        emitSocketEvent("typing:stop", { conversationId });
+      }
+      emitSocketEvent(leaveEvent, conversationId);
+      if (!isStudyGroup) emitSocketEvent("conversation:inactive", { conversationId });
+      useAppStore.getState().setActiveConversationId(null);
+    };
   }, [accessToken, conversationId, currentUser?.id, isStudyGroup]);
 
   const handleTextChange = (val: string) => {
@@ -647,126 +686,141 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
     <CXScreen edges={["top", "right", "left"]}>
       <Reanimated.View style={[styles.flex, animatedContainerStyle]}>
         <CXRow style={styles.chatHeader}>
-        <CXIconButton icon="chevron-back" label="Go back" backgroundColor={colors.transparent} onPress={navigation.goBack} />
-        <Pressable onPress={info} style={styles.chatIdentity} accessibilityRole="button">
-          <CXAvatar name={title} source={avatarUrl} size={40} />
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong" numberOfLines={1}>{title}</CXText>
-            <CXText variant="caption" color={remoteTyping || otherParticipant?.online ? colors.success : colors.textMuted}>
-              {remoteTyping
-                ? "typing…"
-                : otherParticipant?.online
-                  ? "Online"
-                  : otherParticipant?.lastSeenAt
-                    ? `last seen ${new Date(otherParticipant.lastSeenAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
-                    : "Offline"}
-            </CXText>
-          </View>
-        </Pressable>
-        {Platform.OS !== "web" && !isGroupConversation && isFriend && otherParticipant && <CXIconButton icon="call-outline" label="Audio call" backgroundColor={colors.transparent}
-          onPress={() => void startAudioCall({ conversationId, peerId: otherParticipant._id, name: title, avatarUrl })} />}
-        <CXIconButton icon="ellipsis-horizontal" label="Chat info" backgroundColor={colors.transparent} onPress={info} />
-      </CXRow>
-      {messageError && <Pressable onPress={() => void fetchMessages()} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
-        <CXText variant="small" color={colors.danger}>{messageError} · Tap to retry</CXText>
-      </Pressable>}
-      <FlatList
-        ref={listRef}
-        data={dataOwnerId === currentUser?.id ? messageRows : []}
-        ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} /> :
-          !messageError ? <CXText variant="small" color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>No messages yet</CXText> : null}
-        inverted
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.messageList}
-        showsVerticalScrollIndicator={false}
-        initialNumToRender={15}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        onScroll={(event) => {
-          const nearBottom = event.nativeEvent.contentOffset.y < 80;
-          nearBottomRef.current = nearBottom;
-          if (nearBottom && newMessageCount) setNewMessageCount(0);
-        }}
-        scrollEventThrottle={32}
-        renderItem={({ item }) => {
-          if (item._rowType === "date") {
-            return <View style={styles.dateSeparator}><CXText variant="caption" color={colors.textMuted}>{item.label}</CXText></View>;
-          }
-          if (item._rowType === "unread") {
-            return <View style={styles.unreadDivider}><View style={styles.dividerLine} /><CXText variant="caption" color={colors.primary}>{item.count} unread messages</CXText><View style={styles.dividerLine} /></View>;
-          }
-          return (
-            <MessageBubble
-              message={item}
-              mine={item.sender?._id === currentUser?.id || item.senderId === currentUser?.id}
-              onLongPress={() => setSelectedMessage(item)}
-              onReply={() => setReplyTo(item)}
-              onRetry={item._pending ? () => void deliverPending(item._pending) : undefined}
-              onOpenImage={setImageViewerUrl}
-              isGroup={isGroupConversation || isStudyGroup}
-            />
-          );
-        }}
-      />
-      {newMessageCount > 0 ? (
-        <Pressable
-          style={styles.newMessagesButton}
-          onPress={() => {
-            listRef.current?.scrollToOffset({ offset: 0, animated: true });
-            setNewMessageCount(0);
-          }}
-        >
-          <Ionicons name="arrow-down" size={16} color={colors.white} />
-          <CXText variant="smallStrong" color={colors.white}>{newMessageCount} new messages</CXText>
-        </Pressable>
-      ) : null}
-      {visibleConversation && (isGroupConversation || isFriend) ? <>
-        {replyTo && (
-          <View style={styles.replyPreviewWrapper}>
-            <View style={styles.replyPreviewBar} />
+          <CXIconButton icon="chevron-back" label="Go back" backgroundColor={colors.transparent} onPress={navigation.goBack} />
+          <Pressable onPress={info} style={styles.chatIdentity} accessibilityRole="button">
+            <CXAvatar name={title} source={avatarUrl} size={40} />
             <View style={styles.flex}>
-              <CXText variant="smallStrong" color={colors.primary}>{replyTo.sender?.name || "User"}</CXText>
-              <CXText variant="caption" numberOfLines={1}>{replyTo.text}</CXText>
+              <CXText variant="bodyStrong" numberOfLines={1}>{title}</CXText>
+              <CXText variant="caption" color={remoteTyping || otherParticipant?.online ? colors.success : colors.textMuted}>
+                {remoteTyping
+                  ? "typing…"
+                  : otherParticipant?.online
+                    ? "Online"
+                    : otherParticipant?.lastSeenAt
+                      ? `last seen ${new Date(otherParticipant.lastSeenAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
+                      : "Offline"}
+              </CXText>
             </View>
-            <CXIconButton label="Remove reply" icon="close" size={24} onPress={() => setReplyTo(null)} backgroundColor={colors.transparent} />
-          </View>
-        )}
-        {editingMessage && (
-          <View style={styles.replyPreviewWrapper}>
-            <View style={styles.replyPreviewBar} />
-            <View style={styles.flex}>
-              <CXText variant="smallStrong" color={colors.primary}>Editing message</CXText>
-              <CXText variant="caption" numberOfLines={1}>{editingMessage.text}</CXText>
-            </View>
-            <CXIconButton label="Cancel edit" icon="close" size={24} onPress={() => { setEditingMessage(null); setText(""); }} backgroundColor={colors.transparent} />
-          </View>
-        )}
-        <CXRow style={styles.composer}>
-          <CXIconButton icon="add" label="Add photo" size={38} backgroundColor={colors.backgroundLavender} onPress={() => setAttachmentSheetVisible(true)} />
-          <TextInput
-            value={text}
-            onChangeText={handleTextChange}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textFaint}
-            multiline
-            style={styles.composerInput}
-          />
-          <CXIconButton
-            icon="happy-outline"
-            label="Add emoji"
-            size={36}
-            backgroundColor={colors.transparent}
-            color={colors.textMuted}
-            onPress={() => handleTextChange(`${text}😊`)}
-          />
-          {(text.trim() || media) && <CXIconButton icon="send" label="Send message" size={42} onPress={() => void send()} />}
+          </Pressable>
+          {Platform.OS !== "web" && !isGroupConversation && isFriend && otherParticipant && <CXIconButton icon="call-outline" label="Audio call" backgroundColor={colors.transparent}
+            onPress={() => void startAudioCall({ conversationId, peerId: otherParticipant._id, name: title, avatarUrl })} />}
+          <CXIconButton icon="ellipsis-horizontal" label="Chat info" backgroundColor={colors.transparent} onPress={info} />
         </CXRow>
-      </> : visibleConversation?.type === "direct" ?
-        <CXText variant="small" color={colors.textMuted} align="center" style={{ padding: spacing.md }}>
-          You can only message friends.
-        </CXText> : null}
+        {messageError && <Pressable onPress={() => void fetchMessages()} style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs }}>
+          <CXText variant="small" color={colors.danger}>{messageError} · Tap to retry</CXText>
+        </Pressable>}
+        <FlatList
+          ref={listRef}
+          data={dataOwnerId === currentUser?.id ? messageRows : []}
+          ListEmptyComponent={loading ? <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} /> :
+            !messageError ? <CXText variant="small" color={colors.textMuted} align="center" style={{ marginTop: spacing.xl }}>No messages yet</CXText> : null}
+          inverted
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.messageList}
+          showsVerticalScrollIndicator={false}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          onScroll={(event) => {
+            const nearBottom = event.nativeEvent.contentOffset.y < 80;
+            nearBottomRef.current = nearBottom;
+            if (nearBottom && newMessageCount) setNewMessageCount(0);
+          }}
+          scrollEventThrottle={32}
+          renderItem={({ item }) => {
+            if (item._rowType === "date") {
+              return <View style={styles.dateSeparator}><CXText variant="caption" color={colors.textMuted}>{item.label}</CXText></View>;
+            }
+            if (item._rowType === "unread") {
+              return <View style={styles.unreadDivider}><View style={styles.dividerLine} /><CXText variant="caption" color={colors.primary}>{item.count} unread messages</CXText><View style={styles.dividerLine} /></View>;
+            }
+            return (
+              <MessageBubble
+                message={item}
+                mine={item.sender?._id === currentUser?.id || item.senderId === currentUser?.id}
+                onLongPress={() => setSelectedMessage(item)}
+                onReply={() => setReplyTo(item)}
+                onRetry={item._pending ? () => void deliverPending(item._pending) : undefined}
+                onOpenImage={setImageViewerUrl}
+                isGroup={isGroupConversation || isStudyGroup}
+              />
+            );
+          }}
+        />
+        {newMessageCount > 0 ? (
+          <Pressable
+            style={styles.newMessagesButton}
+            onPress={() => {
+              listRef.current?.scrollToOffset({ offset: 0, animated: true });
+              setNewMessageCount(0);
+            }}
+          >
+            <Ionicons name="arrow-down" size={16} color={colors.white} />
+            <CXText variant="smallStrong" color={colors.white}>{newMessageCount} new messages</CXText>
+          </Pressable>
+        ) : null}
+        {visibleConversation && (isGroupConversation || isFriend) ? <>
+          {replyTo && (
+            <View style={styles.replyPreviewWrapper}>
+              <View style={styles.replyPreviewBar} />
+              <View style={[styles.flex, { paddingVertical: 8 }]}>
+                <CXText variant="smallStrong" color={colors.primary}>{replyTo.sender?.name || "User"}</CXText>
+                <CXText variant="caption" numberOfLines={1}>{replyTo.text}</CXText>
+              </View>
+              <CXIconButton label="Remove reply" icon="close" size={24} onPress={() => setReplyTo(null)} backgroundColor={colors.transparent} />
+            </View>
+          )}
+          {editingMessage && (
+            <View style={styles.replyPreviewWrapper}>
+              <View style={styles.replyPreviewBar} />
+              <View style={[styles.flex, { paddingVertical: 8 }]}>
+                <CXText variant="smallStrong" color={colors.primary}>Editing message</CXText>
+                <CXText variant="caption" numberOfLines={1}>{editingMessage.text}</CXText>
+              </View>
+              <CXIconButton label="Cancel edit" icon="close" size={24} onPress={() => { setEditingMessage(null); setText(""); }} backgroundColor={colors.transparent} />
+            </View>
+          )}
+          <CXRow style={styles.composer}>
+            <CXIconButton icon="add" label="Add photo" size={38} backgroundColor={colors.backgroundLavender} onPress={() => setAttachmentSheetVisible(true)} />
+            <TextInput
+              value={text}
+              onChangeText={handleTextChange}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textFaint}
+              multiline
+              style={styles.composerInput}
+              onFocus={() => setEmojiPickerVisible(false)}
+            />
+            <CXIconButton
+              icon="happy-outline"
+              label="Add emoji"
+              size={36}
+              backgroundColor={colors.transparent}
+              color={emojiPickerVisible ? colors.primary : colors.textMuted}
+              onPress={() => {
+                if (!emojiPickerVisible) Keyboard.dismiss();
+                setEmojiPickerVisible(!emojiPickerVisible);
+              }}
+            />
+            {(text.trim() || media) && <CXIconButton icon="send" label="Send message" size={42} onPress={() => void send()} />}
+          </CXRow>
+          {emojiPickerVisible && (
+            <ScrollView style={{ height: 250, backgroundColor: colors.white, borderTopWidth: 1, borderColor: colors.border }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", padding: spacing.sm, justifyContent: "space-between" }}>
+                {["😂", "❤️", "👍", "🙏", "😢", "😮", "🔥", "💯", "✨", "😊", "🎉", "🙌", "🤔", "🙄", "💀", "👀", "😎", "🥳", "😭", "😡", "💩", "👻", "👽", "🤖", "🙈", "🙉", "🙊", "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼"].map(e => (
+                  <Pressable key={e} onPress={() => handleTextChange(`${text}${e}`)} style={{ padding: 10 }}>
+                    <Text style={{ fontSize: 32 }}>{e}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+        </> : visibleConversation?.type === "direct" ?
+          <CXText variant="small" color={colors.textMuted} align="center" style={{ padding: spacing.md }}>
+            You can only message friends.
+          </CXText> : null}
       </Reanimated.View>
 
       <CXActionSheet
@@ -826,7 +880,7 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
                 }}
                 style={styles.reactionBtn}
               >
-                <CXText style={{ fontSize: 24 }}>{emoji}</CXText>
+                <Text style={{ fontSize: 24 }}>{emoji}</Text>
               </Pressable>
             ))}
           </CXRow>
@@ -928,6 +982,26 @@ export function ConversationScreen({ navigation, route }: StackProps<"Conversati
   );
 }
 
+function MessageSkeleton({ mine }: { mine: boolean }) {
+  return (
+    <View style={[styles.messageRow, mine ? styles.messageRowMine : null]}>
+      <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther, { width: Math.random() * 100 + 100, height: 42, opacity: 0.5, backgroundColor: mine ? colors.primaryTint : colors.surfaceLavender }]} />
+    </View>
+  );
+}
+
+function ChatSkeletonList() {
+  return (
+    <View style={{ gap: spacing.sm, padding: spacing.md, width: '100%', height: '100%', justifyContent: 'flex-end', paddingBottom: 100 }}>
+      <MessageSkeleton mine={true} />
+      <MessageSkeleton mine={false} />
+      <MessageSkeleton mine={false} />
+      <MessageSkeleton mine={true} />
+      <MessageSkeleton mine={false} />
+    </View>
+  );
+}
+
 function MessageBubble({ message, mine, onLongPress, onReply, onRetry, onOpenImage, isGroup }: { message: any; mine: boolean; onLongPress?: () => void; onReply?: () => void; onRetry?: () => void; onOpenImage?: (url: string) => void; isGroup?: boolean }) {
   // Simple hash to assign a unique color to each user's name
   const nameColors = ["#E57373", "#F06292", "#BA68C8", "#9575CD", "#7986CB", "#64B5F6", "#4FC3F7", "#4DD0E1", "#4DB6AC", "#81C784", "#AED581", "#FF8A65"];
@@ -985,71 +1059,72 @@ function MessageBubble({ message, mine, onLongPress, onReply, onRetry, onOpenIma
   return (
     <GestureDetector gesture={swipeGesture}>
       <View style={styles.swipeContainer}>
-        <View style={styles.swipeReplyIcon}>
-          <Ionicons name="arrow-undo" size={18} color={colors.primary} />
-        </View>
         <Reanimated.View style={[styles.messageRow, mine && styles.messageRowMine, swipeStyle]}>
-      {!mine && isGroup && (
-        <View style={{ justifyContent: 'flex-end', marginBottom: 2, marginRight: 6 }}>
-          <CXAvatar source={message.sender?.avatarUrl} name={message.sender?.name || "User"} size={28} />
-        </View>
-      )}
-      <Pressable
-        style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}
-        onLongPress={onLongPress}
-        delayLongPress={300}
-      >
-        {!mine && isGroup && (
-          <CXText variant="smallStrong" style={{ color: senderColor, marginBottom: 2 }}>{message.sender?.name || "Member"}</CXText>
-        )}
-        {message.replyTo && (
-          <View style={[styles.replyQuote, mine ? styles.replyQuoteMine : styles.replyQuoteOther]}>
-            <View style={[styles.replyBar, mine ? styles.replyBarMine : styles.replyBarOther]} />
-            <View style={styles.flex}>
-              <CXText variant="smallStrong" color={mine ? colors.white : colors.primary}>{message.replyTo.sender?.name}</CXText>
-              <CXText variant="caption" color={mine ? "#EDE9FF" : colors.ink} numberOfLines={1}>{message.replyTo.text}</CXText>
+          {!mine && isGroup && (
+            <View style={{ justifyContent: 'flex-end', marginBottom: 2, marginRight: 6 }}>
+              <CXAvatar source={message.sender?.avatarUrl} name={message.sender?.name || "User"} size={28} />
             </View>
-          </View>
-        )}
-        {message.deletedForEveryoneAt ? (
-          <CXRow style={{ gap: spacing.xs }}>
-            <Ionicons name="ban-outline" size={15} color={mine ? "#EDE9FF" : colors.textMuted} />
-            <CXText color={mine ? "#EDE9FF" : colors.textMuted} style={{ fontStyle: "italic" }}>
-              This message was deleted
-            </CXText>
-          </CXRow>
-        ) : message.attachments && message.attachments.length > 0 && (
-          <View style={{ marginBottom: 4 }}>
-            {message.attachments.map((att: any, i: number) => <Pressable key={`${message._id}-${i}`}
-              onPress={() => onOpenImage?.(att.url)} accessibilityRole="button">
-              {att.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|webp)(\?|$)/i.test(att.url) ?
-                <Image source={{ uri: att.url }} style={{ width: 200, height: 200, borderRadius: 8, marginBottom: 4 }} /> :
-                <CXRow style={{ padding: spacing.sm, gap: spacing.xs }}>
-                  <Ionicons name="document-outline" size={20} color={mine ? colors.white : colors.ink} />
-                  <CXText variant="small" color={mine ? colors.white : colors.ink}>{att.name || "Open attachment"}</CXText>
-                </CXRow>}
-            </Pressable>)}
-          </View>
-        )}
-        {!message.deletedForEveryoneAt && !!message.text && <CXText color={mine ? colors.white : colors.ink}>{message.text}</CXText>}
-        <CXRow style={styles.messageMeta}>
-          <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>{timeString}</CXText>
-          {message.editedAt ? <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>edited</CXText> : null}
-          {mine ? (
-            <Pressable disabled={status !== "failed" || !onRetry} onPress={onRetry} hitSlop={8}>
-              <Ionicons name={iconName as any} size={14} color={iconColor} />
-            </Pressable>
-          ) : null}
-        </CXRow>
+          )}
+          <Pressable
+            style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}
+            onLongPress={onLongPress}
+            delayLongPress={300}
+          >
+            {!mine && isGroup && (
+              <CXText variant="smallStrong" style={{ color: senderColor, marginBottom: 2 }}>{message.sender?.name || "Member"}</CXText>
+            )}
+            {message.replyTo && (
+              <View style={[styles.replyQuote, mine ? styles.replyQuoteMine : styles.replyQuoteOther]}>
+                <View style={[styles.replyBar, mine ? styles.replyBarMine : styles.replyBarOther]} />
+                <View style={[styles.flex, { paddingVertical: 6, paddingRight: 8 }]}>
+                  <CXText variant="smallStrong" color={mine ? colors.white : colors.primary}>{message.replyTo.sender?.name}</CXText>
+                  <CXText variant="caption" color={mine ? "#EDE9FF" : colors.ink} numberOfLines={1}>{message.replyTo.text}</CXText>
+                </View>
+              </View>
+            )}
+            {message.deletedForEveryoneAt ? (
+              <CXRow style={{ gap: spacing.xs }}>
+                <Ionicons name="ban-outline" size={15} color={mine ? "#EDE9FF" : colors.textMuted} />
+                <CXText color={mine ? "#EDE9FF" : colors.textMuted} style={{ fontStyle: "italic" }}>
+                  This message was deleted
+                </CXText>
+              </CXRow>
+            ) : message.attachments && message.attachments.length > 0 && (
+              <View style={{ marginBottom: 4 }}>
+                {message.attachments.map((att: any, i: number) => <Pressable key={`${message._id}-${i}`}
+                  onPress={() => onOpenImage?.(att.url)} onLongPress={onLongPress} delayLongPress={300} accessibilityRole="button">
+                  {att.mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|webp)(\?|$)/i.test(att.url) ?
+                    <Image source={{ uri: att.url }} style={{ width: 200, height: 200, borderRadius: 8, marginBottom: 4 }} /> :
+                    <CXRow style={{ padding: spacing.sm, gap: spacing.xs }}>
+                      <Ionicons name="document-outline" size={20} color={mine ? colors.white : colors.ink} />
+                      <CXText variant="small" color={mine ? colors.white : colors.ink}>{att.name || "Open attachment"}</CXText>
+                    </CXRow>}
+                </Pressable>)}
+              </View>
+            )}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+              {!message.deletedForEveryoneAt && !!message.text && (
+                <CXText style={{ flexShrink: 1, marginRight: 8 }} color={mine ? colors.white : colors.ink}>{message.text}</CXText>
+              )}
+              <CXRow style={styles.messageMeta}>
+                <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>{timeString}</CXText>
+                {message.editedAt ? <CXText variant="caption" color={mine ? "#EDE9FF" : colors.textMuted}>edited</CXText> : null}
+                {mine ? (
+                  <Pressable disabled={status !== "failed" || !onRetry} onPress={onRetry} hitSlop={8}>
+                    <Ionicons name={iconName as any} size={14} color={iconColor} />
+                  </Pressable>
+                ) : null}
+              </CXRow>
+            </View>
 
-        {message.reactions && message.reactions.length > 0 && (
-          <View style={[styles.reactionBadge, mine ? styles.reactionBadgeMine : styles.reactionBadgeOther]}>
-            <CXText style={styles.reactionText}>
-              {reactionSummary}
-            </CXText>
-          </View>
-        )}
-      </Pressable>
+            {message.reactions && message.reactions.length > 0 && (
+              <View style={[styles.reactionBadge, mine ? styles.reactionBadgeMine : styles.reactionBadgeOther]}>
+                <Text style={styles.reactionText}>
+                  {reactionSummary}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         </Reanimated.View>
       </View>
     </GestureDetector>
@@ -1082,7 +1157,7 @@ export function NewChatScreen({ navigation }: StackProps<"NewChat">) {
   };
 
   const createGroup = () => {
-    navigation.navigate("CreateChatGroup" as any);
+    navigation.navigate("CreateGroup" as any);
   };
 
   const filtered = friends.filter((user) =>
@@ -1103,7 +1178,7 @@ export function NewChatScreen({ navigation }: StackProps<"NewChat">) {
           <Pressable onPress={createGroup}>
             <CXListRow
               icon="people-outline"
-              title="New Group"
+              title="New Study Group"
               iconColor={colors.primary}
             />
           </Pressable>
@@ -1338,32 +1413,101 @@ export function ChatInfoScreen({ navigation, route }: StackProps<"ChatInfo">) {
   const admins = new Set((conversation.admins || []).map((admin: any) => typeof admin === "string" ? admin : admin._id));
 
   return <CXScrollScreen>
-    <CXHeader title={isGroup ? "Group Info" : "Chat Info"} onBack={navigation.goBack} />
-    <View style={styles.chatInfoHero}>
-      <CXAvatar name={title} source={avatarUrl} size={86} />
-      <CXText variant="h3">{title}</CXText>
-      {isGroup && <CXText variant="caption" color={colors.textMuted}>{conversation.participants.length} members</CXText>}
-      {!isGroup && peer?.username && <CXText variant="caption" color={colors.textMuted}>@{peer.username}</CXText>}
-    </View>
-    {!isGroup && peer && <CXCard>
-      <CXListRow icon="person-outline" title="View Profile" subtitle="See their CampusX profile"
-        onPress={() => navigation.navigate("UserProfile", { userId: peer._id })} />
-    </CXCard>}
-    {isGroup && <>
-      <CXSectionHeader title="Members" />
-      <CXCard>
-        {conversation.participants.map((participant: any) => <Pressable key={participant._id}
-          onPress={() => navigation.navigate("UserProfile", { userId: participant._id })}
-          style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.sm }} accessibilityRole="button">
-          <CXAvatar name={participant.name || "Member"} source={participant.avatarUrl} size={42} />
-          <View style={styles.flex}>
-            <CXText variant="bodyStrong">{participant.name || "Member"}</CXText>
-            {admins.has(participant._id) && <CXText variant="caption" color={colors.primary}>Admin</CXText>}
+          <CXHeader title={isGroup ? "Group Info" : "Chat Info"} onBack={navigation.goBack} />
+      <View style={[styles.chatInfoHero, { paddingVertical: spacing.xxl, alignItems: "center", backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.borderSoft, marginBottom: spacing.md }]}>
+        <LinearGradient
+          colors={[colors.primary, "#A855F7"]}
+          style={{
+            padding: 4,
+            borderRadius: 999,
+            marginBottom: spacing.md,
+            shadowColor: colors.primary,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 16,
+            elevation: 10
+          }}
+        >
+          <View style={{ backgroundColor: colors.surface, padding: 2, borderRadius: 999 }}>
+            <CXAvatar name={title} source={avatarUrl} size={100} />
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </Pressable>)}
-      </CXCard>
-    </>}
+        </LinearGradient>
+  
+        <CXText variant="h2" style={{ textAlign: "center", paddingHorizontal: spacing.md }}>{title}</CXText>
+  
+        {isGroup && (
+          <View style={{
+            backgroundColor: colors.primary + "15",
+            paddingHorizontal: spacing.md,
+            paddingVertical: 6,
+            borderRadius: radius.pill,
+            marginTop: spacing.sm
+          }}>
+            <CXText variant="bodyStrong" color={colors.primary}>{conversation.participants.length} Members</CXText>
+          </View>
+        )}
+  
+        {!isGroup && peer?.username && (
+          <CXText variant="body" color={colors.textMuted} style={{ marginTop: spacing.xs }}>@{peer.username}</CXText>
+        )}
+      </View>
+  
+      {!isGroup && peer && (
+        <View style={{ paddingHorizontal: spacing.md, marginBottom: spacing.lg }}>
+          <CXCard style={{ shadowColor: colors.ink, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 }}>
+          <CXListRow
+            icon="person-outline"
+            title="View Profile"
+            subtitle="See their CampusX profile"
+            onPress={() => navigation.navigate("UserProfile", { userId: peer._id })}
+          />
+        </CXCard>
+      </View>
+    )}
+
+    {isGroup && (
+      <View style={{ paddingHorizontal: spacing.sm, paddingBottom: spacing.xl }}>
+        <CXSectionHeader title="Members" />
+        <View style={{ backgroundColor: colors.surface, borderRadius: radius.xl, overflow: "hidden" }}>
+          {conversation.participants.map((participant: any, index: number) => (
+            <Pressable
+              key={participant._id}
+              onPress={() => navigation.navigate("UserProfile", { userId: participant._id })}
+              style={({ pressed }) => [
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing.md,
+                  padding: spacing.md,
+                  borderBottomWidth: index < conversation.participants.length - 1 ? 1 : 0,
+                  borderBottomColor: colors.border
+                },
+                pressed && { backgroundColor: colors.background }
+              ]}
+              accessibilityRole="button"
+            >
+              <CXAvatar name={participant.name || "Member"} source={participant.avatarUrl} size={46} />
+              <View style={styles.flex}>
+                <CXText variant="bodyStrong">{participant.name || "Member"}</CXText>
+                {admins.has(participant._id) && (
+                  <View style={{
+                    alignSelf: "flex-start",
+                    backgroundColor: colors.primary + "15",
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                    marginTop: 2
+                  }}>
+                    <CXText variant="caption" color={colors.primary}>Admin</CXText>
+                  </View>
+                )}
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.textFaint} />
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    )}
   </CXScrollScreen>;
 }
 export function AIChatScreen({ route, navigation }: StackProps<"AIChat">) {
@@ -1442,9 +1586,9 @@ export function AIChatScreen({ route, navigation }: StackProps<"AIChat">) {
           backgroundColor={colors.transparent}
           onPress={navigation.goBack}
         />
-        <LinearGradient colors={["#6366F1", "#A855F7"]} style={[styles.aiAvatar, { width: 38, height: 38, borderRadius: 19, backgroundColor: 'transparent' }]}>
-          <Ionicons name="sparkles" size={18} color={colors.white} />
-        </LinearGradient>
+        <View style={[styles.aiAvatar, { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.white, borderStyle: 'solid', borderWidth: 1, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name="sparkles" size={18} color={colors.primary} />
+        </View>
         <View style={styles.flex}>
           <CXText variant="bodyStrong" style={{ fontSize: 16 }}>CampusAI</CXText>
           <CXText variant="caption" color={colors.primary} style={{ fontWeight: "600" }}>
@@ -1470,34 +1614,57 @@ export function AIChatScreen({ route, navigation }: StackProps<"AIChat">) {
           />
         </CXRow>
       </CXRow>
-        <ScrollView
-          contentContainerStyle={[styles.aiMessages, { paddingBottom: spacing.xxl }]}
-          showsVerticalScrollIndicator={false}
-        >
+      <ScrollView
+        contentContainerStyle={[styles.aiMessages, { paddingBottom: spacing.xxl }]}
+        showsVerticalScrollIndicator={false}
+      >
         {messages.length === 0 && (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40, paddingHorizontal: spacing.lg }}>
-            <LinearGradient colors={["#6366F1", "#A855F7"]} style={{ padding: 20, borderRadius: 32, marginBottom: 20, shadowColor: "#6366F1", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }}>
-              <Ionicons name="sparkles" size={42} color={colors.white} />
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 60, paddingHorizontal: spacing.xl }}>
+            <LinearGradient
+              colors={["#EEF2FF", "#F5F3FF"]}
+              style={{ width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg }}
+            >
+              <Ionicons name="sparkles" size={40} color="#6366F1" />
             </LinearGradient>
-            <CXText variant="h2" align="center" style={{ marginBottom: 8 }}>
-              CampusAI
+            <CXText variant="h2" align="center" style={{ marginBottom: spacing.xs, color: "#312E81" }}>
+              How can I help you today?
             </CXText>
-            <CXText variant="body" color={colors.textMuted} align="center" style={{ marginBottom: 32 }}>
-              Your personal study assistant. Ask me anything about your courses, schedules, or ideas.
+            <CXText variant="body" align="center" style={{ marginBottom: spacing.xl, color: "#6B7280" }}>
+              Ask anything about your courses, schedules, or ideas.
             </CXText>
-            
-            <View style={{ width: '100%', gap: 12 }}>
+
+            <View style={{ width: '100%', gap: spacing.md }}>
               {[
-                { icon: "book", text: "Explain a complex topic" },
-                { icon: "pencil", text: "Help me write an essay outline" },
-                { icon: "bulb", text: "Quiz me on my subjects" },
+                { icon: "book-outline", text: "Explain a complex topic" },
+                { icon: "pencil-outline", text: "Help me write an essay" },
+                { icon: "bulb-outline", text: "Quiz me on my subjects" },
               ].map((item, idx) => (
-                <Pressable key={idx} onPress={() => { setText(item.text); }} style={({pressed}) => [{ backgroundColor: colors.white, padding: 16, borderRadius: radius.xl, flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderColor: colors.borderSoft, shadowColor: "#000", shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 }, pressed && {opacity: 0.7, transform: [{scale: 0.98}]}]}>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#F5F3FF", alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name={item.icon as any} size={20} color="#8B5CF6" />
+                <Pressable
+                  key={idx}
+                  onPress={() => { setText(item.text); }}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: colors.white,
+                      padding: spacing.md,
+                      borderRadius: radius.lg,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: spacing.md,
+                      borderWidth: 1,
+                      borderColor: "#EEF2FF",
+                      shadowColor: "#6366F1",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 4,
+                      elevation: 1
+                    },
+                    pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+                  ]}
+                >
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#F3F4F6", alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name={item.icon as any} size={18} color="#4B5563" />
                   </View>
-                  <CXText variant="bodyStrong">{item.text}</CXText>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textFaint} style={{ marginLeft: 'auto' }} />
+                  <CXText variant="bodyStrong" style={{ color: "#4B5563" }}>{item.text}</CXText>
                 </Pressable>
               ))}
             </View>
@@ -1543,25 +1710,25 @@ export function AIChatScreen({ route, navigation }: StackProps<"AIChat">) {
         {error ? <CXText color={colors.danger}>{error}</CXText> : null}
       </ScrollView>
       <Animated.View style={{ paddingBottom: keyboardHeightAnim }}>
-      <CXRow style={[styles.composer, { paddingVertical: spacing.sm, paddingHorizontal: spacing.md }]}>
-        <TextInput
-          value={text}
-          onChangeText={setText}
-          placeholder="Ask CampusAI anything..."
-          placeholderTextColor={colors.textFaint}
-          multiline
-          style={[styles.composerInput, { backgroundColor: "#F3F4F6", borderColor: colors.borderSoft, borderWidth: 1 }]}
-        />
-        <CXIconButton
-          icon="send"
-          label="Send"
-          size={46}
-          backgroundColor={text.trim() ? colors.primary : "#E5E7EB"}
-          color={colors.white}
-          disabled={loading || !text.trim()}
-          onPress={() => void send()}
-        />
-      </CXRow>
+        <CXRow style={[styles.composer, { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.borderSoft }]}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: "#F3F4F6", borderRadius: 24, paddingHorizontal: spacing.sm }}>
+            <TextInput
+              value={text}
+              onChangeText={setText}
+              placeholder="Message CampusAI..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              style={[styles.composerInput, { flex: 1, maxHeight: 100, minHeight: 40, paddingTop: 10, paddingBottom: 10, paddingHorizontal: 8, fontSize: 16 }]}
+            />
+            <Pressable
+              disabled={loading || !text.trim()}
+              onPress={() => void send()}
+              style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: text.trim() ? "#6366F1" : "#E5E7EB", alignItems: 'center', justifyContent: 'center', marginLeft: 8 }}
+            >
+              <Ionicons name="arrow-up" size={20} color={colors.white} />
+            </Pressable>
+          </View>
+        </CXRow>
       </Animated.View>
     </CXScreen>
   );
@@ -1663,7 +1830,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     backgroundColor: colors.white,
   },
-  messageList: { padding: spacing.md, gap: spacing.sm },
+  messageList: { padding: spacing.md, gap: 4 },
   swipeContainer: { position: "relative" },
   swipeReplyIcon: {
     position: "absolute",
@@ -1681,9 +1848,10 @@ const styles = StyleSheet.create({
   messageRowMine: { alignItems: "flex-end" },
   bubble: {
     maxWidth: "85%",
-    borderRadius: radius.xl,
-    padding: spacing.md,
-    gap: spacing.xs,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 2,
   },
   bubbleMine: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
   bubbleOther: {

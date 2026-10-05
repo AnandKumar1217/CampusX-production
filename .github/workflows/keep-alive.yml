@@ -1,0 +1,27 @@
+name: Smart Keep-Alive Scheduler
+
+on:
+  schedule:
+    # Runs at minute 2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57 of every hour
+    - cron: '2/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install mongoose
+
+      - name: Run Keep-Alive Script
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: node scripts/keep-alive.js
