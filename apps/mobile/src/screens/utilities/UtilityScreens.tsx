@@ -30,6 +30,7 @@ import {
   CXSectionHeader,
   CXText,
   CXBottomActionArea,
+  CXSnackbar,
 } from "@/components/ui";
 
 import { api } from "@/services/api";
@@ -52,6 +53,8 @@ export function NotificationsScreen({
   const queryClient = useQueryClient();
   const fetchUnreadNotifications = useAppStore((state) => state.fetchUnreadNotifications);
   const [activeFilter, setActiveFilter] = useState<string>("All");
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const userId = useAppStore((state) => state.user?.id);
   const {
@@ -88,13 +91,15 @@ export function NotificationsScreen({
       void queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
       void fetchUnreadNotifications();
     } catch {
-      Alert.alert("Couldn't update notifications", "Please try again.");
+      setSnackbarMessage("Couldn't update notifications. Please try again.");
+      setSnackbarVisible(true);
     }
   };
 
   const openTarget = (item: Notification) => {
     if (!item.target || !item.target.route) {
-      Alert.alert("Content unavailable", "This notification has no available destination.");
+      setSnackbarMessage("This notification has no available destination.");
+      setSnackbarVisible(true);
       return;
     }
     handleNotification(item.target);
@@ -169,7 +174,8 @@ export function NotificationsScreen({
                         void queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
                         void fetchUnreadNotifications();
                       } catch {
-                        Alert.alert("Couldn't mark notification as read", "Please try again later.");
+                        setSnackbarMessage("Couldn't mark notification as read. Please try again later.");
+                        setSnackbarVisible(true);
                       }
                     }
                     openTarget(item);
@@ -218,6 +224,12 @@ export function NotificationsScreen({
           <CXButton label="Load more" loading={isFetchingNextPage} onPress={() => void fetchNextPage()} />
         ) : null}
       </ScrollView>
+      <CXSnackbar
+        visible={snackbarVisible}
+        message={snackbarMessage}
+        onDismiss={() => setSnackbarVisible(false)}
+        type="error"
+      />
     </CXScreen>
   );
 }
