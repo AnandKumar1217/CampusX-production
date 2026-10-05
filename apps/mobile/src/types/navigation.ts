@@ -13,7 +13,7 @@ export type RootStackParamList = {
   ResetPassword: { token?: string } | undefined;
   SignupAccount: undefined;
   SignupProfile: undefined;
-  SignupSuccess: undefined;
+  SignupSuccess: { firstName?: string } | undefined;
   Main: NavigatorScreenParams<MainTabsParamList> | undefined;
   Feed: undefined;
   PostDetails: { postId: string };

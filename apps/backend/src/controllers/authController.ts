@@ -36,7 +36,7 @@ export async function signupController(request: Request, response: Response) {
 export async function checkIdentityController(request: Request, response: Response) {
   return sendSuccess(
     response,
-    await checkIdentity(request.body.email, request.body.username),
+    await checkIdentity(request.body.email, request.body.username, request.body.otp),
     "Identity available",
   );
 }

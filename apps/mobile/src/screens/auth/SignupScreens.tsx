@@ -73,20 +73,49 @@ export function SignupAccountScreen({
   navigation,
 }: NativeStackScreenProps<RootStackParamList, "SignupAccount">) {
   const draft = useSignupStore();
-  const { control, handleSubmit, setError, formState: { isSubmitting } } = useForm<z.infer<typeof accountSchema>>({
+  const { control, handleSubmit, setError, setValue, watch, formState: { isSubmitting } } = useForm<z.infer<typeof accountSchema>>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       fullName: draft.fullName,
       username: draft.username,
       email: draft.email,
-      otp: "",
       password: draft.password,
     },
   });
+  
+  const emailValue = watch("email");
+  const otpValue = watch("otp");
+  
   const [usernameSuggestions, setUsernameSuggestions] = React.useState<string[]>([]);
   const [showOtp, setShowOtp] = React.useState(false);
+  const [otpVerified, setOtpVerified] = React.useState(false);
+  const [verifyingOtp, setVerifyingOtp] = React.useState(false);
 
   const [sendingOtp, setSendingOtp] = React.useState(false);
+
+  React.useEffect(() => {
+    setOtpVerified(false);
+    setValue("otp", "");
+    setShowOtp(false);
+  }, [emailValue, setValue]);
+
+  React.useEffect(() => {
+    if (otpValue && otpValue.length === 6 && !otpVerified && !verifyingOtp) {
+      (async () => {
+        try {
+          setVerifyingOtp(true);
+          await api.post("/auth/check-identity", { email: emailValue, otp: otpValue });
+          setOtpVerified(true);
+          setError("otp", { message: undefined });
+        } catch (err: any) {
+          setOtpVerified(false);
+          setError("otp", { message: getApiErrorMessage(err) });
+        } finally {
+          setVerifyingOtp(false);
+        }
+      })();
+    }
+  }, [otpValue, emailValue, otpVerified, verifyingOtp, setError]);
 
   const submit = handleSubmit(async (values) => {
     try {
@@ -207,6 +236,8 @@ export function SignupAccountScreen({
                   }
                   try {
                     setSendingOtp(true);
+                    setOtpVerified(false);
+                    setValue("otp", "");
                     await api.post("/auth/send-verification-otp", { email });
                     setShowOtp(true);
                   } catch (err: any) {
@@ -247,6 +278,8 @@ export function SignupAccountScreen({
               onBlur={field.onBlur}
               onChangeText={field.onChange}
               error={fieldState.error?.message}
+              hint={otpVerified ? "✓ Email verified" : verifyingOtp ? "Verifying..." : undefined}
+              editable={!otpVerified}
             />
           )}
         />
@@ -268,7 +301,7 @@ export function SignupAccountScreen({
           />
         )}
       />
-      <CXButton label="Continue" iconRight="arrow-forward" loading={isSubmitting} onPress={submit} />
+      <CXButton label="Continue" iconRight="arrow-forward" loading={isSubmitting} disabled={!otpVerified} onPress={submit} />
       <CXText variant="caption" color={colors.textMuted} align="center">
         By continuing, you agree to our{" "}
         <CXText variant="caption" color={colors.primary}>
@@ -416,8 +449,9 @@ export function SignupProfileScreen({
               response.data.data.refreshToken,
               response.data.data.user
             );
+            const firstName = draft.fullName.split(" ")[0];
             draft.reset();
-            navigation.reset({ index: 0, routes: [{ name: "SignupSuccess" }] });
+            navigation.reset({ index: 0, routes: [{ name: "SignupSuccess", params: { firstName } }] });
           } catch (caught) {
             setError(getApiErrorMessage(caught));
           } finally {
@@ -446,8 +480,9 @@ function SignupShell({ children }: React.PropsWithChildren) {
 
 export function SignupSuccessScreen({
   navigation,
+  route,
 }: NativeStackScreenProps<RootStackParamList, "SignupSuccess">) {
-  const draft = useSignupStore();
+  const firstName = route.params?.firstName || "Student";
   
   return (
     <SignupShell>
@@ -457,13 +492,12 @@ export function SignupSuccessScreen({
         </View>
         <CXText variant="h1" align="center">Account Created!</CXText>
         <CXText color={colors.textMuted} align="center" style={{ paddingHorizontal: 20 }}>
-          Welcome to CampusX, {draft.fullName.split(" ")[0] || "Student"}! Your account has been successfully set up.
+          Welcome to CampusX, {firstName}! Your account has been successfully set up.
         </CXText>
       </View>
       <CXButton
         label="Go to Dashboard"
         onPress={() => {
-          draft.reset();
           navigation.reset({ index: 0, routes: [{ name: "Main" }] });
         }}
       />

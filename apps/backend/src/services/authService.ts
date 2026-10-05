@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
 import crypto, { randomUUID } from "node:crypto";
@@ -70,19 +71,28 @@ function generateOtp() {
   return crypto.randomInt(100000, 1000000).toString();
 }
 
-async function issueSession(user: AuthUser, meta: SessionMeta) {
+async function issueSession(user: AuthUser, meta: SessionMeta, session?: mongoose.ClientSession) {
   const jti = nanoid(24);
   const accessToken = createAccessToken(user._id.toString());
   const refreshToken = createRefreshToken(user._id.toString(), jti);
   const expiresAt = new Date(
     Date.now() + env.JWT_REFRESH_TTL_DAYS * 86_400_000,
   );
-  await RefreshToken.create({
-    user: user._id,
-    tokenHash: hashToken(refreshToken),
-    expiresAt,
-    ...meta,
-  });
+  if (session) {
+    await RefreshToken.create([{
+      user: user._id,
+      tokenHash: hashToken(refreshToken),
+      expiresAt,
+      ...meta,
+    }], { session });
+  } else {
+    await RefreshToken.create({
+      user: user._id,
+      tokenHash: hashToken(refreshToken),
+      expiresAt,
+      ...meta,
+    });
+  }
   return { user: safeUser(user), accessToken, refreshToken };
 }
 
@@ -148,23 +158,42 @@ export async function signup(input: SignupInput, meta: SessionMeta) {
   const email = input.email.trim().toLowerCase();
   const username = input.username.trim().toLowerCase();
   const passwordHash = await bcrypt.hash(input.password, 12);
-  const user = await User.create({
-    name: input.fullName.trim(),
-    email,
-    username,
-    passwordHash,
-    college: input.college.trim(),
-    department: input.department.trim(),
-    academicYear: input.academicYear,
-    interests: input.interests ?? [],
-    qrToken: await generateUniqueQrToken(),
-    emailVerified: true,
-  });
+  const qrToken = await generateUniqueQrToken();
 
-  // OTP is verified and user created successfully, delete OTP
-  await EmailOtp.deleteMany({ email, purpose: "signup_verification" });
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  return issueSession(user, meta);
+  try {
+    const [user] = await User.create([{
+      name: input.fullName.trim(),
+      email,
+      username,
+      passwordHash,
+      college: input.college.trim(),
+      department: input.department.trim(),
+      academicYear: input.academicYear,
+      interests: input.interests ?? [],
+      qrToken,
+      emailVerified: true,
+    }], { session });
+
+    if (!user) {
+      throw new AppError(500, "User creation failed", "INTERNAL_ERROR");
+    }
+
+    const sessionData = await issueSession(user, meta, session);
+
+    // OTP is verified and user created successfully, delete OTP
+    await EmailOtp.deleteMany({ email, purpose: "signup_verification" }, { session });
+
+    await session.commitTransaction();
+    return sessionData;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 }
 
 export async function login(

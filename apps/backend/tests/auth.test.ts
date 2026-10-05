@@ -8,6 +8,21 @@ import * as emailService from "../src/services/emailService";
 import { AppError } from "../src/utils/http";
 import * as tokenService from "../src/services/tokenService";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
+
+const mockSession = vi.hoisted(() => ({
+  startTransaction: vi.fn(),
+  commitTransaction: vi.fn(),
+  abortTransaction: vi.fn(),
+  endSession: vi.fn(),
+}));
+
+vi.mock("mongoose", () => ({
+  default: {
+    startSession: vi.fn().mockResolvedValue(mockSession)
+  },
+  startSession: vi.fn().mockResolvedValue(mockSession)
+}));
 
 vi.mock("../src/models/User", () => ({
   User: {
@@ -25,6 +40,14 @@ vi.mock("../src/models/EmailOtp", () => ({
     deleteMany: vi.fn(),
     deleteOne: vi.fn(),
     create: vi.fn(),
+  }
+}));
+
+vi.mock("../src/models/RefreshToken", () => ({
+  RefreshToken: {
+    create: vi.fn(),
+    findOne: vi.fn(),
+    updateOne: vi.fn(),
   }
 }));
 
@@ -237,7 +260,7 @@ describe("Auth Service Tests", () => {
       vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
       
       const mockUser = { _id: "user_1", name: "Test", username: "test", email: "test@example.com", college: "College", department: "Dept", academicYear: "1", interests: [], emailVerified: true };
-      vi.mocked(User.create).mockResolvedValue(mockUser as any);
+      vi.mocked(User.create).mockResolvedValue([mockUser] as any);
       
       await authService.signup({
         fullName: "Test",
@@ -252,14 +275,97 @@ describe("Auth Service Tests", () => {
 
       // Verify User created exactly once with emailVerified: true
       expect(User.create).toHaveBeenCalledTimes(1);
-      expect(User.create).toHaveBeenCalledWith(expect.objectContaining({
+      expect(User.create).toHaveBeenCalledWith([expect.objectContaining({
         email: "test@example.com",
         username: "test",
         emailVerified: true
-      }));
+      })], { session: mockSession });
 
       // Verify OTP is deleted AFTER verification
-      expect(EmailOtp.deleteMany).toHaveBeenCalledWith({ email: "test@example.com", purpose: "signup_verification" });
+      expect(EmailOtp.deleteMany).toHaveBeenCalledWith({ email: "test@example.com", purpose: "signup_verification" }, { session: mockSession });
+      expect(mockSession.commitTransaction).toHaveBeenCalled();
+    });
+
+    it("User.create failure aborts transaction and leaves OTP", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000) 
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      vi.mocked(User.create).mockRejectedValue(new Error("DB Error"));
+      
+      await expect(authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "123456"
+      }, {})).rejects.toThrowError("DB Error");
+
+      expect(mockSession.abortTransaction).toHaveBeenCalled();
+      expect(EmailOtp.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("RefreshToken persistence failure aborts transaction and leaves OTP", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000) 
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      const mockUser = { _id: "user_1", name: "Test", username: "test", email: "test@example.com", college: "College", department: "Dept", academicYear: "1", interests: [], emailVerified: true };
+      vi.mocked(User.create).mockResolvedValue([mockUser] as any);
+      
+      vi.mocked(RefreshToken.create).mockRejectedValue(new Error("Refresh Token Error"));
+      
+      await expect(authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "123456"
+      }, {})).rejects.toThrowError("Refresh Token Error");
+
+      expect(mockSession.abortTransaction).toHaveBeenCalled();
+      expect(EmailOtp.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it("OTP consumption failure aborts transaction", async () => {
+      vi.mocked(User.exists).mockResolvedValue(null);
+      const mockRecord = { 
+        codeHash: "hashed_123456", 
+        expiresAt: new Date(Date.now() + 10000) 
+      };
+      vi.mocked(EmailOtp.findOne).mockResolvedValue(mockRecord as any);
+      
+      const mockUser = { _id: "user_1", name: "Test", username: "test", email: "test@example.com", college: "College", department: "Dept", academicYear: "1", interests: [], emailVerified: true };
+      vi.mocked(User.create).mockResolvedValue([mockUser] as any);
+      vi.mocked(RefreshToken.create).mockResolvedValue({} as any);
+      
+      vi.mocked(EmailOtp.deleteMany).mockRejectedValue(new Error("OTP Delete Error"));
+      
+      await expect(authService.signup({
+        fullName: "Test",
+        username: "test",
+        email: "test@example.com",
+        password: "password123",
+        college: "College",
+        department: "Dept",
+        academicYear: "1",
+        otp: "123456"
+      }, {})).rejects.toThrowError("OTP Delete Error");
+
+      expect(mockSession.abortTransaction).toHaveBeenCalled();
+      expect(mockSession.commitTransaction).not.toHaveBeenCalled();
     });
   });
 
