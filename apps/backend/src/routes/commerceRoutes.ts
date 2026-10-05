@@ -58,7 +58,7 @@ eventRouter.post(
         imagePublicId: z.string().optional(),
         category: z.string().max(80),
         startsAt: z.coerce.date(),
-        endsAt: z.coerce.date(),
+        endsAt: z.coerce.date().optional(),
         location: z.object({
           name: z.string().max(200),
           coordinates: z.tuple([z.number(), z.number()]).optional(),
@@ -70,7 +70,7 @@ eventRouter.post(
       })
       .parse(request.body);
 
-    if (input.endsAt <= input.startsAt) {
+    if (input.endsAt && input.endsAt <= input.startsAt) {
       throw new AppError(400, "End time must be after start time", "INVALID_DATES");
     }
     if (input.registrationDeadline && input.registrationDeadline > input.startsAt) {
