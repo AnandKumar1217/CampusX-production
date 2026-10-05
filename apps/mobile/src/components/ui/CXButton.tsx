@@ -121,7 +121,7 @@ type IconButtonProps = PressableProps & {
 export function CXIconButton({
   icon,
   label,
-  size = 30,
+  size = 40,
   color = colors.primary,
   backgroundColor = colors.surfaceLavender,
   badge,

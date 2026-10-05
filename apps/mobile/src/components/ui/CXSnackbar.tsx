@@ -69,8 +69,8 @@ export function CXSnackbar({
       pointerEvents="none"
     >
       <View style={[styles.content, type === 'error' && styles.errorContent]}>
-        <Ionicons name={type === 'error' ? "alert-circle" : "checkmark-circle"} size={20} color={colors.white} />
-        <CXText variant="bodyStrong" color={colors.white} style={styles.text}>
+        <Ionicons name={type === 'error' ? "alert-circle" : "checkmark-circle"} size={18} color={colors.white} />
+        <CXText variant="smallStrong" color={colors.white} style={styles.text}>
           {message}
         </CXText>
       </View>
@@ -90,29 +90,22 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary, // Purple color from theme
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    borderRadius: 20, // Curved corners, not completely pill-shaped
-    // Super 3D effect
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.8,
-    shadowRadius: 16,
-    elevation: 12,
-    borderWidth: 1.5,
-    borderColor: '#987BFC', // Lighter purple for a top-edge highlight effect
-    borderBottomWidth: 3, // Thicker bottom border for 3D depth
-    borderBottomColor: colors.primaryDark,
+    backgroundColor: colors.ink, 
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 4,
+    borderRadius: 24, 
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   errorContent: {
     backgroundColor: colors.danger,
     shadowColor: colors.danger,
-    borderColor: '#ef4444',
-    borderBottomColor: '#b91c1c',
   },
   text: {
-    marginLeft: spacing.md,
-    fontSize: 15,
+    marginLeft: spacing.sm,
+    flex: 1,
   },
 });
