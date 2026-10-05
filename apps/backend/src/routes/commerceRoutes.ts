@@ -401,7 +401,7 @@ marketplaceRouter.get(
     // Apply Cloudinary transformations to coverImage
     const formattedItems = items.map(item => {
       let coverImage = item.imagePublicIds?.[0] 
-        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
         : null;
       
       const formatted: any = {
@@ -498,7 +498,7 @@ marketplaceRouter.get(
     
     const formattedItems = items.map(item => {
       let coverImage = item.imagePublicIds?.[0] 
-        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
         : null;
       return { ...item, coverImage, imagePublicIds: undefined };
     });
@@ -551,7 +551,7 @@ marketplaceRouter.get(
       
     const formattedItems = items.map(item => {
       let coverImage = item.imagePublicIds?.[0] 
-        ? `https://res.cloudinary.com/dzs0qjuzm/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
+        ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/w_500,c_fill,f_auto,q_auto/${item.imagePublicIds[0]}`
         : null;
       return { ...item, coverImage, imagePublicIds: undefined };
     });

@@ -17,7 +17,7 @@ const mapListing = (item: any): Listing => ({
   ...item,
   id: item._id || item.id,
   seller: mapUser(item.seller),
-  images: item.images || (item.coverImage ? [item.coverImage] : (item.image ? [item.image] : [])),
+  images: (item.images && item.images.length > 0) ? item.images : (item.coverImage ? [item.coverImage] : (item.image ? [item.image] : [])),
   views: item.views || 0,
 });
 
