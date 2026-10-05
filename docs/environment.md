@@ -1,0 +1,3 @@
+# Environment Variables
+
+See root and apps/.env.example files...

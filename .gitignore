@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 
-# Environment files (examples remain trackable)
+# Environment files
 .env
 .env.*
 !.env.example
@@ -22,20 +22,38 @@ apps/mobile/dist-check/
 apps/mobile/android/
 apps/mobile/ios/
 artifacts/android/
+
+# Mobile Builds
 *.apk
 *.aab
 
-# Local Android signing and SDK configuration
-local.properties
+# Keystores & Credentials
 *.jks
 *.keystore
+local.properties
+
+# Generated files
+config.json
+rn_config.json
+apps/mobile/config.json
+apps/mobile/rn_config.json
 
 # Editors, operating systems, and diagnostics
 .vscode/
 .DS_Store
+
+# Logs and debug output
 *.log
+logcat*
+crash_log*
+fsck*
 hs_err_pid*.log
-temp_*
-scratch_*
+
+# Temp files
+*.tmp
+*.bak
+*.old
+temp*/
+scratch*/
 docs/reports/
 __SAFE_TO_DELETE__/

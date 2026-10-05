@@ -1,0 +1,3 @@
+# Testing
+
+Backend tests with Vitest, mobile tests with Jest/Vitest...

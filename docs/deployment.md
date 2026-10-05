@@ -1,0 +1,3 @@
+# Deployment
+
+Render for backend, EAS for mobile...
