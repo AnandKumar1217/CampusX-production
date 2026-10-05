@@ -58,6 +58,8 @@ import { ChatsScreen } from "@/screens/main/ChatsScreen";
 import { DiscoverScreen } from "@/screens/main/DiscoverScreen";
 import { HomeScreen } from "@/screens/main/HomeScreen";
 import { ProfileScreen } from "@/screens/main/ProfileScreen";
+import { AboutScreen } from "@/screens/main/AboutScreen";
+import { HelpSupportScreen } from "@/screens/main/HelpSupportScreen";
 import { EditProfileScreen } from "@/screens/main/EditProfileScreen";
 import {
   FeedScreen,
@@ -278,6 +280,14 @@ export function AppNavigator() {
         <Stack.Screen
           name="LocationSettings"
           component={LocationSettingsScreen}
+        />
+        <Stack.Screen
+          name="AboutCampusX"
+          component={AboutScreen}
+        />
+        <Stack.Screen
+          name="HelpSupport"
+          component={HelpSupportScreen}
         />
 
         <Stack.Screen name="Timetable" component={TimetableScreen} />

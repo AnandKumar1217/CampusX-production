@@ -43,6 +43,8 @@ export type RootStackParamList = {
   StoryViewer: { storyId: string };
 
   LocationSettings: undefined;
+  AboutCampusX: undefined;
+  HelpSupport: undefined;
 
   Timetable: undefined;
   Calendar: undefined;

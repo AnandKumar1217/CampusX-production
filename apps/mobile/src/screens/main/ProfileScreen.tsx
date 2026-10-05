@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useFocusEffect } from "@react-navigation/native";
 import { useEffect, useState, useCallback } from "react";
-import { Pressable, ScrollView, StyleSheet, View, Share, BackHandler } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, Share, BackHandler, Linking, Alert } from "react-native";
 
 import {
   CXButton,
@@ -235,29 +235,34 @@ export function ProfileScreen() {
 
         <CXSectionHeader title="Support" />
         <CXCard style={styles.links}>
-          <CXListRow icon="help-circle-outline" title="Help & Support" />
+          <CXListRow 
+            icon="help-circle-outline" 
+            title="Help & Support" 
+            onPress={() => navigation.navigate("HelpSupport")}
+          />
           <CXListRow
             icon="information-circle-outline"
             title="About CampusX"
             subtitle="Version 1.0.0"
+            onPress={() => navigation.navigate("AboutCampusX")}
           />
         </CXCard>
         <CXSectionHeader title="Account" />
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.md, marginTop: spacing.sm }}>
-          <CXButton
-            label="Sign Out"
-            iconLeft="log-out-outline"
-            variant="outline"
+        <CXCard style={styles.links}>
+          <CXListRow
+            icon="log-out-outline"
+            title="Sign Out"
             onPress={() => void logout()}
           />
-          <CXButton
-            label="Delete Account"
-            iconLeft="trash-outline"
-            variant="primary"
-            style={{ backgroundColor: colors.danger, borderColor: colors.danger }}
+          <CXListRow
+            icon="trash-outline"
+            iconColor={colors.danger}
+            iconBackgroundColor={colors.dangerTint}
+            title="Delete Account"
+            titleColor={colors.danger}
             onPress={() => setDeleteModalVisible(true)}
           />
-        </View>
+        </CXCard>
       </ScrollView>
 
       <DeleteAccountModal

@@ -1498,7 +1498,7 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
       } else if (avatarUri && avatarUri !== group.avatarUrl) {
         const formData = new FormData();
         const filename = avatarUri.split('/').pop() || 'avatar.jpg';
-        const match = /\\.(\\w+)$/.exec(filename);
+        const match = /\.(\w+)$/.exec(filename);
         const type = match ? `image/${match[1]}` : "image";
 
         formData.append('file', {
