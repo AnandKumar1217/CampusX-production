@@ -247,33 +247,49 @@ export async function revokeRefreshToken(rawToken: string) {
   );
 }
 
+async function enforceSendLimits(email: string, purpose: "password_reset" | "signup_verification") {
+  const recent = await EmailOtp.findOne({ email, purpose });
+  if (recent && recent.lastSentAt > new Date(Date.now() - 60_000)) {
+    throw new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT");
+  }
+
+  const oneHourAgo = new Date(Date.now() - 60 * 60_000);
+  const sendCount = await OtpSendWindow.countDocuments({ email, purpose, createdAt: { $gt: oneHourAgo } });
+  if (sendCount >= 5) {
+    throw new AppError(429, "Too many requests. Please try again later.", "RATE_LIMIT");
+  }
+}
+
 export async function createPasswordReset(identifier: string) {
   const normalized = identifier.trim().toLowerCase();
+  
+  await enforceSendLimits(normalized, "password_reset");
+
   const user = await User.findOne({
     $or: [
       { email: normalized },
       { username: normalized },
-      { phone: identifier.trim() },
+      { phone: normalized },
     ],
   });
-  if (!user) return { message: "If that account exists, we have sent a password reset email." };
+
+  if (!user) {
+    // Dummy rate-limit increment to make response indistinguishable for unknown users
+    await OtpSendWindow.create({ email: normalized, purpose: "password_reset", expiresAt: new Date(Date.now() + 60 * 60_000) });
+    await EmailOtp.deleteMany({ email: normalized, purpose: "password_reset" });
+    await EmailOtp.create({
+      email: normalized,
+      purpose: "password_reset",
+      codeHash: "dummy",
+      expiresAt: new Date(Date.now() + 10 * 60_000),
+    });
+    return { message: "If that account exists, we have sent a password reset email." };
+  }
   
   const email = user.email;
 
-  // Rate Limiting
-  const window = await OtpSendWindow.findOneAndUpdate(
-    { email, purpose: "password_reset" },
-    { $inc: { count: 1 }, $setOnInsert: { expiresAt: new Date(Date.now() + 60 * 60_000) } },
-    { upsert: true, new: true }
-  );
-
-  if (window.count > 5) {
-    throw new AppError(429, "Too many password reset requests. Please try again later.", "RATE_LIMIT");
-  }
-
-  const recent = await EmailOtp.findOne({ email, purpose: "password_reset" });
-  if (recent && recent.lastSentAt > new Date(Date.now() - 60_000)) {
-    throw new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT");
+  if (email !== normalized) {
+    await enforceSendLimits(email, "password_reset");
   }
 
   const otp = generateOtp();
@@ -290,6 +306,11 @@ export async function createPasswordReset(identifier: string) {
   } catch (error) {
     await EmailOtp.deleteOne({ _id: otpRecord._id });
     throw new AppError(503, "Failed to send email. Please try again.", "EMAIL_DELIVERY_FAILED");
+  }
+
+  await OtpSendWindow.create({ email, purpose: "password_reset", expiresAt: new Date(Date.now() + 60 * 60_000) });
+  if (email !== normalized) {
+    await OtpSendWindow.create({ email: normalized, purpose: "password_reset", expiresAt: new Date(Date.now() + 60 * 60_000) });
   }
 
   return { message: "If that account exists, we have sent a password reset email." };
@@ -339,21 +360,7 @@ export async function sendVerificationOtp(emailRaw: string) {
     throw new AppError(409, "An account with this email already exists", "EMAIL_EXISTS");
   }
 
-  // Rate Limiting
-  const window = await OtpSendWindow.findOneAndUpdate(
-    { email, purpose: "signup_verification" },
-    { $inc: { count: 1 }, $setOnInsert: { expiresAt: new Date(Date.now() + 60 * 60_000) } },
-    { upsert: true, new: true }
-  );
-
-  if (window.count > 5) {
-    throw new AppError(429, "Too many verification requests. Please try again later.", "RATE_LIMIT");
-  }
-
-  const recent = await EmailOtp.findOne({ email, purpose: "signup_verification" });
-  if (recent && recent.lastSentAt > new Date(Date.now() - 60_000)) {
-    throw new AppError(429, "Please wait 60 seconds before requesting another code", "RATE_LIMIT");
-  }
+  await enforceSendLimits(email, "signup_verification");
 
   const otp = generateOtp();
   await EmailOtp.deleteMany({ email, purpose: "signup_verification" });
@@ -370,6 +377,8 @@ export async function sendVerificationOtp(emailRaw: string) {
     await EmailOtp.deleteOne({ _id: otpRecord._id });
     throw new AppError(503, "Failed to send verification email. Please try again.", "EMAIL_DELIVERY_FAILED");
   }
+
+  await OtpSendWindow.create({ email, purpose: "signup_verification", expiresAt: new Date(Date.now() + 60 * 60_000) });
 }
 
 export async function resetPassword(token: string, password: string) {

@@ -1,4 +1,5 @@
 import { env } from "../config/env.js";
+import { AppError } from "../utils/http.js";
 
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -15,7 +16,7 @@ export async function sendEmail({
 }) {
   if (!env.BREVO_API_KEY || !env.BREVO_SENDER_EMAIL) {
     console.warn("[EmailService] BREVO_API_KEY or BREVO_SENDER_EMAIL is missing. Email not sent.");
-    return false;
+    throw new AppError(503, "Email service is not configured", "EMAIL_DELIVERY_FAILED");
   }
 
   try {
@@ -41,13 +42,14 @@ export async function sendEmail({
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[EmailService] Brevo API Error:", response.status, errorText);
-      return false;
+      throw new AppError(503, "Failed to send email via provider", "EMAIL_DELIVERY_FAILED");
     }
 
     return true;
   } catch (error) {
+    if (error instanceof AppError) throw error;
     console.error("[EmailService] Failed to send email:", error);
-    return false;
+    throw new AppError(503, "Network error while sending email", "EMAIL_DELIVERY_FAILED");
   }
 }
 
