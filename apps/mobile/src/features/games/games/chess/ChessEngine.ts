@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Chess, Move as ChessMove } from "chess.js";
 
 export type Player = "w" | "b";

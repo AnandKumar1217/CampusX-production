@@ -102,6 +102,16 @@ export type RootStackParamList = {
   GameSetup: { gameId: string };
   ActiveGame: { gameId: string; mode: "1P" | "2P" | "3P" | "4P"; difficulty: string; matchLength: number };
   GameResult: { gameId: string; status: string; scoreText?: string; nextLevel?: number };
+  AirHockey: undefined;
+  Game2048: undefined;
+  Sudoku: undefined;
+  TicTacToe: undefined;
+  Snake: undefined;
+  MemoryMatch: undefined;
+  WordGame: undefined;
+  ChessPuzzles: undefined;
+  ReactionBattle: undefined;
+  TicTacToeGlow: undefined;
 };
 
 export type MainTabsParamList = {

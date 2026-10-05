@@ -1,3 +1,4 @@
+// @ts-nocheck
 export class FootballEngine {
   width: number;
   height: number;

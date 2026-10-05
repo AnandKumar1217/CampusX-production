@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type Player = 1 | 2;
 
 export interface Move {

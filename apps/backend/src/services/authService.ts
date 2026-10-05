@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { nanoid } from "nanoid";
-import { randomUUID } from "node:crypto";
+import crypto, { randomUUID } from "node:crypto";
 
 import { env } from "../config/env.js";
 import { RefreshToken } from "../models/RefreshToken.js";
@@ -32,6 +32,7 @@ type AuthUser = {
   interests: string[];
   verified: boolean;
   qrToken?: string | null;
+  emailVerified?: boolean;
 };
 type SignupInput = {
   fullName: string;
@@ -65,7 +66,7 @@ function safeUser(user: AuthUser) {
 }
 
 function generateOtp() {
-  return crypto.randomInt(100000, 999999).toString();
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 async function issueSession(user: AuthUser, meta: SessionMeta) {

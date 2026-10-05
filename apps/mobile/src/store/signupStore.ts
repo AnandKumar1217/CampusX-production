@@ -9,6 +9,7 @@ type SignupDraft = {
   department: string;
   academicYear: string;
   interests: string[];
+  otp: string;
 };
 
 const initialDraft: SignupDraft = {
@@ -20,6 +21,7 @@ const initialDraft: SignupDraft = {
   department: "",
   academicYear: "",
   interests: [],
+  otp: "",
 };
 
 type SignupState = SignupDraft & {

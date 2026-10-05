@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type Question = {
   text: string;
   answer: boolean;

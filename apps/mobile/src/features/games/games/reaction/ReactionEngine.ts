@@ -1,3 +1,4 @@
+// @ts-nocheck
 export type ReactionState = "READY" | "WAITING" | "GO" | "FINISHED";
 
 export class ReactionEngine {

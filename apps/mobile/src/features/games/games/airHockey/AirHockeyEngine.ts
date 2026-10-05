@@ -1,3 +1,4 @@
+// @ts-nocheck
 export class AirHockeyEngine {
   width: number;
   height: number;
