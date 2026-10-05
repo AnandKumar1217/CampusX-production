@@ -43,6 +43,7 @@ import { groupService, Group } from "@/services/groupService";
 import { useFocusEffect, CommonActions } from "@react-navigation/native";
 import { getSocket } from "@/services/socket";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useOpenChat } from "@/hooks/useOpenChat";
 
 type StackProps<Name extends keyof RootStackParamList> = NativeStackScreenProps<
   RootStackParamList,
@@ -229,6 +230,7 @@ export function GroupDetailsScreen({
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { openChat } = useOpenChat();
   const refreshGroupDataRef = React.useRef<() => void>(() => { });
   const refreshGroup = () => {
     refreshGroupDataRef.current();
@@ -567,8 +569,12 @@ export function GroupDetailsScreen({
                     onRemove={membership?.role === "owner" && ((m.user as any)._id || m.user.id) !== user?.id ? () => {
                       setRemoveMemberId((m.user as any)._id || m.user.id);
                     } : undefined}
-                    action={m.role === "owner" ? "Owner" : m.role === "admin" ? "Admin" : m.role === "moderator" ? "Mod" : undefined}
-                    onAction={() => { }}
+                    action={((m.user as any)._id || m.user.id) === user?.id ? "" : m.role === "owner" ? "Owner" : m.role === "admin" ? "Admin" : m.role === "moderator" ? "Mod" : undefined}
+                    onAction={() => {
+                      if (((m.user as any)._id || m.user.id) !== user?.id) {
+                        openChat((m.user as any)._id || m.user.id, m.user.name);
+                      }
+                    }}
                   />
                 </React.Fragment>
               ))}
@@ -605,6 +611,8 @@ export function GroupMembersScreen({
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const { openChat } = useOpenChat();
+  const currentUser = useAppStore(state => state.user);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -686,7 +694,12 @@ export function GroupMembersScreen({
                       {idx > 0 && <View style={styles.divider} />}
                       <CXUserRow
                         user={m.user}
-                        action=""
+                        action={((m.user as any)._id || m.user.id) === currentUser?.id ? "" : undefined}
+                        onAction={() => {
+                          if (((m.user as any)._id || m.user.id) !== currentUser?.id) {
+                            openChat((m.user as any)._id || m.user.id, m.user.name);
+                          }
+                        }}
                         onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
                       />
                     </React.Fragment>
@@ -704,7 +717,12 @@ export function GroupMembersScreen({
                       {idx > 0 && <View style={styles.divider} />}
                       <CXUserRow
                         user={m.user}
-                        action=""
+                        action={((m.user as any)._id || m.user.id) === currentUser?.id ? "" : undefined}
+                        onAction={() => {
+                          if (((m.user as any)._id || m.user.id) !== currentUser?.id) {
+                            openChat((m.user as any)._id || m.user.id, m.user.name);
+                          }
+                        }}
                         onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
                       />
                     </React.Fragment>
@@ -722,7 +740,12 @@ export function GroupMembersScreen({
                       {idx > 0 && <View style={styles.divider} />}
                       <CXUserRow
                         user={m.user}
-                        action=""
+                        action={((m.user as any)._id || m.user.id) === currentUser?.id ? "" : undefined}
+                        onAction={() => {
+                          if (((m.user as any)._id || m.user.id) !== currentUser?.id) {
+                            openChat((m.user as any)._id || m.user.id, m.user.name);
+                          }
+                        }}
                         onPress={() => navigation.navigate("UserProfile", { userId: m.user._id })}
                       />
                     </React.Fragment>
