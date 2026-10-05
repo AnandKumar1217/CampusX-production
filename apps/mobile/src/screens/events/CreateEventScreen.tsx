@@ -297,7 +297,7 @@ export function CreateEventScreen({ navigation, route }: any) {
             style={{borderWidth: 1, borderColor: theme.colors.border, padding: 12, borderRadius: 8, backgroundColor: theme.colors.surface}}
             onPress={() => handlePickDate('endsAt')}
           >
-            <CXText style={{color: form.endsAt ? theme.colors.text : theme.colors.textSecondary, fontSize: 14}}>{form.endsAt ? form.endsAt.toLocaleString() : "Select date & time"}</CXText>
+            <CXText style={{color: form.endsAt ? theme.colors.text : theme.colors.textSecondary, fontSize: 14}}>{form.endsAt ? form.endsAt.toLocaleString() : "Optional — Select end date & time"}</CXText>
           </Pressable>
         </View>
 
