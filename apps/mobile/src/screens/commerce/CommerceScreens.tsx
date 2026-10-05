@@ -1393,7 +1393,7 @@ export function CreateListingScreen({
           image: finalImages.length > 0 ? finalImages[0] : undefined,
           images: finalImages,
           imagePublicIds: finalPublicIds,
-          status: draft ? "draft" : "active",
+          status: draft ? "draft" : "available",
         });
         
         // Optimistically update caches so public feed and details update instantly
@@ -1421,7 +1421,7 @@ export function CreateListingScreen({
           image: finalImages.length > 0 ? finalImages[0] : undefined,
           images: finalImages,
           imagePublicIds: finalPublicIds,
-          status: draft ? "draft" : "active",
+          draft: draft,
         });
         setSnackbarMessage(draft ? "Draft saved successfully" : "Listing created successfully");
         setSnackbarVisible(true);
