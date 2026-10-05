@@ -401,14 +401,21 @@ export function EventDetailsScreen({ navigation, route }: any) {
 
       {!isOwner && (
         <View style={styles.actionBar}>
-          <CXButton
-            label={isRegistered ? "Registered" : isCancelled ? "Event Cancelled" : isFull ? "Event Full" : isDeadlinePassed ? "Registration Closed" : "Register Now"}
-            onPress={handleRegisterToggle}
-            variant={isRegistered ? "outline" : "primary"}
-            disabled={!!(isRegistered || isFull || isCancelled || registerMutation.isPending || isDeadlinePassed)}
-            style={[styles.actionBtn, isRegistered && { backgroundColor: theme.colors.surfaceHover, borderColor: 'transparent' }]}
-            loading={registerMutation.isPending}
-          />
+          {isRegistered ? (
+            <View style={styles.registeredBadge}>
+              <Ionicons name="checkmark-circle" size={18} color="#fff" />
+              <CXText style={styles.registeredText}>Registered</CXText>
+            </View>
+          ) : (
+            <CXButton
+              label={isCancelled ? "Event Cancelled" : isFull ? "Event Full" : isDeadlinePassed ? "Registration Closed" : "Register Now"}
+              onPress={handleRegisterToggle}
+              variant="primary"
+              disabled={!!(isFull || isCancelled || registerMutation.isPending || isDeadlinePassed)}
+              style={styles.actionBtn}
+              loading={registerMutation.isPending}
+            />
+          )}
         </View>
       )}
       <CXSnackbar visible={snackbarVisible} message={snackbarMessage} onDismiss={() => setSnackbarVisible(false)} />
@@ -511,5 +518,13 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 6,
   },
-  actionBtn: { width: "100%", height: 44, borderRadius: 100 }
+  actionBtn: { width: "100%", height: 44, borderRadius: 100 },
+  registeredBadge: {
+    width: "100%", height: 44, borderRadius: 100,
+    backgroundColor: '#10b981',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+  },
+  registeredText: {
+    color: '#fff', fontSize: 16, fontWeight: 'bold'
+  }
 });
