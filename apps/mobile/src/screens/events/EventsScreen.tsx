@@ -106,7 +106,7 @@ export function EventsScreen({ navigation }: any) {
     // Hide completed/cancelled events from all normal discovery
     result = result.filter(e => {
       if (!e.startsAt) return false;
-      const endTime = e.endsAt ? new Date(e.endsAt).getTime() : new Date(e.startsAt).getTime() + 86400000;
+      const endTime = e.endsAt ? new Date(e.endsAt).getTime() : new Date(e.startsAt).getTime() + 7200000; // default 2 hours
       return endTime > now.getTime() && e.status !== "cancelled";
     });
 
