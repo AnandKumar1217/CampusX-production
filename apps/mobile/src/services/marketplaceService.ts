@@ -31,8 +31,8 @@ export const marketplaceService = {
   },
 
   getMyListings: async () => {
-    const res = await api.get<{ data: any[] }>("/marketplace/mine");
-    return res.data.data.map(mapListing);
+    const res = await api.get<{ data: { items: any[] } }>("/marketplace/mine");
+    return res.data.data.items.map(mapListing);
   },
 
   getListing: async (id: string) => {
@@ -66,8 +66,8 @@ export const marketplaceService = {
   },
 
   getSavedListings: async () => {
-    const res = await api.get<{ data: any[] }>("/marketplace/saved");
-    return res.data.data.map(mapListing);
+    const res = await api.get<{ data: { items: any[] } }>("/marketplace/saved");
+    return res.data.data.items.map(mapListing);
   }
 };
 
