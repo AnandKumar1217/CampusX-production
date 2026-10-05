@@ -23,6 +23,7 @@ import {
   CXSectionHeader,
   CXText,
   CXActionSheet,
+  CXAlert,
 } from "@/components/ui";
 
 import { api, getApiErrorMessage } from "@/services/api";
@@ -432,6 +433,8 @@ export function CreateTripScreen({ navigation }: StackProps<"CreateTrip">) {
       return res.data.data;
     }
   });
+  
+  const [alertState, setAlertState] = useState({ visible: false, title: "", message: "", type: "error" as any });
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -449,16 +452,16 @@ export function CreateTripScreen({ navigation }: StackProps<"CreateTrip">) {
       queryClient.invalidateQueries({ queryKey: ["trips"] });
       navigation.replace("TripDetails", { tripId: trip._id });
     },
-    onError: (err) => Alert.alert("Error", getApiErrorMessage(err))
+    onError: (err) => setAlertState({ visible: true, title: "Error", message: getApiErrorMessage(err), type: "error" })
   });
 
   const nextStep = () => {
     if (step === 1 && (!form.title.trim() || !form.destination.trim())) {
-      Alert.alert("Trip details required", "Enter a trip name and destination.");
+      setAlertState({ visible: true, title: "Trip details required", message: "Enter a trip name and destination.", type: "error" });
       return;
     }
     if (step === 1 && form.endDate < form.startDate) {
-      Alert.alert("Invalid dates", "End date must be on or after the start date.");
+      setAlertState({ visible: true, title: "Invalid dates", message: "End date must be on or after the start date.", type: "error" });
       return;
     }
     setStep(s => s + 1);
@@ -564,6 +567,13 @@ export function CreateTripScreen({ navigation }: StackProps<"CreateTrip">) {
           )}
         </CXRow>
       </View>
+      <CXAlert 
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onClose={() => setAlertState(s => ({ ...s, visible: false }))}
+      />
     </CXScreen>
   );
 }
@@ -607,6 +617,8 @@ export function EditTripScreen({ navigation, route }: StackProps<"EditTrip">) {
       endDate: new Date(trip.endDate || trip.startDate),
     });
   }, [data?.trip]);
+  
+  const [alertState, setAlertState] = useState({ visible: false, title: "", message: "", type: "error" as any });
 
   const saveMutation = useMutation({
     mutationFn: () => api.put(`/trips/${tripId}`, {
@@ -625,15 +637,15 @@ export function EditTripScreen({ navigation, route }: StackProps<"EditTrip">) {
       void queryClient.invalidateQueries({ queryKey: ["trips", userId] });
       navigation.goBack();
     },
-    onError: error => Alert.alert("Could not save trip", getApiErrorMessage(error)),
+    onError: error => setAlertState({ visible: true, title: "Could not save trip", message: getApiErrorMessage(error), type: "error" }),
   });
   const save = () => {
     if (!form.title.trim() || !form.destination.trim()) {
-      Alert.alert("Trip details required", "Enter a trip name and destination.");
+      setAlertState({ visible: true, title: "Trip details required", message: "Enter a trip name and destination.", type: "error" });
       return;
     }
     if (form.endDate < form.startDate) {
-      Alert.alert("Invalid dates", "End date must be on or after the start date.");
+      setAlertState({ visible: true, title: "Invalid dates", message: "End date must be on or after the start date.", type: "error" });
       return;
     }
     saveMutation.mutate();
@@ -675,6 +687,13 @@ export function EditTripScreen({ navigation, route }: StackProps<"EditTrip">) {
           </View>
         </CXScrollScreen>
       )}
+      <CXAlert 
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        onClose={() => setAlertState(s => ({ ...s, visible: false }))}
+      />
     </CXScreen>
   );
 }

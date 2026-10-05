@@ -7,3 +7,4 @@ export * from "./CXDropdown";
 export * from "./CXSnackbar";
 export * from "./CXBottomActionArea";
 export * from "./CXActionSheet";
+export * from "./CXAlert";
