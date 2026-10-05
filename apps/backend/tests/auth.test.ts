@@ -43,13 +43,7 @@ vi.mock("../src/models/EmailOtp", () => ({
   }
 }));
 
-vi.mock("../src/models/RefreshToken", () => ({
-  RefreshToken: {
-    create: vi.fn(),
-    findOne: vi.fn(),
-    updateOne: vi.fn(),
-  }
-}));
+
 
 vi.mock("../src/models/OtpSendWindow", () => ({
   OtpSendWindow: {

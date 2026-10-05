@@ -61,7 +61,7 @@ const accountSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   username: z.string().min(3, "Use at least 3 characters").max(30, "Too long").regex(/^[a-z0-9_.]+$/, "Only lowercase letters, numbers, dots, and underscores"),
   email: z.string().email("Enter a valid email address"),
-  otp: z.string().length(6, "Code must be 6 digits"),
+  otp: z.string().regex(/^[0-9]{6}$/, "Code must be 6 digits"),
   password: z
     .string()
     .min(8, "Use at least 8 characters")
@@ -93,14 +93,24 @@ export function SignupAccountScreen({
 
   const [sendingOtp, setSendingOtp] = React.useState(false);
 
+  const lastAttemptedOtpRef = React.useRef<string>("");
+
   React.useEffect(() => {
     setOtpVerified(false);
     setValue("otp", "");
     setShowOtp(false);
+    lastAttemptedOtpRef.current = "";
   }, [emailValue, setValue]);
 
   React.useEffect(() => {
-    if (otpValue && otpValue.length === 6 && !otpVerified && !verifyingOtp) {
+    if (
+      otpValue &&
+      /^[0-9]{6}$/.test(otpValue) &&
+      !otpVerified &&
+      !verifyingOtp &&
+      otpValue !== lastAttemptedOtpRef.current
+    ) {
+      lastAttemptedOtpRef.current = otpValue;
       (async () => {
         try {
           setVerifyingOtp(true);
@@ -238,6 +248,7 @@ export function SignupAccountScreen({
                     setSendingOtp(true);
                     setOtpVerified(false);
                     setValue("otp", "");
+                    lastAttemptedOtpRef.current = "";
                     await api.post("/auth/send-verification-otp", { email });
                     setShowOtp(true);
                   } catch (err: any) {
@@ -276,7 +287,10 @@ export function SignupAccountScreen({
               maxLength={6}
               value={field.value}
               onBlur={field.onBlur}
-              onChangeText={field.onChange}
+              onChangeText={(val) => {
+                const numeric = val.replace(/\D/g, "").slice(0, 6);
+                field.onChange(numeric);
+              }}
               error={fieldState.error?.message}
               hint={otpVerified ? "✓ Email verified" : verifyingOtp ? "Verifying..." : undefined}
               editable={!otpVerified}
