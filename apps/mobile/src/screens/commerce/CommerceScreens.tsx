@@ -1239,8 +1239,11 @@ export function CreateListingScreen({
 }: StackProps<"CreateListing">) {
   const { editId } = route.params ?? {};
   const userStore = useAppStore((state: any) => state.user);
-  const { data: allListings = [] } = useQuery({ queryKey: marketplaceKeys.feed(), queryFn: async () => (await marketplaceService.listListings()).items });
-  const existingListing = useMemo(() => allListings.find(l => l.id === editId), [editId, allListings]);
+  const { data: existingListing } = useQuery({
+    queryKey: marketplaceKeys.detail(editId!),
+    queryFn: () => marketplaceService.getListing(editId!),
+    enabled: !!editId,
+  });
 
   const parseLocation = (loc: any) => {
     if (!loc) return { name: "", address: "", latitude: null, longitude: null };
