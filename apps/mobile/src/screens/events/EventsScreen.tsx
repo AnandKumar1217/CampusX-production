@@ -103,11 +103,10 @@ export function EventsScreen({ navigation }: any) {
     // Weekend (Saturday and Sunday)
     const isWeekend = (d: Date) => d.getDay() === 0 || d.getDay() === 6;
 
-    // Hide completed/cancelled events from all normal discovery
+    // Hide cancelled events from all normal discovery
     result = result.filter(e => {
       if (!e.startsAt) return false;
-      const endTime = e.endsAt ? new Date(e.endsAt).getTime() : new Date(e.startsAt).getTime() + 86400000;
-      return endTime > now.getTime() && e.status !== "cancelled";
+      return e.status !== "cancelled";
     });
 
     if (activeDateFilter === "today") {
