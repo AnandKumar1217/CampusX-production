@@ -100,7 +100,7 @@ export function EventCard({ event, isFeatured = false, onPress, onLongPress }: E
             <View style={styles.infoItem}>
               <Ionicons name="location-outline" color={theme.colors.textSecondary} size={14} style={{marginRight: 4}} />
               <CXText variant="caption" style={styles.infoText} numberOfLines={1}>
-                {event.location || "Location not specified"}
+                {typeof event.location === 'object' ? (event.location as any).name : event.location || "Location not specified"}
               </CXText>
             </View>
           )}

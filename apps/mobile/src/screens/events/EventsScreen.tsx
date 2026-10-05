@@ -83,7 +83,7 @@ export function EventsScreen({ navigation }: any) {
       const q = debouncedSearchQuery.toLowerCase();
       result = result.filter(e =>
         e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
+        (typeof e.location === 'object' ? (e.location as any).name || '' : e.location || '').toLowerCase().includes(q) ||
         (e.description && e.description.toLowerCase().includes(q)) ||
         (e.category && e.category.toLowerCase().includes(q)) ||
         (e.organizer?.name && e.organizer.name.toLowerCase().includes(q))

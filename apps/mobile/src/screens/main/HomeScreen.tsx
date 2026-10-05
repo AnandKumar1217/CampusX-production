@@ -240,7 +240,7 @@ export function HomeScreen() {
   const filteredEvents = events.filter((e) =>
     (activeFilter === "All" || activeFilter === "Events") &&
     (e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.location.toLowerCase().includes(searchQuery.toLowerCase()))
+    (typeof e.location === 'object' ? (e.location as any).name || '' : e.location || '').toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const filteredClasses = timetable.filter((c) =>

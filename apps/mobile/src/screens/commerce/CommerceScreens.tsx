@@ -404,13 +404,13 @@ function OldEditEventScreen({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [locQuery, setLocQuery] = useState(existing?.location ?? "");
+  const [locQuery, setLocQuery] = useState(typeof existing?.location === 'object' ? (existing.location as any).name : (existing?.location ?? ""));
   const [locResults, setLocResults] = useState<any[]>([]);
   const [searchingLoc, setSearchingLoc] = useState(false);
   const [showLocResults, setShowLocResults] = useState(false);
 
   useEffect(() => {
-    if (locQuery.length < 3 || form.location === locQuery) {
+    if (locQuery.length < 3 || (typeof form.location === 'object' ? (form.location as any).name : form.location) === locQuery) {
       setLocResults([]);
       setShowLocResults(false);
       return;
@@ -635,10 +635,10 @@ function OldEditEventScreen({
         <CXInput
           label="Venue"
           placeholder="Search location (e.g. CMRIT)"
-          value={locQuery}
+          value={typeof locQuery === 'string' ? locQuery : (locQuery as any)?.name ?? ""}
           onChangeText={(text) => {
             setLocQuery(text);
-            if (form.location !== text) {
+            if ((typeof form.location === 'object' ? (form.location as any).name : form.location) !== text) {
               setForm((value) => ({ ...value, location: text, coordinates: undefined }));
             }
           }}
