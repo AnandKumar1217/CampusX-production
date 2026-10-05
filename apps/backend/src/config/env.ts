@@ -92,6 +92,9 @@ const schema = z
     GOOGLE_CLOUD_VISION_API_KEY: z.string().optional(),
     TIMETABLE_ENHANCED_IMPORT: z.enum(["true", "false"]).default("true").transform((val) => val === "true"),
     CAMPUSX_INSTALL_URL: z.string().optional(),
+    BREVO_API_KEY: z.string().optional(),
+    BREVO_SENDER_EMAIL: z.string().email().optional(),
+    BREVO_SENDER_NAME: z.string().default("CampusX"),
   })
   .superRefine((value, context) => {
     if (value.NODE_ENV !== "production") return;

@@ -1,0 +1,279 @@
+
+> campusx@0.1.0 typecheck
+> npm run typecheck --workspaces --if-present
+
+
+> @campusx/mobile@1.0.0 typecheck
+> tsc --noEmit
+
+src/features/games/games/airHockey/AirHockeyScreen.tsx(56,30): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/airHockey/AirHockeyScreen.tsx(56,53): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/airHockey/AirHockeyScreen.tsx(62,32): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/airHockey/AirHockeyScreen.tsx(62,55): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(21,22): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(22,27): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(34,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(50,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(65,26): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(65,39): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(66,40): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(70,30): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(70,47): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(72,30): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(74,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(94,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(95,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(96,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(96,5): error TS2322: Type 'Piece | undefined' is not assignable to type 'Piece'.
+  Type 'undefined' is not assignable to type 'Piece'.
+src/features/games/games/checkers/CheckersEngine.ts(99,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(105,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(108,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(135,12): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(135,36): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(136,12): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(136,36): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(156,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/checkers/CheckersEngine.ts(162,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/checkers/CheckersEngine.ts(171,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersEngine.ts(189,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/checkers/CheckersEngine.ts(192,5): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/checkers/CheckersScreen.tsx(72,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/checkers/CheckersScreen.tsx(138,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/chess/ChessEngine.ts(30,31): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'string' is not assignable to type 'Square | undefined'.
+src/features/games/games/chess/ChessEngine.ts(55,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/chess/ChessEngine.ts(74,5): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/chess/ChessEngine.ts(116,64): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/chess/ChessEngine.ts(116,64): error TS2345: Argument of type '{ square: Square; type: PieceSymbol; color: Color; } | null | undefined' is not assignable to parameter of type '{ type: string; color: string; } | null'.
+  Type 'undefined' is not assignable to type '{ type: string; color: string; } | null'.
+src/features/games/games/chess/ChessScreen.tsx(82,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/chess/ChessScreen.tsx(145,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(24,11): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(25,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(57,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(58,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(61,16): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(62,16): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(101,5): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(109,24): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourEngine.ts(111,24): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourScreen.tsx(93,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/connectFour/ConnectFourScreen.tsx(143,27): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(42,14): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(47,14): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(55,30): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(56,30): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(58,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(59,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(66,11): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(67,13): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(67,34): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(67,57): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(67,78): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(68,11): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(95,13): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(96,13): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(110,13): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(111,13): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(122,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(142,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(146,7): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(150,5): error TS2322: Type 'Move | undefined' is not assignable to type 'Move | null'.
+  Type 'undefined' is not assignable to type 'Move | null'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(178,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(179,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(180,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(181,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(188,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(189,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(190,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/dotsAndBoxes/DotsAndBoxesEngine.ts(191,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(27,11): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(41,12): error TS18048: 'seeds' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(47,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(48,7): error TS18048: 'seeds' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(58,55): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(60,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(60,38): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(73,43): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(75,44): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(80,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(80,26): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(84,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(84,27): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(90,11): error TS18048: 'p1Score' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(90,21): error TS18048: 'p2Score' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(91,16): error TS18048: 'p2Score' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(91,26): error TS18048: 'p1Score' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(105,7): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+src/features/games/games/mancala/MancalaEngine.ts(126,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+src/features/games/games/mancala/MancalaEngine.ts(132,41): error TS18048: 'score.p1' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(132,52): error TS18048: 'score.p2' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(132,63): error TS18048: 'score.p2' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaEngine.ts(132,74): error TS18048: 'score.p1' is possibly 'undefined'.
+src/features/games/games/mancala/MancalaScreen.tsx(116,61): error TS18048: 'seeds' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(61,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(68,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(68,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(77,73): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(77,73): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(78,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(78,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(78,59): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(78,59): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(79,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(79,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(79,62): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(79,62): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(80,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(80,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(80,61): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(80,61): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(81,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(81,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(81,60): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(81,60): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(91,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(98,20): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(100,12): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(100,25): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(100,44): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(101,12): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(101,28): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(101,47): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(102,12): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(102,27): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(102,46): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(103,12): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(103,26): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(103,45): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(112,18): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(115,26): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(116,28): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(117,28): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeEngine.ts(118,29): error TS18048: 'cell' is possibly 'undefined'.
+src/features/games/games/maze/MazeScreen.tsx(25,25): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/maze/MazeScreen.tsx(25,54): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/maze/MazeScreen.tsx(33,25): error TS2339: Property 'level' does not exist on type 'MazeEngine'.
+src/features/games/games/maze/MazeScreen.tsx(53,30): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/maze/MazeScreen.tsx(53,59): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/maze/MazeScreen.tsx(56,7): error TS2353: Object literal may only specify known properties, and 'maxLevel' does not exist in type 'Partial<GameStats>'.
+src/features/games/games/maze/MazeScreen.tsx(75,48): error TS2339: Property 'gray400' does not exist on type '{ readonly ink: "#0F0E23"; readonly inkSoft: "#2F2E5B"; readonly textMuted: "#656191"; readonly textFaint: "#9C9DAB"; readonly white: "#FFFFFF"; readonly background: "#FBFBFD"; readonly backgroundLavender: "#F7F4FF"; ... 18 more ...; readonly transparent: "transparent"; }'.
+src/features/games/games/maze/MazeScreen.tsx(157,33): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/maze/MazeScreen.tsx(157,62): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/memory/MemoryEngine.ts(33,29): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/games/games/memory/MemoryEngine.ts(70,8): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/features/games/games/memory/MemoryEngine.ts(70,19): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/features/games/games/memory/MemoryEngine.ts(85,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/memory/MemoryEngine.ts(85,40): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/memory/MemoryEngine.ts(87,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/memory/MemoryEngine.ts(100,20): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(100,45): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(101,18): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(102,18): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(103,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/memory/MemoryEngine.ts(106,18): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(107,18): error TS2538: Type 'undefined' cannot be used as an index type.
+src/features/games/games/memory/MemoryEngine.ts(130,30): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number | "DRAW" | "WIN"'.
+  Type 'undefined' is not assignable to type 'number | "DRAW" | "WIN"'.
+src/features/games/games/memory/MemoryScreen.tsx(29,28): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/memory/MemoryScreen.tsx(29,57): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/memory/MemoryScreen.tsx(55,9): error TS2353: Object literal may only specify known properties, and 'maxLevel' does not exist in type 'Partial<GameStats>'.
+src/features/games/games/memory/MemoryScreen.tsx(55,34): error TS2339: Property 'maxLevel' does not exist on type 'GameStats'.
+src/features/games/games/memory/MemoryScreen.tsx(100,48): error TS2339: Property 'gray400' does not exist on type '{ readonly ink: "#0F0E23"; readonly inkSoft: "#2F2E5B"; readonly textMuted: "#656191"; readonly textFaint: "#9C9DAB"; readonly white: "#FFFFFF"; readonly background: "#FBFBFD"; readonly backgroundLavender: "#F7F4FF"; ... 18 more ...; readonly transparent: "transparent"; }'.
+src/features/games/games/memory/MemoryScreen.tsx(111,23): error TS2322: Type '"h4"' is not assignable to type '"hero" | "h1" | "h2" | "h3" | "title" | "body" | "bodyStrong" | "small" | "smallStrong" | "caption" | "button" | "mono" | undefined'.
+src/features/games/games/memory/MemoryScreen.tsx(111,88): error TS2339: Property 'gray400' does not exist on type '{ readonly ink: "#0F0E23"; readonly inkSoft: "#2F2E5B"; readonly textMuted: "#656191"; readonly textFaint: "#9C9DAB"; readonly white: "#FFFFFF"; readonly background: "#FBFBFD"; readonly backgroundLavender: "#F7F4FF"; ... 18 more ...; readonly transparent: "transparent"; }'.
+src/features/games/games/pong/PongScreen.tsx(56,30): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/pong/PongScreen.tsx(62,32): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/quiz/QuizEngine.ts(37,29): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/games/games/quiz/QuizEngine.ts(53,21): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/quiz/QuizEngine.ts(55,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/quiz/QuizEngine.ts(105,23): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number | "DRAW"'.
+  Type 'undefined' is not assignable to type 'number | "DRAW"'.
+src/features/games/games/quiz/QuizScreen.tsx(86,24): error TS18048: 'currentQ' is possibly 'undefined'.
+src/features/games/games/reaction/ReactionEngine.ts(23,29): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/features/games/games/reaction/ReactionEngine.ts(54,47): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reaction/ReactionEngine.ts(62,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reaction/ReactionEngine.ts(65,11): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(13,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(14,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(15,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(16,5): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(52,20): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(53,20): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(56,39): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(58,15): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(59,15): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(62,36): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(77,7): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(149,9): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(150,37): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(155,17): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(160,28): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(160,41): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(162,56): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(163,36): error TS18048: 'dr' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(163,46): error TS18048: 'dc' is possibly 'undefined'.
+src/features/games/games/reversi/ReversiEngine.ts(165,53): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/reversi/ReversiScreen.tsx(115,19): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(129,18): error TS2345: Argument of type '{ x?: number | undefined; y?: number | undefined; }' is not assignable to parameter of type 'Point'.
+  Types of property 'x' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/features/games/games/snake/SnakeEngine.ts(149,11): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(149,24): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(149,47): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(149,60): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(153,13): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(153,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(153,43): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(153,53): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(157,15): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(157,25): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(157,45): error TS18048: 'h1' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(157,55): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(164,11): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(164,24): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(164,47): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(164,60): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(168,13): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(168,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(168,43): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(168,53): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(171,13): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(171,23): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(171,43): error TS18048: 'h2' is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(171,53): error TS2532: Object is possibly 'undefined'.
+src/features/games/games/snake/SnakeEngine.ts(175,39): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path C:\Users\tammi\OneDrive\Downloads\CampusX-production\apps\mobile
+npm error workspace @campusx/mobile@1.0.0
+npm error location C:\Users\tammi\OneDrive\Downloads\CampusX-production\apps\mobile
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c tsc --noEmit
+
+
+> @campusx/backend@0.1.0 typecheck
+> tsc --noEmit
+

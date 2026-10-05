@@ -1,0 +1,844 @@
+--------- beginning of main
+09-27 15:34:48.651 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:48.651 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:48.651 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:48.651 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:48.817 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:48.817 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:48.817 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:48.817 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:49.133 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:49.134 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.134 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.134 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:49.484  6621  6621 I adbd    : adbd service requested 'shell,v2,raw:am force-stop com.campusx.mobile'
+09-27 15:34:49.554  8415  8415 E cmd     : BBinder_init Processname  cmd  
+09-27 15:34:49.554  8415  8415 E cmd     : BBinder_init hasGetProcessName  cmd
+09-27 15:34:49.763 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:49.764 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.764 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.764 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:49.931 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:49.932 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.932 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:49.932 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:49.988  6621  6621 I adbd    : adbd service requested 'shell,v2,raw:monkey -p com.campusx.mobile -c android.intent.category.LAUNCHER 1'
+09-27 15:34:50.098 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:50.098 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:50.098 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:50.098 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:50.143  8418  8418 E app_process: BBinder_init Processname  app_process  
+09-27 15:34:50.143  8418  8418 E app_process: BBinder_init hasGetProcessName  app_process
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath failed , error(No such file or directory)
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath2 failed , error(No such file or directory)
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath3 failed , error(No such file or directory)
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv get_baksize open file /data/dalvik-cache/classpath4 failed , error(No such file or directory)
+09-27 15:34:50.181  8418  8418 E appproc : checkAndSetEnv write_classpathbak open file failed:Permission denied
+09-27 15:34:50.187  8418  8418 I AndroidRuntime: Using default boot image
+09-27 15:34:50.187  8418  8418 I AndroidRuntime: Leaving lock profiling enabled
+09-27 15:34:50.197  8418  8418 I app_process: Using generational CollectorTypeCC GC.
+09-27 15:34:50.349  8418  8418 I app_process: Priority-to-niceness mapping: 19, 16, 13, 10, 0, -2, -4, -5, -6, -8
+09-27 15:34:50.364  8418  8418 I VivoSystemFrameworkFactory: Instance implClass com.vivo.VivoSystemFrameworkFactoryImpl
+--------- beginning of system
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: Failed to create UltraFrameworkComponentFactoryImpl
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	at java.lang.Class.classForName(Native Method)
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	at java.lang.Class.forName(Class.java:591)
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	at java.lang.Class.forName(Class.java:496)
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	at android.os.ufw.UltraFrameworkComponentFactory.getInstance(UltraFrameworkComponentFactory.java:78)
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	at android.view.SurfaceControl.<clinit>(SurfaceControl.java:614)
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: Caused by: java.lang.ClassNotFoundException: android.os.ufw.UltraFrameworkComponentFactoryImpl
+09-27 15:34:50.367  8418  8418 E UltraFrameworkComponentFactory: 	... 5 more
+09-27 15:34:50.380  8418  8418 E VivoConfigStore: it is Zygote,don't need init
+09-27 15:34:50.381  8418  8418 E VivoConfigStore: the feature vivo.software.commonradius is used in zygote, but you did't add attribute is_support_zygote=1 in vivo_config.ini ,please play attention to check your vivo_config.ini for the feature!!!
+09-27 15:34:50.383  8418  8418 W libc    : Access denied finding property "ro.vendor.mtk.hbt_binfmt_misc_support"
+09-27 15:34:50.404  8418  8418 W Monkey  : args: [-p, com.campusx.mobile, -c, android.intent.category.LAUNCHER, 1]
+09-27 15:34:50.404  8418  8418 W Monkey  :  arg: "-p"
+09-27 15:34:50.404  8418  8418 W Monkey  :  arg: "com.campusx.mobile"
+09-27 15:34:50.405  8418  8418 W Monkey  :  arg: "-c"
+09-27 15:34:50.405  8418  8418 W Monkey  :  arg: "android.intent.category.LAUNCHER"
+09-27 15:34:50.405  8418  8418 W Monkey  :  arg: "1"
+09-27 15:34:50.405  8418  8418 W Monkey  : data="com.campusx.mobile"
+09-27 15:34:50.405  8418  8418 W Monkey  : data="android.intent.category.LAUNCHER"
+09-27 15:34:50.451  8418  8418 E VivoConfigStore: it is Zygote,don't need init
+09-27 15:34:50.451  8418  8418 E VivoConfigStore: it is Zygote,don't need init
+09-27 15:34:50.484  8418  8418 I Monkey  : Events injected: 1
+09-27 15:34:50.509  8418  8418 I Monkey  : ## Network stats: elapsed time=47ms (0ms mobile, 0ms wifi, 47ms not connected)
+09-27 15:34:50.524  8418  8418 I app_process: System.exit called, status: 0
+09-27 15:34:50.524  8418  8418 I AndroidRuntime: VM exiting with result code 0.
+09-27 15:34:50.537 32511 32511 I .campusx.mobile: Using generational CollectorTypeCC GC.
+09-27 15:34:50.581 32511 32511 E .campusx.mobile: BBinder_init Processname  <pre-initialized>  
+09-27 15:34:50.581 32511 32511 E .campusx.mobile: BBinder_init hasGetProcessName  <pre-initialized>
+09-27 15:34:50.752 32511 32511 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+09-27 15:34:50.756 32511 32511 I FirebaseInitProvider: FirebaseApp initialization successful
+09-27 15:34:50.771 32511 32511 W SoLoader: Initializing SoLoader: 0
+09-27 15:34:50.771 32511 32511 W SoLoader: Recording new base apk path: /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk
+09-27 15:34:50.771 32511 32511 W SoLoader: Previously recorded 0 base apk paths.
+09-27 15:34:50.772 32511 32511 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+09-27 15:34:50.772 32511 32511 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+09-27 15:34:50.773 32511 32511 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!/lib/arm64-v8a]]
+09-27 15:34:50.775 32511 32511 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/lib/arm64 flags = 0]]
+09-27 15:34:50.775 32511 32511 I SoLoader: init finish: 4 SO sources prepared
+09-27 15:34:50.775 32511 32511 W SoLoader: SoLoader initialized: 8
+09-27 15:34:50.894 32511 32511 I TaskService: Handling intent with action 'android.intent.action.BOOT_COMPLETED'.
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: QUALCOMM build                   : 923a446bf8, I23d7d7df15
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Build Date                       : 09/05/24
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: EV031.35.01.12
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Local Branch                     : 
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.UM.9.14.11.00.00.571.148
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Remote Branch                    : NONE
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Build Config                     : S P 10.0.7 AArch64
+09-27 15:34:50.902 32511  8470 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+09-27 15:34:50.916 32511  8470 I AdrenoGLES-0: PFP: 0x016ee201, ME: 0x00000000
+09-27 15:34:50.980 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:50.981 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:50.981 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:50.981 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:50.986 32511 32511 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+09-27 15:34:50.986 32511 32511 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+09-27 15:34:50.986 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+09-27 15:34:50.986 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+09-27 15:34:50.986 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+09-27 15:34:50.987 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactContext(): Creating BridgelessReactContext
+09-27 15:34:50.987 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating ReactInstance
+09-27 15:34:50.993 32511 32511 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+09-27 15:34:50.994 32511 32511 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 15:34:51.006 32511 32511 W libc    : Access denied finding property "persist.vivo.ltw.enabled"
+09-27 15:34:51.017 32511 32511 W HWUI    : Unknown dataspace 0
+09-27 15:34:51.059 32511 32511 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 15:34:51.063 32511  8470 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 15:34:51.125 32511  8475 I ExpoModulesCore: ✅ AppContext was initialized
+09-27 15:34:51.131 32511  8475 I org.webrtc.Logging: NativeLibrary: Loading native library: jingle_peerconnection_so
+09-27 15:34:51.131 32511  8475 I org.webrtc.Logging: LibraryLoader: Loading library: jingle_peerconnection_so
+09-27 15:34:51.141 32511  8475 I org.webrtc.Logging: PeerConnectionFactory: PeerConnectionFactory was initialized without an injected Loggable. Any existing Loggable will be deleted.
+09-27 15:34:51.142 32511  8475 I org.webrtc.Logging: EglBase14Impl: Using OpenGL ES version 2
+09-27 15:34:51.150 32511  8475 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: JavaAudioDeviceModule: createAudioDeviceModule
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: JavaAudioDeviceModule: HW NS will be used.
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: JavaAudioDeviceModule: HW AEC will be used.
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: WebRtcAudioEffectsExternal: ctor@[name=pool-9-thread-1, id=73578]
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: WebRtcAudioRecordExternal: ctor@[name=pool-9-thread-1, id=73578]
+09-27 15:34:51.151 32511  8475 I org.webrtc.Logging: WebRtcAudioTrackExternal: ctor@[name=pool-9-thread-1, id=73578]
+09-27 15:34:51.170 32511  8475 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 15:34:51.171 32511  8475 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 15:34:51.171 32511  8475 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 15:34:51.171 32511  8475 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 15:34:51.171 32511  8475 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 15:34:51.171 32511  8475 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/ra
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/ra
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/alac
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/alac
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/ape
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/ape
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/adpcm
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/x-ms-adpcm
+09-27 15:34:51.172 32511  8475 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 15:34:51.173 32511  8475 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 15:34:51.173 32511  8475 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 15:34:51.173 32511  8475 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 15:34:51.173 32511  8475 W VideoCapabilities: Unsupported mime video/rv
+09-27 15:34:51.173 32511  8475 W VideoCapabilities: Unsupported mime video/rv
+09-27 15:34:51.173 32511  8475 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 15:34:51.173 32511  8475 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/divx3
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/divx3
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/flv1
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/flv1
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 15:34:51.174 32511  8475 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 15:34:51.175 32511  8475 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 15:34:51.175 32511  8475 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 15:34:51.179 32511  8475 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 15:34:51.179 32511  8475 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 15:34:51.194 32511  8487 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInAEC(true)
+09-27 15:34:51.194 32511  8487 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setAEC(true)
+09-27 15:34:51.194 32511  8487 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInNS(true)
+09-27 15:34:51.194 32511  8487 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setNS(true)
+09-27 15:34:51.195 32511  8486 I org.webrtc.Logging: PeerConnectionFactory: onNetworkThreadReady
+09-27 15:34:51.195 32511  8487 I org.webrtc.Logging: PeerConnectionFactory: onWorkerThreadReady
+09-27 15:34:51.196 32511  8488 I org.webrtc.Logging: PeerConnectionFactory: onSignalingThreadReady
+09-27 15:34:51.242 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Loading JS Bundle
+09-27 15:34:51.244 32511  8475 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Calling DevSupportManagerBase.onNewReactContextCreated(reactContext)
+09-27 15:34:51.244 32511  8475 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Execute
+09-27 15:34:51.260 32511 32511 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 15:34:51.261 32511 32511 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Executing ReactInstanceEventListeners
+09-27 15:34:51.354 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.OverKeyboardViewManager
+09-27 15:34:51.356 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class a8.d
+09-27 15:34:51.357 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenFooterManager
+09-27 15:34:51.357 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.uimanager.V
+09-27 15:34:51.358 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabScreenViewManager
+09-27 15:34:51.359 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.geojsonsource.MLRNGeoJSONSourceManager
+09-27 15:34:51.360 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+09-27 15:34:51.361 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.markerview.MLRNMarkerViewManager
+09-27 15:34:51.362 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.GroupViewManagerWrapper
+09-27 15:34:51.363 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabsHostViewManager
+09-27 15:34:51.364 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.imagesource.MLRNImageSourceManager
+09-27 15:34:51.365 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ModalScreenViewManager
+09-27 15:34:51.366 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardGestureAreaViewManager
+09-27 15:34:51.367 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.vectorsource.MLRNVectorSourceManager
+09-27 15:34:51.368 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.layer.MLRNLayerManager
+09-27 15:34:51.369 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+09-27 15:34:51.369 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.p
+09-27 15:34:51.370 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+09-27 15:34:51.371 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.SimpleViewManagerWrapper
+09-27 15:34:51.372 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.location.MLRNNativeUserLocationManager
+09-27 15:34:51.372 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+09-27 15:34:51.373 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.images.MLRNImagesManager
+09-27 15:34:51.373 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.callout.MLRNCalloutManager
+09-27 15:34:51.374 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+09-27 15:34:51.374 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+09-27 15:34:51.376 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rastersource.MLRNRasterSourceManager
+09-27 15:34:51.378 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardControllerViewManager
+09-27 15:34:51.378 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+09-27 15:34:51.379 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.camera.MLRNCameraManager
+09-27 15:34:51.380 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.oney.WebRTCModule.RTCVideoViewManager
+09-27 15:34:51.380 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContentWrapperManager
+09-27 15:34:51.381 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager
+09-27 15:34:51.382 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager$b
+09-27 15:34:51.382 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNAndroidTextureMapViewManager
+09-27 15:34:51.383 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rasterdemsource.MLRNRasterDEMSourceManager
+09-27 15:34:51.383 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+09-27 15:34:51.384 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardBackgroundViewManager
+09-27 15:34:51.385 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.pointannotation.MLRNPointAnnotationManager
+09-27 15:34:51.414 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+09-27 15:34:51.415 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.VirtualViewManager$c
+09-27 15:34:51.417 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeMergeManager
+09-27 15:34:51.419 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewManager
+09-27 15:34:51.419 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.c
+09-27 15:34:51.420 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+09-27 15:34:51.422 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeGaussianBlurManager
+09-27 15:34:51.424 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+09-27 15:34:51.425 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.b
+09-27 15:34:51.426 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+09-27 15:34:51.428 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+09-27 15:34:51.429 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.k
+09-27 15:34:51.431 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeColorMatrixManager
+09-27 15:34:51.433 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+09-27 15:34:51.434 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+09-27 15:34:51.436 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+09-27 15:34:51.438 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+09-27 15:34:51.440 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeBlendManager
+09-27 15:34:51.442 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+09-27 15:34:51.443 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.SvgViewManager
+09-27 15:34:51.446 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+09-27 15:34:51.446 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.d
+09-27 15:34:51.448 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+09-27 15:34:51.450 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+09-27 15:34:51.452 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+09-27 15:34:51.455 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FilterManager
+09-27 15:34:51.456 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+09-27 15:34:51.458 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+09-27 15:34:51.460 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+09-27 15:34:51.462 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+09-27 15:34:51.464 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+09-27 15:34:51.466 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+09-27 15:34:51.468 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+09-27 15:34:51.468 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.a
+09-27 15:34:51.470 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeFloodManager
+09-27 15:34:51.471 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+09-27 15:34:51.473 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+09-27 15:34:51.475 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+09-27 15:34:51.477 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeCompositeManager
+09-27 15:34:51.478 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+09-27 15:34:51.480 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+09-27 15:34:51.482 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+09-27 15:34:51.484 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+09-27 15:34:51.486 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+09-27 15:34:51.488 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+09-27 15:34:51.490 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+09-27 15:34:51.492 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeOffsetManager
+09-27 15:34:51.494 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+09-27 15:34:51.495 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+09-27 15:34:51.499 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+09-27 15:34:51.499 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.t
+09-27 15:34:51.500 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+09-27 15:34:51.502 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+09-27 15:34:51.502 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.f
+09-27 15:34:51.503 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+09-27 15:34:51.505 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.F
+09-27 15:34:51.506 32511  8476 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+09-27 15:34:51.508 29008 29145 I FontLog : (REDACTED) Received query %s, URI %s
+09-27 15:34:51.508 29008 29145 I FontLog : (REDACTED) Query [%s] resolved to %s
+09-27 15:34:51.524 29008 29145 I FontLog : (REDACTED) Fetch %s end status %s
+09-27 15:34:51.528 29008 29145 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 15:34:51.535 29008 29145 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 15:34:51.692 32511  8476 E Expo    : Cannot initialize app loader. expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.692 32511  8476 W System.err: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.692 32511  8476 W System.err: 	at java.lang.Class.classForName(Native Method)
+09-27 15:34:51.692 32511  8476 W System.err: 	at java.lang.Class.forName(Class.java:591)
+09-27 15:34:51.692 32511  8476 W System.err: 	at java.lang.Class.forName(Class.java:496)
+09-27 15:34:51.692 32511  8476 W System.err: 	at u8.a.a(SourceFile:42)
+09-27 15:34:51.692 32511  8476 W System.err: 	at u8.a.b(SourceFile:22)
+09-27 15:34:51.692 32511  8476 W System.err: 	at qa.j.u(SourceFile:20)
+09-27 15:34:51.692 32511  8476 W System.err: 	at qa.j.f(SourceFile:1)
+09-27 15:34:51.692 32511  8476 W System.err: 	at qa.j.k(SourceFile:9)
+09-27 15:34:51.692 32511  8476 W System.err: 	at qa.c.f(SourceFile:41)
+09-27 15:34:51.692 32511  8476 W System.err: 	at C8.c.d(SourceFile:58)
+09-27 15:34:51.692 32511  8476 W System.err: 	at C8.c.a(SourceFile:6)
+09-27 15:34:51.692 32511  8476 W System.err: 	at expo.modules.adapters.react.NativeModulesProxy.getConstants(SourceFile:8)
+09-27 15:34:51.692 32511  8476 W System.err: 	at com.facebook.jni.NativeRunnable.run(Native Method)
+09-27 15:34:51.692 32511  8476 W System.err: 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:34:51.692 32511  8476 W System.err: 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:34:51.692 32511  8476 W System.err: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(SourceFile:6)
+09-27 15:34:51.692 32511  8476 W System.err: 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:34:51.692 32511  8476 W System.err: 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:34:51.692 32511  8476 W System.err: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(SourceFile:38)
+09-27 15:34:51.692 32511  8476 W System.err: 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.a(SourceFile:1)
+09-27 15:34:51.692 32511  8476 W System.err: 	at com.facebook.react.bridge.queue.c.run(SourceFile:1)
+09-27 15:34:51.692 32511  8476 W System.err: 	at java.lang.Thread.run(Thread.java:1572)
+09-27 15:34:51.692 32511  8476 W System.err: Caused by: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.692 32511  8476 W System.err: 	... 22 more
+09-27 15:34:51.693 32511  8476 W b       : [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+09-27 15:34:51.696 32511 32511 E Expo    : Cannot initialize app loader. expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.696 32511 32511 W System.err: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.697 32511 32511 W System.err: 	at java.lang.Class.classForName(Native Method)
+09-27 15:34:51.697 32511 32511 W System.err: 	at java.lang.Class.forName(Class.java:591)
+09-27 15:34:51.697 32511  8476 I ExpoModulesCore: ✅ JSI interop was installed
+09-27 15:34:51.698 32511 32511 W System.err: 	at java.lang.Class.forName(Class.java:496)
+09-27 15:34:51.698 32511 32511 W System.err: 	at u8.a.a(SourceFile:42)
+09-27 15:34:51.698 32511 32511 W System.err: 	at u8.a.b(SourceFile:22)
+09-27 15:34:51.698 32511 32511 W System.err: 	at qa.j.u(SourceFile:20)
+09-27 15:34:51.699 32511 32511 W System.err: 	at qa.j.f(SourceFile:1)
+09-27 15:34:51.699 32511 32511 W System.err: 	at qa.c.m(SourceFile:7)
+09-27 15:34:51.699 32511 32511 W System.err: 	at qa.c.onHostResume(SourceFile:1)
+09-27 15:34:51.699 32511 32511 W System.err: 	at s8.b$a.onHostResume(SourceFile:11)
+09-27 15:34:51.699 32511 32511 W System.err: 	at com.facebook.react.bridge.ReactContext$1.run(SourceFile:18)
+09-27 15:34:51.700 32511 32511 W System.err: 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:34:51.700 32511 32511 W System.err: 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:34:51.700 32511 32511 W System.err: 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(SourceFile:6)
+09-27 15:34:51.700 32511 32511 W System.err: 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:34:51.700 32511 32511 W System.err: 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:34:51.701 32511 32511 W System.err: 	at android.app.ActivityThread.main(ActivityThread.java:9889)
+09-27 15:34:51.701 32511 32511 W System.err: 	at java.lang.reflect.Method.invoke(Native Method)
+09-27 15:34:51.701 32511 32511 W System.err: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+09-27 15:34:51.701 32511 32511 W System.err: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:957)
+09-27 15:34:51.702 32511 32511 W System.err: Caused by: java.lang.ClassNotFoundException: expo.modules.adapters.react.apploader.RNHeadlessAppLoader
+09-27 15:34:51.702 32511 32511 W System.err: 	... 20 more
+09-27 15:34:51.707 32511  8476 I ExpoModulesCore: ✅ Constants were exported
+09-27 15:34:51.936 32511  8476 E ReactNativeJS: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary.
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "[runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: invariant@1:139141
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: getEnforcing@1:148574
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2245048
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2243982
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2243668
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2242587
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2240692
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2240318
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:2200219
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:1477976
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:1282001
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:130350
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: anonymous@1:130305
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: guardedLoadModule@1:77272
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: global@1:76433
+09-27 15:34:51.939 32511  8476 W unknown:BridgelessReact: ")
+09-27 15:34:51.944 32511  8476 E libc++abi: terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:34:51.944 32511  8476 E libc++abi: invariant@1:139141
+09-27 15:34:51.944 32511  8476 E libc++abi: getEnforcing@1:148574
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2245048
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2243982
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2243668
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2242587
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2240692
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2240318
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadModule@1:77315
+09-27 15:34:51.944 32511  8476 E libc++abi: metroRequire@1:76911
+09-27 15:34:51.944 32511  8476 E libc++abi: anonymous@1:2200219
+09-27 15:34:51.944 32511  8476 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:34:51.944 32511  8476 E libc++abi: guardedLoadM
+09-27 15:34:51.945 32511  8476 I libc    : debuggerd signal invoked signal:6
+09-27 15:34:51.945 32511  8476 I libc    : debuggerd requestDump:0 NO_NEW_PRIVS:0
+--------- beginning of crash
+09-27 15:34:51.945 32511  8476 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 8476 (mqt_v_js), pid 32511 (.campusx.mobile)
+09-27 15:34:51.945 32511  8476 I libc    : clone child process pid:8504
+09-27 15:34:51.945 32511  8476 I libc    : debuggerd pseudothread crash_process: 8476
+09-27 15:34:51.978  8505  8505 I crash_dump64: crash_dump invoked target_process:32511 current_process:8505: Success
+09-27 15:34:51.980  8506  8506 I crash_dump64: enter crash_dump child process: Success
+09-27 15:34:51.984  8506  8506 E crash_dump64: failed to get the guest state header for thread 8444: Bad address
+09-27 15:34:51.984  8506  8506 E crash_dump64: failed to get the guest state header for thread 8445: Bad address
+09-27 15:34:51.987  8506  8506 E crash_dump64: failed to get the guest state header for thread 8446: Bad address
+09-27 15:34:51.987  8506  8506 E crash_dump64: failed to get the guest state header for thread 8447: Bad address
+09-27 15:34:51.989  8506  8506 E crash_dump64: failed to get the guest state header for thread 8448: Bad address
+09-27 15:34:51.990  8506  8506 E crash_dump64: failed to get the guest state header for thread 8449: Bad address
+09-27 15:34:51.991  8506  8506 E crash_dump64: failed to get the guest state header for thread 8450: Bad address
+09-27 15:34:51.991  8506  8506 E crash_dump64: failed to get the guest state header for thread 8451: Bad address
+09-27 15:34:51.991  8506  8506 E crash_dump64: failed to get the guest state header for thread 8452: Bad address
+09-27 15:34:51.992  8506  8506 E crash_dump64: failed to get the guest state header for thread 8454: Bad address
+09-27 15:34:51.992  8506  8506 E crash_dump64: failed to get the guest state header for thread 8459: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8460: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8463: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8464: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8465: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8466: Bad address
+09-27 15:34:51.993  8506  8506 E crash_dump64: failed to get the guest state header for thread 8467: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8468: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8469: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8470: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8474: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8475: Bad address
+09-27 15:34:51.994  8506  8506 E crash_dump64: failed to get the guest state header for thread 8476: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8477: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8478: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8480: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8481: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8483: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8484: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8485: Bad address
+09-27 15:34:51.995  8506  8506 E crash_dump64: failed to get the guest state header for thread 8486: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8487: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8488: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8489: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8490: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8491: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8492: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8493: Bad address
+09-27 15:34:51.996  8506  8506 E crash_dump64: failed to get the guest state header for thread 8494: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8495: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8496: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8497: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8498: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8500: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8501: Bad address
+09-27 15:34:51.997  8506  8506 E crash_dump64: failed to get the guest state header for thread 8503: Bad address
+09-27 15:34:51.998  8506  8506 E crash_dump64: failed to get the guest state header for thread 32511: Bad address
+09-27 15:34:52.029  8505  8505 I crash_dump64: crash_dump process receive exit: Success
+09-27 15:34:52.030  8506  8506 I crash_dump64: obtaining output fd from tombstoned, type: kDebuggerdTombstoneProto
+09-27 15:34:52.044  8506  8506 I crash_dump64: performing dump of process 32511 (target tid = 8476)
+09-27 15:34:52.406  8506  8506 F DEBUG   : Softversion: PD2251KF_EX_A_15.2.18.1.W30.V000L1
+09-27 15:34:52.406  8506  8506 F DEBUG   : Time: 2026-09-27 15:34:52
+09-27 15:34:52.406  8506  8506 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+09-27 15:34:52.406  8506  8506 F DEBUG   : Build fingerprint: 'iQOO/I2223i/I2223:15/AP3A.240905.015.A2/compiler260422111411:user/release-keys'
+09-27 15:34:52.406  8506  8506 F DEBUG   : Revision: '0'
+09-27 15:34:52.406  8506  8506 F DEBUG   : ABI: 'arm64'
+09-27 15:34:52.406  8506  8506 F DEBUG   : Timestamp: 2026-09-27 15:34:52.052334697+0530
+09-27 15:34:52.406  8506  8506 F DEBUG   : Process uptime: 620s
+09-27 15:34:52.406  8506  8506 F DEBUG   : Cmdline: com.campusx.mobile
+09-27 15:34:52.406  8506  8506 F DEBUG   : pid: 32511, tid: 8476, name: mqt_v_js  >>> com.campusx.mobile <<<
+09-27 15:34:52.406  8506  8506 F DEBUG   : uid: 10822
+09-27 15:34:52.406  8506  8506 F DEBUG   : signal 6 (SIGABRT), code -1 (SI_QUEUE), fault addr --------
+09-27 15:34:52.406  8506  8506 F DEBUG   : Abort message: 'terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:34:52.406  8506  8506 F DEBUG   : invariant@1:139141
+09-27 15:34:52.406  8506  8506 F DEBUG   : getEnforcing@1:148574
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2245048
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2243982
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2243668
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2242587
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2240692
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2240318
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:2200219
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:1477976
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:1282001
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:130350
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : anonymous@1:130305
+09-27 15:34:52.406  8506  8506 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:34:52.406  8506  8506 F DEBUG   : guardedLoadModule@1:77272
+09-27 15:34:52.406  8506  8506 F DEBUG   : metroRequire@1:76911
+09-27 15:34:52.406  8506  8506 F DEBUG   : global@1:76433
+09-27 15:34:52.406  8506  8506 F DEBUG   : 
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(SourceFile:76)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.runtime.ReactInstance$d.reportJsException(SourceFile:22)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.jni.NativeRunnable.run(Native Method)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(SourceFile:6)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(SourceFile:38)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.a(SourceFile:1)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at com.facebook.react.bridge.queue.c.run(SourceFile:1)
+09-27 15:34:52.406  8506  8506 F DEBUG   : 	at java.lang.Thread.run(Thread.java:1572)'
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x0  0000000000000000  x1  000000000000211c  x2  0000000000000006  x3  0000007970b44870
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x4  646277641f736766  x5  646277641f736766  x6  646277641f736766  x7  7f7f7f7f7f7f7f7f
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x8  00000000000000f0  x9  0000007ee6e4e878  x10 ffffff80fffffbdf  x11 0000007eed0d5020
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x12 0000000013b91ee0  x13 000015041a641a7a  x14 0037fca3ec4a3333  x15 0000000034155555
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x16 0000007ee6f47d50  x17 0000007ee6f30140  x18 0000007970964000  x19 0000000000007eff
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x20 000000000000211c  x21 00000000ffffffff  x22 0000007970b449a0  x23 0000007970b449e0
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x24 0000007970b44a90  x25 000000000000002f  x26 0000007976f8cf0a  x27 0000007976f89d65
+09-27 15:34:52.407  8506  8506 F DEBUG   :     x28 0000007976f84461  x29 0000007970b448f0
+09-27 15:34:52.407  8506  8506 F DEBUG   :     lr  0000007ee6ecb82c  sp  0000007970b44850  pc  0000007ee6ecb85c  pst 0000000000001000
+09-27 15:34:52.407  8506  8506 F DEBUG   : 46 total frames
+09-27 15:34:52.407  8506  8506 F DEBUG   : backtrace:
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #00 pc 00000000000a785c  /apex/com.android.runtime/lib64/bionic/libc.so (abort+172) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #01 pc 00000000000a0210  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libc++_shared.so (offset 0xd44000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #02 pc 000000000009eeb0  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libc++_shared.so (offset 0xd44000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #03 pc 000000000009f374  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libc++_shared.so (offset 0xd44000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #04 pc 000000000009f314  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libc++_shared.so (offset 0xd44000) (std::terminate()+56) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #05 pc 000000000025d584  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #06 pc 0000000000489594  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #07 pc 00000000002b90c4  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::JsErrorHandler::handleErrorWithCppPipeline(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+7440) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #08 pc 00000000002b7068  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::JsErrorHandler::handleError(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+1680) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #09 pc 000000000026c630  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #10 pc 00000000000aaa24  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #11 pc 00000000000aa760  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #12 pc 00000000000b2cd8  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #13 pc 00000000000c50c8  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #14 pc 00000000000c4a28  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #15 pc 00000000000f4554  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #16 pc 00000000000a0260  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #17 pc 00000000000a5e40  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #18 pc 00000000000a0060  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libhermes.so (offset 0x1050000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #19 pc 0000000000268024  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #20 pc 000000000041d4c0  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::Task::execute(facebook::jsi::Runtime&, bool)+312) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #21 pc 000000000041b654  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const+60) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #22 pc 000000000041bf64  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)+124) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #23 pc 000000000041bc74  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)+88) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #24 pc 0000000000265d80  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #25 pc 000000000045e930  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libreactnative.so (offset 0x34b0000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #26 pc 0000000000017dd0  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libfbjni.so (offset 0xfc8000) (facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)+72) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #27 pc 0000000000017d10  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/base.apk!libfbjni.so (offset 0xfc8000) (facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))+60) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #28 pc 00000000018b3ba0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (art_jni_trampoline+112)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #29 pc 0000000000dbed9c  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Handler.dispatchMessage+76)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #30 pc 000000000072c8dc  /apex/com.android.art/lib64/libart.so (nterp_helper+2124) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #31 pc 00000000003ab34c  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage+16)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #32 pc 0000000000dc36b0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loopOnce+1088)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #33 pc 0000000000dc31c8  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loop+712)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #34 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #35 pc 00000000003ab6c0  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1+80)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #36 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #37 pc 00000000003ab5f6  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.a+6)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #38 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #39 pc 00000000003ab41a  /data/app/~~_tFD5ncfxIEAcJtEz897fQ==/com.campusx.mobile-IBtnyM10F1f9EHAKqYLhVA==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.c.run+10)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #40 pc 000000000051e788  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (java.lang.Thread.run+72)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #41 pc 0000000000298f94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #42 pc 000000000029738c  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+148) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #43 pc 00000000004d5fd0  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1384) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #44 pc 00000000000b8bc8  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+216) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:34:52.407  8506  8506 F DEBUG   :       #45 pc 00000000000aaf48  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+68) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:34:52.497 32348 32348 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 15:34:52.499 32348  8216 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 15:34:52.532 32348  8227 E FrameEvents: addRelease: Did not find frame.
+09-27 15:34:52.577 32348 32348 W View    : requestLayout() improperly called by androidx.appcompat.widget.ActionMenuView{e879fc6 V.E...... ......ID 705,0-1080,154} during layout: running second layout pass
+09-27 15:34:52.619 32348 32348 V ImeFocusController: onWindowFocus: com.whatsapp.mentions.ui.MentionableEntry{ff6647f VFED.VCL. .F...... 132,26-746,105 #7f0b131b app:id/entry aid=1073741824} softInputMode=STATE_UNCHANGED|ADJUST_RESIZE
+09-27 15:34:52.637 32348  8061 V MediaPlayerNative: reset
+09-27 15:34:52.637 32348  8227 V MediaPlayerNative: message received msg=8, ext1=0, ext2=0
+09-27 15:34:52.674 32348  8061 V MediaPlayer: resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+09-27 15:34:52.674 32348  8061 V MediaPlayer: cleanDrmObj: mDrmObj=null mDrmSessionId=null
+09-27 15:34:52.674 32348  8227 V MediaPlayerNative: notify(8, 0, 0) callback on disconnected mediaplayer
+09-27 15:34:52.678 32348  8061 V MediaPlayer: resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+09-27 15:34:52.678 32348  8061 V MediaPlayer: cleanDrmObj: mDrmObj=null mDrmSessionId=null
+09-27 15:34:52.678 32348  8061 D MediaPlayer: _release native called
+09-27 15:34:52.681 32348  8061 V MediaPlayerNative: setListener
+09-27 15:34:52.681 32348  8061 V MediaPlayerNative: disconnect
+09-27 15:34:52.681 32348  8061 V MediaPlayerNative: destructor
+09-27 15:34:52.682 32348  8061 V MediaPlayerNative: disconnect
+09-27 15:34:52.682 32348  8061 D MediaPlayer: _release native finished
+09-27 15:34:53.488 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.496 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.499 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.502 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.505 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.510 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.514 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.517 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.522 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.522 14770 14770 I Choreographer: Skipped 180 frames!  The application may be doing too much work on its main thread.
+09-27 15:34:53.525 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.527 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:53.550 12208 12208 I WM-RemoteWorkerService: Binding to RemoteWorkerService
+09-27 15:34:53.570 12208 15334 E esji    : (REDACTED) WorkManager failure in operation: %s, worker tag: %s
+09-27 15:34:53.570 12208 15334 E esji    : java.util.concurrent.ExecutionException: fpbs: Account was no longer valid when task executed.
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgn.g(PG:21)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgo.q(PG:24)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgn.get(PG:1)
+09-27 15:34:53.570 12208 15334 E esji    : 	at guax.w(PG:2)
+09-27 15:34:53.570 12208 15334 E esji    : 	at esjh.call(PG:18)
+09-27 15:34:53.570 12208 15334 E esji    : 	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkwh.run(PG:5)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gadt.run(PG:46)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkvt.run(PG:81)
+09-27 15:34:53.570 12208 15334 E esji    : 	at java.lang.Thread.run(Thread.java:1572)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkxm.run(PG:63)
+09-27 15:34:53.570 12208 15334 E esji    : Caused by: fpbs: Account was no longer valid when task executed.
+09-27 15:34:53.570 12208 15334 E esji    : 	at fpcd.apply(PG:5)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqus.apply(PG:17)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgk.c(PG:3)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgm.run(PG:139)
+09-27 15:34:53.570 12208 15334 E esji    : 	... 5 more
+09-27 15:34:53.570 12208 15334 E esji    : Caused by: fokz: fogx: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.570 12208 15334 E esji    : 	at fogb.apply(PG:29)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqux.apply(PG:17)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgl.c(PG:3)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgm.run(PG:139)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbii.execute(PG:1)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgn.d(PG:1)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgn.addListener(PG:42)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgm.e(PG:10)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fohh.i(PG:35)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fohh.h(PG:12)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fojf.b(PG:3)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fpch.e(PG:24)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fpcc.a(PG:7)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqur.a(PG:17)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqur.a(PG:17)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbkn.a(PG:3)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbju.run(PG:19)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbkp.run(PG:5)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqnd.a(PG:108)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fpdb.b(PG:56)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fpch.b(PG:76)
+09-27 15:34:53.570 12208 15334 E esji    : 	at com.google.apps.tiktok.contrib.work.TikTokListenableWorker.d(PG:130)
+09-27 15:34:53.570 12208 15334 E esji    : 	at roi.invokeSuspend(PG:53)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gwuu.resumeWith(PG:11)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gxeu.run(PG:115)
+09-27 15:34:53.570 12208 15334 E esji    : 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:34:53.570 12208 15334 E esji    : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:34:53.570 12208 15334 E esji    : 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:34:53.570 12208 15334 E esji    : 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:34:53.570 12208 15334 E esji    : 	at android.app.ActivityThread.main(ActivityThread.java:9889)
+09-27 15:34:53.570 12208 15334 E esji    : 	at java.lang.reflect.Method.invoke(Native Method)
+09-27 15:34:53.570 12208 15334 E esji    : 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+09-27 15:34:53.570 12208 15334 E esji    : 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:957)
+09-27 15:34:53.570 12208 15334 E esji    : Caused by: fogx: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.570 12208 15334 E esji    : 	at ednv.apply(PG:25)
+09-27 15:34:53.570 12208 15334 E esji    : 	at fqux.apply(PG:17)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgt.c(PG:3)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gbgu.run(PG:47)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkwh.run(PG:5)
+09-27 15:34:53.570 12208 15334 E esji    : 	at gadt.run(PG:46)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkvt.run(PG:81)
+09-27 15:34:53.570 12208 15334 E esji    : 	at java.lang.Thread.run(Thread.java:1572)
+09-27 15:34:53.570 12208 15334 E esji    : 	at dkxm.run(PG:63)
+09-27 15:34:53.570 12208 15334 E esji    : Caused by: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.570 12208 15334 E esji    : 	at ednv.apply(PG:22)
+09-27 15:34:53.570 12208 15334 E esji    : 	... 8 more
+09-27 15:34:53.588 12208 15334 W fpch    : Account Worker did not pass Account requirements and will be skipped.
+09-27 15:34:53.588 12208 15334 W fpch    : fpbs: Account was no longer valid when task executed.
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fpcd.apply(PG:5)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqus.apply(PG:17)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgk.c(PG:3)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgm.run(PG:139)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkwh.run(PG:5)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gadt.run(PG:46)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkvt.run(PG:81)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at java.lang.Thread.run(Thread.java:1572)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkxm.run(PG:63)
+09-27 15:34:53.588 12208 15334 W fpch    : Caused by: fokz: fogx: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fogb.apply(PG:29)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqux.apply(PG:17)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgl.c(PG:3)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgm.run(PG:139)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbii.execute(PG:1)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgn.d(PG:1)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgn.addListener(PG:42)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgm.e(PG:10)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fohh.i(PG:35)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fohh.h(PG:12)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fojf.b(PG:3)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fpch.e(PG:24)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fpcc.a(PG:7)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqur.a(PG:17)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqur.a(PG:17)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbkn.a(PG:3)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbju.run(PG:19)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbkp.run(PG:5)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqnd.a(PG:108)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fpdb.b(PG:56)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fpch.b(PG:76)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at com.google.apps.tiktok.contrib.work.TikTokListenableWorker.d(PG:130)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at roi.invokeSuspend(PG:53)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gwuu.resumeWith(PG:11)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gxeu.run(PG:115)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at android.app.ActivityThread.main(ActivityThread.java:9889)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at java.lang.reflect.Method.invoke(Native Method)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:957)
+09-27 15:34:53.588 12208 15334 W fpch    : Caused by: fogx: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.588 12208 15334 W fpch    : 	at ednv.apply(PG:25)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at fqux.apply(PG:17)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgt.c(PG:3)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gbgu.run(PG:47)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkwh.run(PG:5)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at gadt.run(PG:46)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkvt.run(PG:81)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at java.lang.Thread.run(Thread.java:1572)
+09-27 15:34:53.588 12208 15334 W fpch    : 	at dkxm.run(PG:63)
+09-27 15:34:53.588 12208 15334 W fpch    : Caused by: ednm: Selected account doesn't match the primary search account
+09-27 15:34:53.588 12208 15334 W fpch    : 	at ednv.apply(PG:22)
+09-27 15:34:53.588 12208 15334 W fpch    : 	... 8 more
+09-27 15:34:53.597 14105 15393 I WM-WorkerWrapper: Worker result FAILURE for Work [ id=1040c6f1-6326-4f1b-9fc5-f82e2ac5df93, class=com.google.apps.tiktok.contrib.work.TikTokListenableWorker, tags={ com.google.apps.tiktok.contrib.work.TikTokListenableWorker,TikTokWorker#com.google.android.apps.search.googleapp.discover.sync.FeedSync,tiktok_account_work,account_id_54 } ]
+09-27 15:34:53.609 29008  8544 I PlatformStatsUtil: (REDACTED) Uploading %d dropbox entries to Clearcut
+09-27 15:34:53.628 29008  8544 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:34:54.753 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:54.753 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:54.753 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:54.753 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:55.516 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:55.517 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:55.517 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:55.517 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:55.734 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:55.734 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:55.734 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:55.734 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:56.000 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:56.000 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.001 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.001 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:56.253 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:56.253 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.253 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.253 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:56.650 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:56.650 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.651 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.651 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:56.838 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:56.839 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.839 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:56.839 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:57.780 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:57.781 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:57.781 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:57.781 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:58.054 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:58.054 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.055 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.055 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:58.394 12208 12208 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 15:34:58.397 12208 15447 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 15:34:58.415 12208 12208 I cjlg    : onStart
+09-27 15:34:58.416 12208 12208 I cjcw    : onStart
+09-27 15:34:58.418 12208 12208 I chay    : (REDACTED) [%s] onStart()
+09-27 15:34:58.419 12208 12208 I chdm    : Reloading theme data
+09-27 15:34:58.422 12208 12208 E NetworkErrorMessage: (REDACTED) Invalid connectivity state: %s
+09-27 15:34:58.423 12208 12208 I cjlg    : onResume
+09-27 15:34:58.423 12208 12208 W ebmr    : missing event name
+09-27 15:34:58.424 12208 12208 I cjcw    : onResume
+09-27 15:34:58.431 32348  8075 I WM-WorkerWrapper: Worker result SUCCESS for Work [ id=1b80b530-64f4-413d-a07e-72c2cdec7e90, tags={ com.whatsapp.infra.networking.xmpp.lifecycle.XmppLifecycleWorker } ]
+09-27 15:34:58.434 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:58.435 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.436 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.436 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:58.537 12208 12208 I cjlg    : onPause
+09-27 15:34:58.538 12208 12208 I cjcw    : onPause
+09-27 15:34:58.538 12208 12208 W ebmr    : measuring already stopped.
+09-27 15:34:58.539 12208 12208 I cjlg    : onStop
+09-27 15:34:58.545 12208 12208 I cjcw    : onStop
+09-27 15:34:58.863 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:58.864 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.864 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:58.864 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:59.012 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:59.012 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.013 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.013 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:59.336 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:59.336 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.337 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.337 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:59.467 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:59.467 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.468 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.468 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:59.649 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:59.649 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.650 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.650 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:34:59.768 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:34:59.769 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.769 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:34:59.769 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:35:00.298 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:35:00.299 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:35:00.299 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:35:00.299 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:35:00.849 16900 16900 I KeyboardModeUtils: KeyboardModeUtils.getKeyboardBottomOffset():435 inch: 0.000000 ydpi: 411.890991 adjustKeyboardBottomByDisplaySize: false currentDensityDpi: 440 defaultDensityDpi: 440 keyboardBottomToScreenPx: 0 keyboardBottomToNavBarPx: 0 navBarHeight: 0
+09-27 15:35:00.849 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:35:00.849 16900 16900 I BaseKeyboardSizeHelper: BaseKeyboardSizeHelper.calculateMaxKeyboardBodyHeight():79 leave 267 height for app when ime window height:2312, header height:121 and isFullscreenMode:false, so the max keyboard body height is:1924
+09-27 15:35:00.850 16900 16900 I KeyboardViewManager: KeyboardViewManager.updateKeyboardBottomFrame():518 Set bottomFrameHeight = 5 while holderPaddingBottom = 5; navigationHeight = 0
+09-27 15:35:00.870  6621  6621 I adbd    : adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d''

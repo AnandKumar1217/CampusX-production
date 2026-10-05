@@ -1,0 +1,537 @@
+--------- beginning of main
+09-27 15:46:56.717 11975 12019 I BugleDataModel: PendingMessagesProcessor process from FixupMessageStatusOnStartupAction due to process restarts throttled  with delay 0s with queues smsMessagesToSend:0 mmsMessagesToSend:0 rcsMessagesToSend:0 rcsFTMessagesToSend:0 messagesToDownload:0
+09-27 15:46:56.718 11975 12019 I BugleDataModel: Cleared next retry time for channel: sms_send 
+09-27 15:46:56.718 11975 12019 I BugleDataModel: Cleared next retry time for channel: mms_send 
+09-27 15:46:56.719 11975 12019 I BugleDataModel: Cleared next retry time for channel: mms_download 
+09-27 15:46:56.719 11975 12019 I BugleDataModel: Cleared next retry time for channel: rcs_send 
+09-27 15:46:56.720 11975 12019 I BugleDataModel: Cleared next retry time for channel: rcs_ft_upload 
+09-27 15:46:56.721 11975 12019 I BugleDataModel: Cleared next retry time for channel: rcs_ft_download 
+09-27 15:46:56.721 11975 12019 I BugleDataModel: Cleared next retry time for channel: cloud_sync_send 
+09-27 15:46:56.722 11975 12019 I BugleDataModel: Cleared next retry time for channel: cloud_sync_attachment_download 
+09-27 15:46:56.722 11975 12019 I BugleDataModel: finished running action FixupMessageStatusOnStartupAction in 287 ms
+09-27 15:46:56.724 11975 12019 I BugleDataModel: running action ProcessPendingMessagesAction
+09-27 15:46:56.725 11975 12019 I Bugle   : isDefaultSmsApp: true [CONTEXT class_name="PhoneConfiguration" ]
+09-27 15:46:56.740 11975 12019 I BugleDataModel: PendingMessagesProcessor process from ProcessPendingMessagesAction due to scheduled processing  with delay 0s with queues smsMessagesToSend:0 mmsMessagesToSend:0 rcsMessagesToSend:0 rcsFTMessagesToSend:0 messagesToDownload:0
+09-27 15:46:56.744 11975 12019 I BugleDataModel: finished running action ProcessPendingMessagesAction in 19 ms
+09-27 15:46:56.839  6621  6621 I adbd    : adbd service requested 'shell,v2,raw:monkey -p com.campusx.mobile -c android.intent.category.LAUNCHER 1'
+09-27 15:46:56.922 11975 11975 I BugleDataModel: ActionExecutorImpl: ACTION_EXECUTE_QUEUED_GenericWorkerQueueAction
+09-27 15:46:56.922 11975 12019 I BugleDataModel: running action GenericWorkerQueueAction
+09-27 15:46:56.924 11975 12019 I BugleDataModel: ActionExecutorImpl: ACTION_BACKGROUND_QUEUED_GenericWorkerQueueAction
+09-27 15:46:56.925 11975 12019 I BugleDataModel: finished running action GenericWorkerQueueAction in 2 ms
+09-27 15:46:56.936 11975 12421 I BugleJobs: GenericWorkerQueueAction: Bailing early, no work found, no failed work found
+09-27 15:46:56.937 11975 12421 I BugleDataModel: ActionExecutorImpl: ACTION_RESPONSE_QUEUED_GenericWorkerQueueAction
+09-27 15:46:57.407 10832 10832 I .campusx.mobile: Using generational CollectorTypeCC GC.
+09-27 15:46:57.446 10832 10832 E .campusx.mobile: BBinder_init Processname  <pre-initialized>  
+09-27 15:46:57.446 10832 10832 E .campusx.mobile: BBinder_init hasGetProcessName  <pre-initialized>
+09-27 15:46:57.473 12208 12208 I cjlg    : onPause
+09-27 15:46:57.474 12208 12208 I cjcw    : onPause
+09-27 15:46:57.475 12208 12208 W ebmr    : measuring already stopped.
+09-27 15:46:57.603 10832 10832 I FirebaseApp: Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+09-27 15:46:57.607 10832 10832 I FirebaseInitProvider: FirebaseApp initialization successful
+09-27 15:46:57.634 10832 10832 W SoLoader: Initializing SoLoader: 0
+09-27 15:46:57.635 10832 10832 W SoLoader: Recording new base apk path: /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk
+09-27 15:46:57.635 10832 10832 W SoLoader: Previously recorded 0 base apk paths.
+09-27 15:46:57.637 10832 10832 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+09-27 15:46:57.637 10832 10832 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+09-27 15:46:57.637 10832 10832 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!/lib/arm64-v8a]]
+09-27 15:46:57.640 10832 10832 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/lib/arm64 flags = 0]]
+09-27 15:46:57.640 10832 10832 I SoLoader: init finish: 4 SO sources prepared
+09-27 15:46:57.640 10832 10832 W SoLoader: SoLoader initialized: 8
+09-27 15:46:57.702 10832 10832 I TaskService: Handling intent with action 'android.intent.action.BOOT_COMPLETED'.
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: QUALCOMM build                   : 923a446bf8, I23d7d7df15
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: Build Date                       : 09/05/24
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: OpenGL ES Shader Compiler Version: EV031.35.01.12
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: Local Branch                     : 
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: Remote Branch                    : refs/tags/AU_LINUX_ANDROID_LA.UM.9.14.11.00.00.571.148
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: Remote Branch                    : NONE
+09-27 15:46:57.710 10832 12497 I AdrenoGLES-0: Reconstruct Branch               : NOTHING
+09-27 15:46:57.711 10832 12497 I AdrenoGLES-0: Build Config                     : S P 10.0.7 AArch64
+09-27 15:46:57.711 10832 12497 I AdrenoGLES-0: Driver Path                      : /vendor/lib64/egl/libGLESv2_adreno.so
+09-27 15:46:57.717 10832 12497 I AdrenoGLES-0: PFP: 0x016ee201, ME: 0x00000000
+09-27 15:46:57.777 10832 10832 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+09-27 15:46:57.777 10832 10832 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+09-27 15:46:57.778 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+09-27 15:46:57.778 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+09-27 15:46:57.778 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+09-27 15:46:57.779 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactContext(): Creating BridgelessReactContext
+09-27 15:46:57.780 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating ReactInstance
+09-27 15:46:57.785 10832 10832 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+09-27 15:46:57.785 10832 10832 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 15:46:57.794 10832 10832 W libc    : Access denied finding property "persist.vivo.ltw.enabled"
+09-27 15:46:57.801 10832 10832 W HWUI    : Unknown dataspace 0
+09-27 15:46:57.847 10832 10832 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 15:46:57.851 10832 12497 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 15:46:57.862 10832 12502 I ExpoModulesCore: ✅ AppContext was initialized
+09-27 15:46:57.865 10832 12502 I org.webrtc.Logging: NativeLibrary: Loading native library: jingle_peerconnection_so
+09-27 15:46:57.865 10832 12502 I org.webrtc.Logging: LibraryLoader: Loading library: jingle_peerconnection_so
+09-27 15:46:57.869 10832 12502 I org.webrtc.Logging: PeerConnectionFactory: PeerConnectionFactory was initialized without an injected Loggable. Any existing Loggable will be deleted.
+09-27 15:46:57.871 10832 12502 I org.webrtc.Logging: EglBase14Impl: Using OpenGL ES version 2
+09-27 15:46:57.894 10832 12502 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: WebRtcAudioManagerExternal: Sample rate is set to 48000 Hz
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: JavaAudioDeviceModule: createAudioDeviceModule
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: JavaAudioDeviceModule: HW NS will be used.
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: JavaAudioDeviceModule: HW AEC will be used.
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: WebRtcAudioEffectsExternal: ctor@[name=pool-9-thread-1, id=73728]
+09-27 15:46:57.895 10832 12502 I org.webrtc.Logging: WebRtcAudioRecordExternal: ctor@[name=pool-9-thread-1, id=73728]
+09-27 15:46:57.896 10832 12502 I org.webrtc.Logging: WebRtcAudioTrackExternal: ctor@[name=pool-9-thread-1, id=73728]
+09-27 15:46:57.913 10832 12502 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 15:46:57.913 10832 12502 W AudioCapabilities: Unsupported mime audio/x-ms-wma
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/mpeg-L1
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/mpeg-L2
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/ra
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/ra
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/alac
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/alac
+09-27 15:46:57.914 10832 12502 W AudioCapabilities: Unsupported mime audio/ape
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/ape
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/x-ape
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/adpcm
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/x-ms-adpcm
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/pcm
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 15:46:57.915 10832 12502 W AudioCapabilities: Unsupported mime audio/dsd
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/rv
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/rv
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/x-ms-wmv
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/x-ms-wmv2
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/divx3
+09-27 15:46:57.916 10832 12502 W VideoCapabilities: Unsupported mime video/divx3
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/flv1
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/flv1
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/x-flv
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/mjpeg
+09-27 15:46:57.917 10832 12502 W VideoCapabilities: Unsupported mime video/x-motion-jpeg
+09-27 15:46:57.921 10832 12502 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 15:46:57.921 10832 12502 W VideoCapabilities: Unsupported mime image/vnd.android.heic
+09-27 15:46:57.927 10832 12535 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInAEC(true)
+09-27 15:46:57.927 10832 12535 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setAEC(true)
+09-27 15:46:57.927 10832 12535 I org.webrtc.Logging: WebRtcAudioRecordExternal: enableBuiltInNS(true)
+09-27 15:46:57.927 10832 12535 I org.webrtc.Logging: WebRtcAudioEffectsExternal: setNS(true)
+09-27 15:46:57.929 10832 12532 I org.webrtc.Logging: PeerConnectionFactory: onNetworkThreadReady
+09-27 15:46:57.929 10832 12536 I org.webrtc.Logging: PeerConnectionFactory: onSignalingThreadReady
+09-27 15:46:57.929 10832 12535 I org.webrtc.Logging: PeerConnectionFactory: onWorkerThreadReady
+09-27 15:46:57.961 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Loading JS Bundle
+09-27 15:46:57.961 10832 12502 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Calling DevSupportManagerBase.onNewReactContextCreated(reactContext)
+09-27 15:46:57.962 10832 12502 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Execute
+09-27 15:46:57.962 10832 10832 W unknown:BridgelessReact: ReactContext.onHostResume()
+09-27 15:46:57.962 10832 10832 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Executing ReactInstanceEventListeners
+09-27 15:46:58.007 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.OverKeyboardViewManager
+09-27 15:46:58.012 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.views.overlay.OverKeyboardHostShadowNode
+09-27 15:46:58.013 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenFooterManager
+09-27 15:46:58.014 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+09-27 15:46:58.014 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabScreenViewManager
+09-27 15:46:58.015 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.geojsonsource.MLRNGeoJSONSourceManager
+09-27 15:46:58.016 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContainerViewManager
+09-27 15:46:58.017 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.markerview.MLRNMarkerViewManager
+09-27 15:46:58.018 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.GroupViewManagerWrapper
+09-27 15:46:58.019 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.gamma.tabs.TabsHostViewManager
+09-27 15:46:58.020 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.imagesource.MLRNImageSourceManager
+09-27 15:46:58.020 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ModalScreenViewManager
+09-27 15:46:58.021 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardGestureAreaViewManager
+09-27 15:46:58.022 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.vectorsource.MLRNVectorSourceManager
+09-27 15:46:58.023 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.layer.MLRNLayerManager
+09-27 15:46:58.024 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+09-27 15:46:58.024 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+09-27 15:46:58.026 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenViewManager
+09-27 15:46:58.027 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class expo.modules.kotlin.views.SimpleViewManagerWrapper
+09-27 15:46:58.028 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.location.MLRNNativeUserLocationManager
+09-27 15:46:58.029 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackViewManager
+09-27 15:46:58.030 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.images.MLRNImagesManager
+09-27 15:46:58.031 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.callout.MLRNCalloutManager
+09-27 15:46:58.031 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+09-27 15:46:58.031 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.SearchBarManager
+09-27 15:46:58.033 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rastersource.MLRNRasterSourceManager
+09-27 15:46:58.034 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardControllerViewManager
+09-27 15:46:58.035 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderConfigViewManager
+09-27 15:46:58.035 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.camera.MLRNCameraManager
+09-27 15:46:58.036 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.oney.WebRTCModule.RTCVideoViewManager
+09-27 15:46:58.037 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenContentWrapperManager
+09-27 15:46:58.037 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager
+09-27 15:46:58.038 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNMapViewManager$MapShadowNode
+09-27 15:46:58.039 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.mapview.MLRNAndroidTextureMapViewManager
+09-27 15:46:58.039 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.sources.tilesources.rasterdemsource.MLRNRasterDEMSourceManager
+09-27 15:46:58.039 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.rnscreens.ScreenStackHeaderSubviewManager
+09-27 15:46:58.040 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.reactnativekeyboardcontroller.KeyboardBackgroundViewManager
+09-27 15:46:58.041 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class org.maplibre.reactnative.components.annotations.pointannotation.MLRNPointAnnotationManager
+09-27 15:46:58.072 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$DefsViewManager
+09-27 15:46:58.074 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.VirtualViewManager$RenderableShadowNode
+09-27 15:46:58.076 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeMergeManager
+09-27 15:46:58.082 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewManager
+09-27 15:46:58.082 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewShadowNode
+09-27 15:46:58.083 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LinearGradientManager
+09-27 15:46:58.085 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeGaussianBlurManager
+09-27 15:46:58.088 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+09-27 15:46:58.088 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ProgressBarShadowNode
+09-27 15:46:58.092 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+09-27 15:46:58.097 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+09-27 15:46:58.098 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextShadowNode
+09-27 15:46:58.101 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeColorMatrixManager
+09-27 15:46:58.103 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+09-27 15:46:58.105 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ClipPathViewManager
+09-27 15:46:58.109 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$SymbolManager
+09-27 15:46:58.112 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PatternManager
+09-27 15:46:58.115 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeBlendManager
+09-27 15:46:58.116 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+09-27 15:46:58.118 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.SvgViewManager
+09-27 15:46:58.120 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+09-27 15:46:58.121 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchShadowNode
+09-27 15:46:58.123 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$UseViewManager
+09-27 15:46:58.125 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$CircleViewManager
+09-27 15:46:58.127 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TSpanViewManager
+09-27 15:46:58.131 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FilterManager
+09-27 15:46:58.133 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MarkerManager
+09-27 15:46:58.135 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerButtonViewManager
+09-27 15:46:58.137 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+09-27 15:46:58.139 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ForeignObjectManager
+09-27 15:46:58.141 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$EllipseViewManager
+09-27 15:46:58.143 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$LineViewManager
+09-27 15:46:58.145 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageViewManager
+09-27 15:46:58.145 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.frescosupport.FrescoBasedReactTextInlineImageShadowNode
+09-27 15:46:58.147 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeFloodManager
+09-27 15:46:58.149 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$GroupViewManager
+09-27 15:46:58.151 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextViewManager
+09-27 15:46:58.153 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$ImageViewManager
+09-27 15:46:58.155 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeCompositeManager
+09-27 15:46:58.157 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+09-27 15:46:58.158 12208 12208 I cjlg    : onStop
+09-27 15:46:58.159 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RadialGradientManager
+09-27 15:46:58.161 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$MaskManager
+09-27 15:46:58.163 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+09-27 15:46:58.164 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$RectViewManager
+09-27 15:46:58.166 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$TextPathViewManager
+09-27 15:46:58.169 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+09-27 15:46:58.171 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$FeOffsetManager
+09-27 15:46:58.173 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.horcrux.svg.RenderableViewManager$PathViewManager
+09-27 15:46:58.177 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+09-27 15:46:58.179 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextViewManager
+09-27 15:46:58.180 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactVirtualTextShadowNode
+09-27 15:46:58.181 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+09-27 15:46:58.183 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextManager
+09-27 15:46:58.183 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactRawTextShadowNode
+09-27 15:46:58.184 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+09-27 15:46:58.186 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputShadowNode
+09-27 15:46:58.188 10832 12504 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.swmansion.gesturehandler.react.RNGestureHandlerRootViewManager
+09-27 15:46:58.192 12208 12208 I cjcw    : onStop
+09-27 15:46:58.309 29008  6550 I FontLog : (REDACTED) Received query %s, URI %s
+09-27 15:46:58.309 29008  6550 I FontLog : (REDACTED) Query [%s] resolved to %s
+09-27 15:46:58.311 29008  6550 I FontLog : (REDACTED) Fetch %s end status %s
+09-27 15:46:58.315 29008  6550 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 15:46:58.319 29008  6550 I FontLog : (REDACTED) Pulling font file for id = %d, cache size = %d
+09-27 15:46:58.324 10832 12504 W BridgelessReactContext: [WARNING] Bridgeless doesn't support CatalystInstance. Accessing an API that's not part of the new architecture is not encouraged usage.
+09-27 15:46:58.330 10832 12504 I ExpoModulesCore: ✅ JSI interop was installed
+09-27 15:46:58.343 10832 12504 I ExpoModulesCore: ✅ Constants were exported
+09-27 15:46:58.570 10832 12504 E ReactNativeJS: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary.
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: ReactHost{0}.handleHostException(message = "[runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: invariant@1:139141
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: getEnforcing@1:148574
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2245048
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2243982
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2243668
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2242587
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2240692
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2240318
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:2200219
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:1477976
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:1282001
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:130350
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77315
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: anonymous@1:130305
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: loadModuleImplementation@1:77785
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: guardedLoadModule@1:77272
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: metroRequire@1:76911
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: global@1:76433
+09-27 15:46:58.573 10832 12504 W unknown:BridgelessReact: ")
+09-27 15:46:58.578 10832 12504 E libc++abi: terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:46:58.578 10832 12504 E libc++abi: invariant@1:139141
+09-27 15:46:58.578 10832 12504 E libc++abi: getEnforcing@1:148574
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2245048
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2243982
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2243668
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2242587
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2240692
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2240318
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadModule@1:77315
+09-27 15:46:58.578 10832 12504 E libc++abi: metroRequire@1:76911
+09-27 15:46:58.578 10832 12504 E libc++abi: anonymous@1:2200219
+09-27 15:46:58.578 10832 12504 E libc++abi: loadModuleImplementation@1:77785
+09-27 15:46:58.578 10832 12504 E libc++abi: guardedLoadM
+09-27 15:46:58.578 10832 12504 I libc    : debuggerd signal invoked signal:6
+09-27 15:46:58.578 10832 12504 I libc    : debuggerd requestDump:0 NO_NEW_PRIVS:0
+--------- beginning of crash
+09-27 15:46:58.578 10832 12504 F libc    : Fatal signal 6 (SIGABRT), code -1 (SI_QUEUE) in tid 12504 (mqt_v_js), pid 10832 (.campusx.mobile)
+09-27 15:46:58.578 10832 12504 I libc    : clone child process pid:12557
+09-27 15:46:58.578 10832 12504 I libc    : debuggerd pseudothread crash_process: 12504
+09-27 15:46:58.608 12558 12558 I crash_dump64: crash_dump invoked target_process:10832 current_process:12558: Success
+09-27 15:46:58.666 12558 12558 I crash_dump64: crash_dump process receive exit: Success
+09-27 15:46:58.996 12560 12560 F DEBUG   : Softversion: PD2251KF_EX_A_15.2.18.1.W30.V000L1
+09-27 15:46:58.996 12560 12560 F DEBUG   : Time: 2026-09-27 15:46:58
+09-27 15:46:58.996 12560 12560 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+09-27 15:46:58.996 12560 12560 F DEBUG   : Build fingerprint: 'iQOO/I2223i/I2223:15/AP3A.240905.015.A2/compiler260422111411:user/release-keys'
+09-27 15:46:58.996 12560 12560 F DEBUG   : Revision: '0'
+09-27 15:46:58.996 12560 12560 F DEBUG   : ABI: 'arm64'
+09-27 15:46:58.996 12560 12560 F DEBUG   : Timestamp: 2026-09-27 15:46:58.688130253+0530
+09-27 15:46:58.996 12560 12560 F DEBUG   : Process uptime: 570s
+09-27 15:46:58.996 12560 12560 F DEBUG   : Cmdline: com.campusx.mobile
+09-27 15:46:58.996 12560 12560 F DEBUG   : pid: 10832, tid: 12504, name: mqt_v_js  >>> com.campusx.mobile <<<
+09-27 15:46:58.996 12560 12560 F DEBUG   : uid: 10822
+09-27 15:46:58.996 12560 12560 F DEBUG   : signal 6 (SIGABRT), code -1 (SI_QUEUE), fault addr --------
+09-27 15:46:58.996 12560 12560 F DEBUG   : Abort message: 'terminating due to uncaught exception of type facebook::jni::JniException: com.facebook.react.common.JavascriptException: [runtime not ready]: Invariant Violation: TurboModuleRegistry.getEnforcing(...): 'RNCDatePicker' could not be found. Verify that a module by this name is registered in the native binary., stack:
+09-27 15:46:58.996 12560 12560 F DEBUG   : invariant@1:139141
+09-27 15:46:58.996 12560 12560 F DEBUG   : getEnforcing@1:148574
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2245048
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2243982
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2243668
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2242587
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2240692
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2240318
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:2200219
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:1477976
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:1282001
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:130350
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77315
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : anonymous@1:130305
+09-27 15:46:58.996 12560 12560 F DEBUG   : loadModuleImplementation@1:77785
+09-27 15:46:58.996 12560 12560 F DEBUG   : guardedLoadModule@1:77272
+09-27 15:46:58.996 12560 12560 F DEBUG   : metroRequire@1:76911
+09-27 15:46:58.996 12560 12560 F DEBUG   : global@1:76433
+09-27 15:46:58.996 12560 12560 F DEBUG   : 
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.modules.core.ExceptionsManagerModule.reportException(ExceptionsManagerModule.kt:52)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.runtime.ReactInstance$ReactJsExceptionHandlerImpl.reportJsException(ReactInstance.kt:281)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.jni.NativeRunnable.run(Native Method)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at android.os.Handler.handleCallback(Handler.java:1014)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at android.os.Handler.dispatchMessage(Handler.java:102)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage(MessageQueueThreadHandler.kt:21)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at android.os.Looper.loopOnce(Looper.java:250)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at android.os.Looper.loop(Looper.java:340)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1(MessageQueueThreadImpl.kt:175)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4(MessageQueueThreadImpl.kt:0)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+09-27 15:46:58.996 12560 12560 F DEBUG   : 	at java.lang.Thread.run(Thread.java:1572)'
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x0  0000000000000000  x1  00000000000030d8  x2  0000000000000006  x3  000000796b07b870
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x4  646277641f736766  x5  646277641f736766  x6  646277641f736766  x7  7f7f7f7f7f7f7f7f
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x8  00000000000000f0  x9  0000007ee6e4e878  x10 ffffff80fffffbdf  x11 0000007eed0d5020
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x12 0000000013be66ec  x13 0000150759f4f018  x14 00224a6fd719a733  x15 0000000034155555
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x16 0000007ee6f47d50  x17 0000007ee6f30140  x18 000000796ad9c000  x19 0000000000002a50
+09-27 15:46:58.996 12560 12560 F DEBUG   :     x20 00000000000030d8  x21 00000000ffffffff  x22 000000796b07b9a0  x23 000000796b07b9e0
+09-27 15:46:58.997 12560 12560 F DEBUG   :     x24 000000796b07ba90  x25 000000000000002f  x26 000000797275ef0a  x27 000000797275bd65
+09-27 15:46:58.997 12560 12560 F DEBUG   :     x28 0000007972756461  x29 000000796b07b8f0
+09-27 15:46:58.997 12560 12560 F DEBUG   :     lr  0000007ee6ecb82c  sp  000000796b07b850  pc  0000007ee6ecb85c  pst 0000000000001000
+09-27 15:46:58.997 12560 12560 F DEBUG   : 46 total frames
+09-27 15:46:58.997 12560 12560 F DEBUG   : backtrace:
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #00 pc 00000000000a785c  /apex/com.android.runtime/lib64/bionic/libc.so (abort+172) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #01 pc 00000000000a0210  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #02 pc 000000000009eeb0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #03 pc 000000000009f374  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #04 pc 000000000009f314  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libc++_shared.so (offset 0x133c000) (std::terminate()+56) (BuildId: 6783a7f3a0d9c67c55a74cadc441ed55aaa493da)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #05 pc 000000000025d584  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #06 pc 0000000000489594  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #07 pc 00000000002b90c4  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::JsErrorHandler::handleErrorWithCppPipeline(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+7440) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #08 pc 00000000002b7068  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::JsErrorHandler::handleError(facebook::jsi::Runtime&, facebook::jsi::JSError&, bool, bool)+1680) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #09 pc 000000000026c630  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #10 pc 00000000000aaa24  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #11 pc 00000000000aa760  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #12 pc 00000000000b2cd8  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #13 pc 00000000000c50c8  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #14 pc 00000000000c4a28  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #15 pc 00000000000f4554  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #16 pc 00000000000a0260  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #17 pc 00000000000a5e40  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #18 pc 00000000000a0060  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libhermes.so (offset 0x1648000) (BuildId: 3742cb807f54bf165f89bd93a20345afc069184d)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #19 pc 0000000000268024  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #20 pc 000000000041d4c0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::Task::execute(facebook::jsi::Runtime&, bool)+312) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #21 pc 000000000041b654  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::executeTask(facebook::jsi::Runtime&, facebook::react::Task&, bool) const+60) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #22 pc 000000000041bf64  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::runEventLoopTick(facebook::jsi::Runtime&, facebook::react::Task&)+124) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #23 pc 000000000041bc74  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (facebook::react::RuntimeScheduler_Modern::runEventLoop(facebook::jsi::Runtime&)+88) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #24 pc 0000000000265d80  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #25 pc 000000000045e930  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libreactnative.so (offset 0x3aa8000) (BuildId: daceecb3f8ffe4c2)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #26 pc 0000000000017dd0  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libfbjni.so (offset 0x15c0000) (facebook::jni::detail::MethodWrapper<void (facebook::jni::JNativeRunnable::*)(), &facebook::jni::JNativeRunnable::run(), facebook::jni::JNativeRunnable, void>::dispatch(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>)+72) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #27 pc 0000000000017d10  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/base.apk!libfbjni.so (offset 0x15c0000) (facebook::jni::detail::FunctionWrapper<void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>), facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*, void>::call(_JNIEnv*, _jobject*, void (*)(facebook::jni::alias_ref<facebook::jni::detail::JTypeFor<facebook::jni::HybridClass<facebook::jni::JNativeRunnable, facebook::jni::JRunnable>::JavaPart, facebook::jni::JRunnable, void>::_javaobject*>))+60) (BuildId: e438f6554af1d86b210a05412e96c4251e570157)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #28 pc 00000000018b3ba0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (art_jni_trampoline+112)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #29 pc 0000000000dbed9c  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Handler.dispatchMessage+76)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #30 pc 000000000072c8dc  /apex/com.android.art/lib64/libart.so (nterp_helper+2124) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #31 pc 0000000000aa86cc  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadHandler.dispatchMessage+16)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #32 pc 0000000000dc36b0  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loopOnce+1088)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #33 pc 0000000000dc31c8  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (android.os.Looper.loop+712)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #34 pc 000000000072c104  /apex/com.android.art/lib64/libart.so (nterp_helper+116) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #35 pc 0000000000aa8a3c  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.startNewBackgroundThread$lambda$1+80)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #36 pc 0000000000728c6c  /apex/com.android.art/lib64/libart.so (nterp3_op_invoke_static+44) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #37 pc 0000000000aa896c  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion.$r8$lambda$ldnZnqelhYFctGaUKkOKYj5rxo4+0)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #38 pc 0000000000728c6c  /apex/com.android.art/lib64/libart.so (nterp3_op_invoke_static+44) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #39 pc 0000000000aa8794  /data/app/~~337AVmek9lCLOWOCcRIfCA==/com.campusx.mobile-_RlyPIzSL60vM0_5aOCMNw==/oat/arm64/base.vdex (com.facebook.react.bridge.queue.MessageQueueThreadImpl$Companion$$ExternalSyntheticLambda0.run+4)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #40 pc 000000000051e788  /data/misc/apexdata/com.android.art/dalvik-cache/arm64/boot.oat (java.lang.Thread.run+72)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #41 pc 0000000000298f94  /apex/com.android.art/lib64/libart.so (art_quick_invoke_stub+612) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #42 pc 000000000029738c  /apex/com.android.art/lib64/libart.so (art::ArtMethod::Invoke(art::Thread*, unsigned int*, unsigned int, art::JValue*, char const*)+148) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #43 pc 00000000004d5fd0  /apex/com.android.art/lib64/libart.so (art::Thread::CreateCallback(void*)+1384) (BuildId: 1f156fc62660d075a8d675db850b95d5)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #44 pc 00000000000b8bc8  /apex/com.android.runtime/lib64/bionic/libc.so (__pthread_start(void*)+216) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:46:58.997 12560 12560 F DEBUG   :       #45 pc 00000000000aaf48  /apex/com.android.runtime/lib64/bionic/libc.so (__start_thread+68) (BuildId: 8ddb6050b21362b8270ee90493ac2227)
+09-27 15:46:59.083 12208 12208 W libc    : Access denied finding property "vendor.display.enable_optimal_refresh_rate"
+09-27 15:46:59.083  6090  6090 I Finsky  : [2] SCH: job service start with id 9135.
+09-27 15:46:59.092 12208 15447 I BLASTBufferQueue: QoSAllocBuff Successful. Ret 0 
+09-27 15:46:59.102  6090 12231 I Finsky  : [73737] SCH: Satisfied jobs for 9135 are: 12-1
+09-27 15:46:59.114  6090 12572 I Finsky  : [73742] SCH: Job 12-1 starting
+09-27 15:46:59.116  6090  6090 I Finsky  : [2] WM::SCH: Logging work start for 12-1
+09-27 15:46:59.118  6090  6090 I Finsky  : [2] [ContentSync] job started
+09-27 15:46:59.147 12208 12208 I cjlg    : onStart
+09-27 15:46:59.148 12208 12208 I cjcw    : onStart
+09-27 15:46:59.151 12208 12208 I chay    : (REDACTED) [%s] onStart()
+09-27 15:46:59.151 12208 12208 I chdm    : Reloading theme data
+09-27 15:46:59.157 12208 12208 E NetworkErrorMessage: (REDACTED) Invalid connectivity state: %s
+09-27 15:46:59.158 12208 12208 I cjlg    : onResume
+09-27 15:46:59.158 12208 12208 W ebmr    : missing event name
+09-27 15:46:59.159 12208 12208 I cjcw    : onResume
+09-27 15:46:59.159  6090 12578 I Finsky  : [73743] PSR: Package cache is empty, setup cache.
+09-27 15:46:59.258 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2361 
+09-27 15:46:59.260 16900 16900 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1532 onStartInput(EditorInfo{EditorInfo{packageName=com.android.launcher3, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+09-27 15:46:59.261 16900 11282 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 0, locked = false
+09-27 15:46:59.262 16900 16900 I LatinIMEBase: LatinIMEBase.updateInputViewCoverNavigation():317 Update input view padding, isNavbarOverInputWindow=false, bottom inset=0
+09-27 15:46:59.265 16900 11295 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatusInternal():119 repeatCheckTimes = 1, locked = false
+09-27 15:46:59.510  6090 12578 W Finsky  : [73743] SLM: no metadata property com.android.vending.derived.apk.id found for shared library com.google.android.trichromelibrary_653310331:
+09-27 15:46:59.514  6090 12578 W Finsky  : [73743] SLM: no metadata property com.android.vending.sdk.version.patch found for shared library com.google.android.trichromelibrary_653310331:
+09-27 15:47:00.170 29008 12595 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:47:00.177 29008 12595 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:47:00.180 29008 12595 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:47:00.194 29008 12595 I PlatformStatsUtil: (REDACTED) Uploading %d dropbox entries to Clearcut
+09-27 15:47:00.222 29008 12595 I DropBoxUtil: (REDACTED) Reading dropbox entry with tag %s and timestamp %d
+09-27 15:47:01.862  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.mainline.primary.libs' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:01.933  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.wifi' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:02.445  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.devicelock' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:02.588  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.apex.cts.shim' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:02.766  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.appsearch' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:02.767  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.art' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.172  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.mediaprovider' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.287  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.virt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.437  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.btservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.520  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.resolv' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.640  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.configinfrastructure' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.640  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.802  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v31' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.805  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v30' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.805  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v33' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.821  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v32' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:03.822  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.vndk.v34' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:04.084  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.sdkext' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:04.200  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:04.201  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tethering' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:04.453  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.runtime' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:04.604  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.cellbroadcast' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:05.441  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.tzdata6' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:05.585  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.permission' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:07.472  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.media.swcodec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:07.531  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.profiling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:07.562 29008  7312 I NearbyDiscovery: (REDACTED) BloomFilterAdvManager: Detected bloom filter but too far away, ignoring. %sm, %s
+09-27 15:47:07.563 29008 11662 I NearbyDiscovery: (REDACTED) loadFastPairModule: checkFeaturesAreAvailable:%d
+09-27 15:47:07.564 29008 11662 I NearbyDiscovery: loadFastPairModule: FastPair module is downloaded. [CONTEXT service_id=265 ]
+09-27 15:47:07.642 28779 12614 I System.out: GlobalSearch: firstInt:  -2
+09-27 15:47:07.642 28779 12614 I System.out: GlobalSearch: name:  _1_1.del ; size = 2
+09-27 15:47:07.643 28779 12614 I System.out: GlobalSearch: memsize = 1
+09-27 15:47:07.646 28779 12614 I System.out: GlobalSearch: firstInt:  -2
+09-27 15:47:07.646 28779 12614 I System.out: GlobalSearch: name:  _0_1.del ; size = 124
+09-27 15:47:07.646 28779 12614 I System.out: GlobalSearch: memsize = 16
+09-27 15:47:08.321  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.adbd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.379  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.i18n' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.412  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.conscrypt' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.551  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.neuralnetworks' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.669  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ipsec' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.807  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.ondevicepersonalization' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.815  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.healthfitness' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.911  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.uwb' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:08.911  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.extservices' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:09.237  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.os.statsd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:09.252  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.android.rkpd' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:09.284  6090  6090 W Finsky  : [2] STU: Failed to get storage stats for package 'com.google.android.scheduling' (1601: Error getting stats: android.content.pm.PackageManager.NameNotFoundException)
+09-27 15:47:09.447  6090  6090 I Finsky  : [2] App states replicator found 43 unowned apps
+09-27 15:47:09.479  6090  6134 I Finsky  : [73651] Completed 0 account content syncs with 0 successful.
+09-27 15:47:09.480  6090  6090 I Finsky  : [2] [ContentSync] Installation state replication succeeded.
+09-27 15:47:09.480  6090  6090 I Finsky  : [2] SCH: jobFinished: 12-1. TimeElapsed: 10365ms.
+09-27 15:47:09.481  6090  6090 I Finsky  : [2] WM::SCH: Logging work end for 12-1
+09-27 15:47:09.494  6090  6134 I Finsky  : [73651] SCH: Scheduling phonesky job Id: 1-1337, CT: 1790499620323, Constraints: [{ L: 42899632, D: 86099632, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+09-27 15:47:09.495  6090  6134 I Finsky  : [73651] SCH: Scheduling phonesky job Id: 34-3376, CT: 1790457238022, Constraints: [{ L: 604800000, D: 2530676320, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+09-27 15:47:09.495  6090  6134 I Finsky  : [73651] SCH: Scheduling phonesky job Id: 34-3379, CT: 1790475119520, Constraints: [{ L: 79199651, D: 1375199651, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+09-27 15:47:09.495  6090  6134 I Finsky  : [73651] SCH: Scheduling phonesky job Id: 34-3380, CT: 1790475120105, Constraints: [{ L: 604800000, D: 2591999462, C: CHARGING_NONE, I: IDLE_NONE, N: NET_ANY, B: BATTERY_ANY }]
+09-27 15:47:09.500  6090  6135 I Finsky  : [73652] SCH: Scheduling 1 system job(s)
+09-27 15:47:09.501  6090  6135 I Finsky  : [73652] SCH: Scheduling system job Id: 9161, L: 38290454, D: 81490454, C: false, I: false, N: 1
+09-27 15:47:09.510  6090 12572 I Finsky  : [73742] SCH: job service finished with id 9135.
+09-27 15:47:12.526  6621  6621 I adbd    : adbd service requested 'shell,v2:export ANDROID_LOG_TAGS=''; exec logcat '-d''

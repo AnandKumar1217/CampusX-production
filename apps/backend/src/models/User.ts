@@ -26,6 +26,7 @@ const userSchema = new Schema(
       unique: true,
       index: true,
     },
+    emailVerified: { type: Boolean, default: false },
     phone: { type: String, trim: true, sparse: true, unique: true },
     passwordHash: { type: String, required: true, select: false },
     avatarUrl: { 

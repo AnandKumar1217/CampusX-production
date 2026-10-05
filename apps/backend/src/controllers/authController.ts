@@ -9,6 +9,9 @@ import {
   rotateRefreshToken,
   signup,
   checkIdentity,
+  sendVerificationOtp,
+  verifyEmail,
+  verifyForgotPasswordOtp,
 } from "../services/authService.js";
 import { AppError, sendSuccess } from "../utils/http.js";
 
@@ -60,24 +63,27 @@ export async function forgotPasswordController(
   request: Request,
   response: Response,
 ) {
-  const reset = await createPasswordReset(request.body.value);
-  if (reset && env.NODE_ENV === "development")
-    return sendSuccess(
-      response,
-      { delivery: "development", resetUrl: reset.resetUrl },
-      "Password reset generated for development",
-    );
-  if (reset && env.NODE_ENV !== "development")
-    throw new AppError(
-      503,
-      "Password email delivery is not configured yet",
-      "EMAIL_DELIVERY_UNAVAILABLE",
-    );
+  const result = await createPasswordReset(request.body.value);
   return sendSuccess(
     response,
-    { delivery: "not_applicable" },
-    "If the account exists, password reset instructions will be sent",
+    { email: result?.email },
+    "If the account exists, a password reset code will be sent",
   );
+}
+export async function verifyForgotPasswordOtpController(
+  request: Request,
+  response: Response,
+) {
+  const result = await verifyForgotPasswordOtp(request.body.email, request.body.otp);
+  return sendSuccess(response, result, "Code verified successfully");
+}
+export async function sendVerificationOtpController(request: Request, response: Response) {
+  await sendVerificationOtp(request.body.email);
+  return sendSuccess(response, null, "Verification code sent");
+}
+export async function verifyEmailController(request: Request, response: Response) {
+  await verifyEmail(request.body.email, request.body.otp);
+  return sendSuccess(response, null, "Email verified successfully");
 }
 export async function resetPasswordController(
   request: Request,

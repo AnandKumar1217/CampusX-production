@@ -39,14 +39,19 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
   const submit = handleSubmit(async (values) => {
     try {
       if (!isOtpSent) {
-        await api.post("/auth/forgot-password", { method: "email", value: values.email });
+        await api.post("/auth/forgot-password", { value: values.email });
         setIsOtpSent(true);
       } else {
         if (!values.otp || values.otp.length < 4) {
           setError("otp", { message: "Please enter the OTP" });
           return;
         }
-        navigation.navigate("ResetPassword", { token: values.otp } as any);
+        const response = await api.post("/auth/verify-forgot-password-otp", { 
+          email: values.email, 
+          otp: values.otp 
+        });
+        const resetToken = response.data.data.resetToken;
+        navigation.navigate("ResetPassword", { token: resetToken } as any);
       }
     } catch (error) {
       setError("root", { message: getApiErrorMessage(error) });

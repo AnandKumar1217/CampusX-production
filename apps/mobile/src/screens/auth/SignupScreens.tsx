@@ -60,8 +60,8 @@ function StepHeader({
 const accountSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   username: z.string().min(3, "Use at least 3 characters").max(30, "Too long").regex(/^[a-z0-9_.]+$/, "Only lowercase letters, numbers, dots, and underscores"),
-  email: z.string().min(5, "Enter a valid email or phone number"),
-  otp: z.string().optional(),
+  email: z.string().email("Enter a valid email address"),
+  otp: z.string().length(6, "Code must be 6 digits"),
   password: z
     .string()
     .min(8, "Use at least 8 characters")
@@ -86,10 +86,12 @@ export function SignupAccountScreen({
   const [usernameSuggestions, setUsernameSuggestions] = React.useState<string[]>([]);
   const [showOtp, setShowOtp] = React.useState(false);
 
+  const [sendingOtp, setSendingOtp] = React.useState(false);
+
   const submit = handleSubmit(async (values) => {
     try {
       setUsernameSuggestions([]);
-      await api.post("/auth/check-identity", { email: values.email, username: values.username });
+      await api.post("/auth/check-identity", { email: values.email, username: values.username, otp: values.otp });
       draft.patch(values);
       navigation.navigate("SignupProfile");
     } catch (err: any) {
@@ -197,16 +199,33 @@ export function SignupAccountScreen({
             error={fieldState.error?.message}
             trailing={
               <Pressable
-                onPress={() => setShowOtp(true)}
+                onPress={async () => {
+                  const email = field.value;
+                  if (!email || !email.includes("@")) {
+                    setError("email", { message: "Enter a valid email first" });
+                    return;
+                  }
+                  try {
+                    setSendingOtp(true);
+                    await api.post("/auth/send-verification-otp", { email });
+                    setShowOtp(true);
+                  } catch (err: any) {
+                    setError("email", { message: getApiErrorMessage(err) });
+                  } finally {
+                    setSendingOtp(false);
+                  }
+                }}
+                disabled={sendingOtp}
                 style={{
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 6,
                   backgroundColor: colors.primaryTint,
                   borderRadius: radius.pill,
+                  opacity: sendingOtp ? 0.7 : 1,
                 }}
               >
                 <CXText variant="smallStrong" color={colors.primary}>
-                  Verify
+                  {sendingOtp ? "Sending..." : showOtp ? "Resend" : "Verify"}
                 </CXText>
               </Pressable>
             }
@@ -390,6 +409,7 @@ export function SignupProfileScreen({
               department: finalDepartment,
               academicYear: values.academicYear,
               interests: [],
+              otp: draft.otp,
             });
             await setSession(
               response.data.data.accessToken,
