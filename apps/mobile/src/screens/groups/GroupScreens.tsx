@@ -1455,6 +1455,7 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
   const [description, setDescription] = useState("");
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [avatarOptionsVisible, setAvatarOptionsVisible] = useState(false);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -1467,6 +1468,7 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
     if (!result.canceled && result.assets?.[0]?.uri) {
       setAvatarUri(result.assets[0].uri);
     }
+    setAvatarOptionsVisible(false);
   };
 
   useFocusEffect(
@@ -1490,7 +1492,10 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
       let finalAvatarUrl = group.avatarUrl;
       let finalAvatarPublicId = group.avatarPublicId;
 
-      if (avatarUri && avatarUri !== group.avatarUrl) {
+      if (avatarUri === "") {
+        finalAvatarUrl = undefined;
+        finalAvatarPublicId = undefined;
+      } else if (avatarUri && avatarUri !== group.avatarUrl) {
         const formData = new FormData();
         const filename = avatarUri.split('/').pop() || 'avatar.jpg';
         const match = /\\.(\\w+)$/.exec(filename);
@@ -1514,8 +1519,8 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
         name: name.trim(),
         category: subtitle.trim(),
         description: description.trim(),
-        avatarUrl: finalAvatarUrl || null,
-        avatarPublicId: finalAvatarPublicId || null
+        avatarUrl: finalAvatarUrl === undefined ? null : finalAvatarUrl,
+        avatarPublicId: finalAvatarPublicId === undefined ? null : finalAvatarPublicId
       });
 
       queryClient.invalidateQueries({ queryKey: ["groups"] });
@@ -1542,8 +1547,8 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
       <ScrollView contentContainerStyle={styles.page}>
         {/* Avatar Section */}
         <View style={{ alignItems: "center", marginBottom: spacing.xl, marginTop: spacing.md }}>
-          <Pressable onPress={pickImage} style={{ position: "relative" }}>
-            <CXAvatar size={100} source={avatarUri || undefined} name={name || "Group"} />
+          <Pressable onPress={() => setAvatarOptionsVisible(true)} style={{ position: "relative" }}>
+            <CXAvatar size={100} source={avatarUri === "" ? undefined : (avatarUri || undefined)} name={name || "Group"} />
             <View style={{
               position: "absolute",
               bottom: 0,
@@ -1603,6 +1608,27 @@ export function EditGroupScreen({ navigation, route }: StackProps<"EditGroup">) 
           />
         </CXCard>
       </ScrollView>
+
+      <CXActionSheet
+        visible={avatarOptionsVisible}
+        onClose={() => setAvatarOptionsVisible(false)}
+        actions={[
+          {
+            label: "Choose Photo",
+            icon: "image-outline",
+            onPress: pickImage,
+          },
+          {
+            label: "Remove Photo",
+            icon: "trash-outline",
+            destructive: true,
+            onPress: () => {
+              setAvatarUri("");
+              setAvatarOptionsVisible(false);
+            },
+          }
+        ]}
+      />
     </CXScreen>
   );
 }
