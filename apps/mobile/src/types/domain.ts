@@ -159,7 +159,7 @@ export type Listing = {
   category: string;
   images: string[];
   seller: User;
-  status: "active" | "sold" | "draft";
+  status: "active" | "available" | "sold" | "draft" | "reserved" | "deleted";
   description?: string;
   condition?: string;
   location?: string;

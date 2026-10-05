@@ -741,7 +741,7 @@ export function MarketplaceScreen({ navigation }: StackProps<"Marketplace">) {
 
   const filteredListings = useMemo(() => {
     return allListings.filter((listing) => {
-      if (listing.status !== "active") return false; // Only show active listings in marketplace
+      if (listing.status !== "available") return false; // Only show active listings in marketplace
       
       const q = query.trim().toLowerCase();
       const matchesQuery = !q || 
@@ -1662,7 +1662,7 @@ export function ManageListingsScreen({
     }
   });
 
-  const [filter, setFilter] = useState<"all" | "active" | "sold">("active");
+  const [filter, setFilter] = useState<"all" | "available" | "sold">("available");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
@@ -1710,14 +1710,14 @@ export function ManageListingsScreen({
         />
         <CXRow style={styles.filters}>
           <CXChip label="All" active={filter === "all"} onPress={() => setFilter("all")} />
-          <CXChip label="Active" active={filter === "active"} onPress={() => setFilter("active")} />
+          <CXChip label="Active" active={filter === "available"} onPress={() => setFilter("available")} />
           <CXChip label="Sold" active={filter === "sold"} onPress={() => setFilter("sold")} />
         </CXRow>
         <CXCard>
           <CXText variant="bodyStrong">Your Marketplace Overview</CXText>
           <CXRow style={styles.overview}>
             {[
-              [myListings.filter((l: any) => l.status === "active").length.toString(), "Active Listings"],
+              [myListings.filter((l: any) => l.status === "available").length.toString(), "Active Listings"],
               [totalViews.toString(), "Total Views"],
               [soldListingsCount.toString(), "Sold Items"],
             ].map(([value, label]) => (
