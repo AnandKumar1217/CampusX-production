@@ -214,11 +214,6 @@ export function EventDetailsScreen({ navigation, route }: any) {
             <Pressable onPress={handleShare} style={styles.iconBtn}>
               <Ionicons name="share-outline" color={theme.colors.text} size={24} />
             </Pressable>
-            {!isOwner && (
-              <Pressable onPress={() => { toggleSaveMutation.mutate(!isSaved); setSnackbarMessage(isSaved ? "Removed from Saved Items" : "Saved to Saved Items"); setSnackbarVisible(true); }} style={styles.iconBtn}>
-                <Ionicons name={isSaved ? "bookmark" : "bookmark-outline"} color={isSaved ? theme.colors.primary : theme.colors.text} size={24} />
-              </Pressable>
-            )}
             {isOwner && (
               <Pressable onPress={() => setActionSheetVisible(true)} style={styles.iconBtn}>
                 <Ionicons name="ellipsis-vertical" color={theme.colors.text} size={24} />
