@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
@@ -98,7 +97,7 @@ export function MemoryScreen({ navigation, route }: Props) {
           <CXText variant="h3" color={colors.white}>
             {isSolo ? `Level ${engine.level}` : `Memory Battle`}
           </CXText>
-          <CXText variant="body" color={colors.gray400}>
+          <CXText variant="body" color={colors.textFaint}>
             {isSolo ? `Moves: ${engine.moves}` : `P${engine.currentPlayer + 1}'s Turn`}
           </CXText>
         </View>
@@ -109,7 +108,7 @@ export function MemoryScreen({ navigation, route }: Props) {
         <View style={styles.scoreBoard}>
           {engine.scores.slice(0, engine.players).map((s, i) => (
             <View key={i} style={[styles.scorePill, engine.currentPlayer === i && styles.activePill]}>
-              <CXText variant="h4" color={engine.currentPlayer === i ? "#FFF" : colors.gray400}>
+              <CXText variant="bodyStrong" color={engine.currentPlayer === i ? "#FFF" : colors.textFaint}>
                 P{i + 1}: {s}
               </CXText>
             </View>

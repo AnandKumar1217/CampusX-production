@@ -10,7 +10,6 @@ import {
   signupController,
   checkIdentityController,
   sendVerificationOtpController,
-  verifyEmailController,
   verifyForgotPasswordOtpController,
 } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
@@ -23,7 +22,6 @@ import {
   signupSchema,
   checkIdentitySchema,
   sendVerificationOtpSchema,
-  verifyEmailSchema,
   verifyForgotPasswordOtpSchema,
 } from "../validators/auth.js";
 
@@ -75,9 +73,4 @@ authRouter.post(
   "/send-verification-otp",
   validate(sendVerificationOtpSchema),
   asyncHandler(sendVerificationOtpController),
-);
-authRouter.post(
-  "/verify-email",
-  validate(verifyEmailSchema),
-  asyncHandler(verifyEmailController),
 );

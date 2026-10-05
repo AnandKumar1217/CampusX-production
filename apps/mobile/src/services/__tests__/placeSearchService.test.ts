@@ -111,7 +111,7 @@ describe("placeSearchService Deduplication and Modes", () => {
   it("6. submitted search uses fresh request with bbox", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ features: [] }),
+      json: async () => ({ features: [] as any[] }),
     });
 
     await placeSearchService.searchPlaces("test", 12.9716, 77.5946, undefined, undefined, "submit");

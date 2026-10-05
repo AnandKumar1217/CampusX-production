@@ -10,7 +10,6 @@ import {
   signup,
   checkIdentity,
   sendVerificationOtp,
-  verifyEmail,
   verifyForgotPasswordOtp,
 } from "../services/authService.js";
 import { AppError, sendSuccess } from "../utils/http.js";
@@ -66,7 +65,7 @@ export async function forgotPasswordController(
   const result = await createPasswordReset(request.body.value);
   return sendSuccess(
     response,
-    { email: result?.email },
+    result,
     "If the account exists, a password reset code will be sent",
   );
 }
@@ -81,10 +80,7 @@ export async function sendVerificationOtpController(request: Request, response: 
   await sendVerificationOtp(request.body.email);
   return sendSuccess(response, null, "Verification code sent");
 }
-export async function verifyEmailController(request: Request, response: Response) {
-  await verifyEmail(request.body.email, request.body.otp);
-  return sendSuccess(response, null, "Email verified successfully");
-}
+
 export async function resetPasswordController(
   request: Request,
   response: Response,

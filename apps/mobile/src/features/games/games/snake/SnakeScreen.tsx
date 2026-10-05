@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Dimensions, TouchableOpacity } from "react-native";

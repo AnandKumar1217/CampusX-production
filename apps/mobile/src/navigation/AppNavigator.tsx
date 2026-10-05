@@ -115,6 +115,7 @@ const Tabs = createBottomTabNavigator<MainTabsParamList>();
 function MainTabs() {
   return (
     <Tabs.Navigator
+      id="MainTabs"
       tabBar={(props) => <CXBottomNav {...props} />}
       screenOptions={{
         headerShown: false,
@@ -181,6 +182,7 @@ export function AppNavigator() {
       }}
     >
       <Stack.Navigator
+        id="RootStack"
         screenOptions={{
           headerShown: false,
           animation: "slide_from_right",

@@ -7,7 +7,7 @@ const MapView = (props: any) => (
   </View>
 );
 
-export const Marker = () => null;
-export const Callout = () => null;
+export const Marker = (): null => null;
+export const Callout = (): null => null;
 
 export default MapView;

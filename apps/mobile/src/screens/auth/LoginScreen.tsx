@@ -3,7 +3,7 @@ import React from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Alert } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Alert, Modal } from "react-native";
 import { z } from "zod";
 import Svg, { Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
@@ -173,11 +173,20 @@ export function LoginScreen({ navigation }: Props) {
           </Pressable>
         </CXRow>
       </ScrollView>
-      <CXSnackbar
-        visible={showComingSoon}
-        message="This feature will be coming soon!"
-        onDismiss={() => setShowComingSoon(false)}
-      />
+      <Modal visible={showComingSoon} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: 'white', padding: 24, borderRadius: 20, width: '100%', alignItems: 'center', elevation: 10, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primaryTint, justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+              <Ionicons name="hammer-outline" size={32} color={colors.primary} />
+            </View>
+            <CXText variant="h2" align="center">Coming Soon!</CXText>
+            <CXText color={colors.textMuted} align="center" style={{ marginTop: 8, marginBottom: 24 }}>
+              This login method is currently under development. Please use your email and password for now.
+            </CXText>
+            <CXButton label="Got it" onPress={() => setShowComingSoon(false)} style={{ width: '100%' }} />
+          </View>
+        </View>
+      </Modal>
     </CXKeyboardScreen>
   );
 }

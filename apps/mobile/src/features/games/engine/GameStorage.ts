@@ -11,6 +11,7 @@ export interface GameStats {
   wins: number;
   losses: number;
   draws: number;
+  maxLevel?: number;
 }
 
 const DEFAULT_SETTINGS: GameSettings = {

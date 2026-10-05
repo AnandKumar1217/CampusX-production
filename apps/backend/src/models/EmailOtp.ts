@@ -5,7 +5,7 @@ const emailOtpSchema = new Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     purpose: { type: String, enum: ["signup_verification", "password_reset"], required: true },
     codeHash: { type: String, required: true },
-    expiresAt: { type: Date, required: true, index: { expires: '10m' } },
+    expiresAt: { type: Date, required: true, index: { expires: 0 } },
     attempts: { type: Number, default: 0 },
     resendCount: { type: Number, default: 1 },
     lastSentAt: { type: Date, default: Date.now },

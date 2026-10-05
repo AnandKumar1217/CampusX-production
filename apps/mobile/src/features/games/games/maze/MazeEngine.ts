@@ -1,4 +1,3 @@
-// @ts-nocheck
 export type Cell = {
   x: number;
   y: number;
@@ -23,8 +22,10 @@ export class MazeEngine {
   
   moves = 0;
   isComplete = false;
+  level: number;
 
   constructor(level: number) {
+    this.level = level;
     // Level scaling
     this.width = Math.min(15, 5 + Math.floor(level / 5));
     this.height = Math.min(20, 7 + Math.floor(level / 4));

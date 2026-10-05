@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Chess, Move as ChessMove } from "chess.js";
 
 export type Player = "w" | "b";
@@ -28,7 +27,7 @@ export class ChessEngine {
   }
 
   getValidMoves(square: string): ChessMove[] {
-    return this.chess.moves({ square, verbose: true }) as ChessMove[];
+    return this.chess.moves({ square: square as any, verbose: true }) as ChessMove[];
   }
 
   playMove(move: string | { from: string, to: string, promotion?: string }): boolean {

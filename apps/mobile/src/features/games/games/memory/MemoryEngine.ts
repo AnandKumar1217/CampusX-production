@@ -1,4 +1,3 @@
-// @ts-nocheck
 export type Card = {
   id: number;
   value: number; // e.g., icon id

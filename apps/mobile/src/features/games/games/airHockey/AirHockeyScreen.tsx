@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Dimensions, GestureResponderEvent } from "react-native";
@@ -139,15 +138,15 @@ export function AirHockeyScreen({ navigation, route }: Props) {
   };
 
   const p1Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: p1X.value - 30 }, { translateY: p1Y.value - 30 }]
+    transform: [{ translateX: p1X.value - 30 }, { translateY: p1Y.value - 30 }] as any
   }));
 
   const p2Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: p2X.value - 30 }, { translateY: p2Y.value - 30 }]
+    transform: [{ translateX: p2X.value - 30 }, { translateY: p2Y.value - 30 }] as any
   }));
 
   const puckStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: puckX.value - 20 }, { translateY: puckY.value - 20 }]
+    transform: [{ translateX: puckX.value - 20 }, { translateY: puckY.value - 20 }] as any
   }));
 
   return (

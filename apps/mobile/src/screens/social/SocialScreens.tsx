@@ -152,13 +152,13 @@ export function FeedScreen({ navigation }: StackProps<"Feed">) {
                 .post(`/posts/${post.id}/reactions`, {
                   type: post.liked ? null : "like",
                 })
-                .catch(() => undefined);
+                .catch((): void => { return; });
             }}
             onSave={() => {
               updatePost(post.id, { saved: !post.saved });
               void api
                 .post(`/posts/${post.id}/save`, { saved: !post.saved })
-                .catch(() => undefined);
+                .catch((): void => { return; });
             }}
           />
         ))}
@@ -198,7 +198,7 @@ export function PostDetailsScreen({
     setComment("");
     void api
       .post(`/posts/${post.id}/comments`, { body: value })
-      .catch(() => undefined);
+      .catch((): void => { return; });
   };
   return (
     <CXScreen>
@@ -781,7 +781,7 @@ export function PeopleScreen({ navigation }: StackProps<"People">) {
 export function GlobalUsersScreen({ navigation }: StackProps<"GlobalUsers">) {
   return (
     <UsersDirectoryPage
-      navigation={navigation as StackProps<"Friends">["navigation"]}
+      navigation={navigation as unknown as StackProps<"Friends">["navigation"]}
       title="Global Users"
     />
   );
@@ -817,7 +817,7 @@ export function PeopleSuggestionsScreen({
   
   return (
     <PeopleListPage
-      navigation={navigation as StackProps<"Friends">["navigation"]}
+      navigation={navigation as unknown as StackProps<"Friends">["navigation"]}
       title="friends You May Know"
       action="Add Friend"
       users={suggestions}
@@ -840,7 +840,7 @@ export function MutualFriendsScreen({
 
   return (
     <PeopleListPage
-      navigation={navigation as StackProps<"Friends">["navigation"]}
+      navigation={navigation as unknown as StackProps<"Friends">["navigation"]}
       title="Mutual Friends"
       subtitle={`${mutualFriends.length} mutual friends`}
       users={mutualFriends}

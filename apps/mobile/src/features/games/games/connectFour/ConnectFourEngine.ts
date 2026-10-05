@@ -1,4 +1,3 @@
-// @ts-nocheck
 export type Player = 1 | 2;
 export type BoardState = (Player | null)[][]; // 6 rows, 7 cols
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 export class PongEngine {
   width: number;
   height: number;

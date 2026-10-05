@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Dimensions, GestureResponderEvent } from "react-native";
@@ -146,7 +145,7 @@ export function PongScreen({ navigation, route }: Props) {
     transform: [
       { translateX: ballX.value - 8 }, // ballSize / 2
       { translateY: ballY.value - 8 }
-    ]
+    ] as any
   }));
 
   return (

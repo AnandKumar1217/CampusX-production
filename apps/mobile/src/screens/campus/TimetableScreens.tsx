@@ -1162,7 +1162,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
     if (validEntries.length === 0) {
       return Alert.alert("No valid classes", "There are no valid classes to import.");
     }
-    const execute = async () => {
+    const execute = async (): Promise<void> => {
       try {
         setImporting(true);
         const result = await scheduleService.importTimetable({
@@ -1185,7 +1185,7 @@ export function TimetableReviewScreen({ navigation, route }: StackProps<"Timetab
     if (route.params.hasExistingTimetable !== false) {
       Alert.alert("Replace current timetable?", "Importing this timetable will replace your existing schedule.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Replace & Import", style: "destructive", onPress: () => void execute() },
+        { text: "Replace & Import", style: "destructive", onPress: (): void => { void execute(); } },
       ]);
     } else await execute();
   };

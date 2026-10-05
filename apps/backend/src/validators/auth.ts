@@ -64,11 +64,7 @@ export const sendVerificationOtpSchema = z.object({
   query,
   body: z.object({ email: z.string().min(5).max(120) }),
 });
-export const verifyEmailSchema = z.object({
-  params,
-  query,
-  body: z.object({ email: z.string().min(5).max(120), otp: z.string().length(6) }),
-});
+
 export const verifyForgotPasswordOtpSchema = z.object({
   params,
   query,

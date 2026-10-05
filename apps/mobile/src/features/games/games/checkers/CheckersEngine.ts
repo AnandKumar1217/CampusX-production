@@ -1,4 +1,3 @@
-// @ts-nocheck
 export type Player = 1 | 2;
 export type Piece = 0 | 1 | 2 | 3 | 4; // 0=empty, 1=p1, 2=p2, 3=p1K, 4=p2K
 export type BoardState = Piece[][];

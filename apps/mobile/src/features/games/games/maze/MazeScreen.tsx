@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
@@ -73,7 +72,7 @@ export function MazeScreen({ navigation, route }: Props) {
         <View style={{ alignItems: "center" }}>
           {/* We didn't store level in engine, but we can compute it from width/height or just display 'Color Maze' */}
           <CXText variant="h3" color={colors.white}>COLOR MAZE</CXText>
-          <CXText variant="body" color={colors.gray400}>Moves: {engine.moves}</CXText>
+          <CXText variant="body" color={colors.textFaint}>Moves: {engine.moves}</CXText>
         </View>
         <CXIconButton icon="pause" onPress={() => setIsPaused(true)} backgroundColor={colors.transparent} label="" />
       </View>

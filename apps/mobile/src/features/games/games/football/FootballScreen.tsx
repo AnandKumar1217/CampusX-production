@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { CommonActions } from "@react-navigation/native";
 import React, { useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Dimensions, GestureResponderEvent } from "react-native";
@@ -180,15 +179,15 @@ export function FootballScreen({ navigation, route }: Props) {
   };
 
   const p1Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: p1X.value - 20 }, { translateY: p1Y.value - 20 }]
+    transform: [{ translateX: p1X.value - 20 }, { translateY: p1Y.value - 20 }] as any
   }));
 
   const p2Style = useAnimatedStyle(() => ({
-    transform: [{ translateX: p2X.value - 20 }, { translateY: p2Y.value - 20 }]
+    transform: [{ translateX: p2X.value - 20 }, { translateY: p2Y.value - 20 }] as any
   }));
 
   const ballStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: ballX.value - 12 }, { translateY: ballY.value - 12 }]
+    transform: [{ translateX: ballX.value - 12 }, { translateY: ballY.value - 12 }] as any
   }));
 
   return (

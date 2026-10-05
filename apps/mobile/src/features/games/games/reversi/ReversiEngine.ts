@@ -1,4 +1,3 @@
-// @ts-nocheck
 export type Player = 1 | 2; // 1 = Black, 2 = White
 export type BoardState = (Player | 0)[][];
 export type Move = { r: number, c: number, flips: {r: number, c: number}[] };
