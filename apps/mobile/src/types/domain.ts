@@ -136,7 +136,7 @@ export type EventItem = {
   startsAt?: string; // from backend Date
   endsAt?: string;   // from backend Date
   time: string;
-  location: string;
+  location: string | { name?: string; address?: string; latitude?: number; longitude?: number };
   coordinates?: { lat: number; lng: number };
   distance?: number;
   category: string;
@@ -162,7 +162,7 @@ export type Listing = {
   status: "active" | "available" | "sold" | "draft" | "reserved" | "deleted";
   description?: string;
   condition?: string;
-  location?: string;
+  location?: string | { name?: string; address?: string; latitude?: number; longitude?: number };
   negotiable?: boolean;
   createdAt: string;
   views: number;

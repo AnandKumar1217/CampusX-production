@@ -44,7 +44,7 @@ export function CXEventCard({
           </CXText>
           <CXRow style={{ gap: spacing.xs }}>
             <CXText variant="caption" color={colors.textMuted} numberOfLines={1} style={styles.flex}>
-              <Ionicons name="location-outline" size={11} /> {event.location}
+              <Ionicons name="location-outline" size={11} /> {typeof event.location === 'object' ? (event.location as any).name : event.location}
             </CXText>
             {event.distance !== undefined && (
               <CXText variant="caption" color={colors.primary}>

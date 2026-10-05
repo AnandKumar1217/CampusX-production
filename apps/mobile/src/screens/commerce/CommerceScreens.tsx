@@ -320,7 +320,7 @@ function OldEventDetailsScreen({
           <CXRow style={styles.eventMeta}>
             <Meta icon="calendar-outline" label={event.date} />
             <Meta icon="time-outline" label={event.time} />
-            <Meta icon="location-outline" label={event.location} />
+            <Meta icon="location-outline" label={typeof event.location === 'object' ? (event.location as any).name : event.location} />
           </CXRow>
           <CXCard style={[styles.organizer, { padding: spacing.md }]}>
             <CXAvatar 
@@ -1132,7 +1132,7 @@ export function ListingDetailsScreen({
             <CXText color={colors.textMuted}>  Negotiable</CXText>
           </CXRow>
           <CXText variant="caption" color={colors.textMuted}>
-            {listing.location ? listing.location : "CMRIT Main Campus"}  {listing.createdAt ? timeAgo(listing.createdAt) : "Just now"}
+            {listing.location ? (typeof listing.location === 'object' ? (listing.location as any).name : listing.location) : "CMRIT Main Campus"}  {listing.createdAt ? timeAgo(listing.createdAt) : "Just now"}
           </CXText>
           <CXSectionHeader title="Seller" />
           <CXCard style={styles.organizer}>

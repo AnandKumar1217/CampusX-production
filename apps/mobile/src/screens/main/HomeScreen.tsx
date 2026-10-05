@@ -363,7 +363,7 @@ export function HomeScreen() {
                       <View style={styles.flex}>
                         <CXText variant="bodyStrong">{e.title}</CXText>
                         <CXText variant="caption" color={colors.textMuted}>
-                          {e.date} · {e.location}
+                          {e.date} · {typeof e.location === 'object' ? (e.location as any).name : e.location}
                         </CXText>
                       </View>
                     </CXCard>
@@ -529,7 +529,7 @@ export function HomeScreen() {
               <View style={styles.flex}>
                 <CXText variant="bodyStrong">{featured.title}</CXText>
                 <CXText variant="caption" color={colors.textMuted}>
-                  {featured.date} · {featured.location}
+                  {featured.date} · {typeof featured.location === 'object' ? (featured.location as any).name : featured.location}
                 </CXText>
               </View>
             </CXCard>
