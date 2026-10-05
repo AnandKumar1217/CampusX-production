@@ -9,6 +9,7 @@ import {
   rotateRefreshToken,
   signup,
   checkIdentity,
+  checkUsername,
   sendVerificationOtp,
   verifyForgotPasswordOtp,
 } from "../services/authService.js";
@@ -40,6 +41,15 @@ export async function checkIdentityController(request: Request, response: Respon
     "Identity available",
   );
 }
+
+export async function checkUsernameController(request: Request, response: Response) {
+  return sendSuccess(
+    response,
+    await checkUsername(request.body.username),
+    "Username check completed",
+  );
+}
+
 export async function loginController(request: Request, response: Response) {
   return sendSuccess(
     response,

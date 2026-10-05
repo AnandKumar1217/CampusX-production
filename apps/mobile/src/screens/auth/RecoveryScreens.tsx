@@ -25,6 +25,7 @@ type ForgotProps = NativeStackScreenProps<RootStackParamList, "ForgotPassword">;
 
 export function ForgotPasswordScreen({ navigation }: ForgotProps) {
   const [isOtpSent, setIsOtpSent] = React.useState(false);
+  const lastAttemptedOtpRef = React.useRef<string>("");
   const schema = z.object({
     email: z.string().email("Enter a valid email address"),
     otp: z.string().optional(),
@@ -37,7 +38,8 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
   const otpValue = watch("otp");
 
   React.useEffect(() => {
-    if (isOtpSent && otpValue?.length === 6 && !formState.isSubmitting) {
+    if (isOtpSent && otpValue && /^[0-9]{6}$/.test(otpValue) && !formState.isSubmitting && otpValue !== lastAttemptedOtpRef.current) {
+      lastAttemptedOtpRef.current = otpValue;
       submit();
     }
   }, [otpValue, isOtpSent, formState.isSubmitting]);
@@ -104,7 +106,10 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
               keyboardType="number-pad"
               value={field.value}
               onBlur={field.onBlur}
-              onChangeText={field.onChange}
+              onChangeText={(val) => {
+                const numeric = val.replace(/\D/g, "").slice(0, 6);
+                field.onChange(numeric);
+              }}
               error={fieldState.error?.message}
             />
           )}
@@ -116,24 +121,17 @@ export function ForgotPasswordScreen({ navigation }: ForgotProps) {
           ⓘ We will send a one-time code to your registered email account.
         </CXText>
       </View>
-      {formState.errors.root?.message ? (
-        <CXText color={colors.danger}>{formState.errors.root.message}</CXText>
-      ) : null}
-      {!isOtpSent && (
-        <CXButton
-          label="Send OTP"
-          loading={formState.isSubmitting}
-          onPress={submit}
-        />
-      )}
-      {isOtpSent && (
-        <CXButton
-          label="Verify & Reset"
-          loading={formState.isSubmitting}
-          onPress={submit}
-          disabled={otpValue?.length !== 6}
-        />
-      )}
+      <View style={{ minHeight: 24, justifyContent: "center", marginVertical: spacing.xs }}>
+        {formState.errors.root?.message ? (
+          <CXText color={colors.danger} variant="small">{formState.errors.root.message}</CXText>
+        ) : null}
+      </View>
+      <CXButton
+        label={isOtpSent ? "Verify & Reset" : "Send OTP"}
+        loading={formState.isSubmitting}
+        onPress={submit}
+        disabled={isOtpSent ? (otpValue?.length !== 6) : false}
+      />
       <Pressable
         onPress={() => navigation.navigate("Login")}
         style={styles.centerLink}

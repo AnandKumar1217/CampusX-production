@@ -11,6 +11,7 @@ import {
   checkIdentityController,
   sendVerificationOtpController,
   verifyForgotPasswordOtpController,
+  checkUsernameController,
 } from "../controllers/authController.js";
 import { validate } from "../middleware/validate.js";
 import { asyncHandler } from "../utils/http.js";
@@ -23,6 +24,7 @@ import {
   checkIdentitySchema,
   sendVerificationOtpSchema,
   verifyForgotPasswordOtpSchema,
+  checkUsernameSchema,
 } from "../validators/auth.js";
 
 const authLimiter = rateLimit({
@@ -30,6 +32,7 @@ const authLimiter = rateLimit({
   limit: 30,
   standardHeaders: "draft-8",
   legacyHeaders: false,
+  skip: (req) => req.path === "/login",
 });
 export const authRouter = Router();
 authRouter.use(authLimiter);
@@ -42,6 +45,11 @@ authRouter.post(
   "/check-identity",
   validate(checkIdentitySchema),
   asyncHandler(checkIdentityController),
+);
+authRouter.post(
+  "/check-username",
+  validate(checkUsernameSchema),
+  asyncHandler(checkUsernameController),
 );
 authRouter.post("/login", validate(loginSchema), asyncHandler(loginController));
 authRouter.post(

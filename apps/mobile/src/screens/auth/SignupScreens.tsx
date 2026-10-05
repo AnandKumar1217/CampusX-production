@@ -85,7 +85,10 @@ export function SignupAccountScreen({
   
   const emailValue = watch("email");
   const otpValue = watch("otp");
+  const usernameValue = watch("username");
   
+  const [checkingUsername, setCheckingUsername] = React.useState(false);
+  const [usernameAvailable, setUsernameAvailable] = React.useState<boolean | null>(null);
   const [usernameSuggestions, setUsernameSuggestions] = React.useState<string[]>([]);
   const [showOtp, setShowOtp] = React.useState(false);
   const [otpVerified, setOtpVerified] = React.useState(false);
@@ -139,20 +142,42 @@ export function SignupAccountScreen({
     }
   }, [otpValue, emailValue, otpVerified, verifyingOtp, setError]);
 
+  React.useEffect(() => {
+    if (!usernameValue || usernameValue.length < 3 || !/^[a-z0-9_.]+$/.test(usernameValue)) {
+      setUsernameAvailable(null);
+      setUsernameSuggestions([]);
+      return;
+    }
+    const timeoutId = setTimeout(async () => {
+      setCheckingUsername(true);
+      try {
+        const response = await api.post("/auth/check-username", { username: usernameValue });
+        if (response.data.data.available) {
+          setUsernameAvailable(true);
+          setUsernameSuggestions([]);
+        } else {
+          setUsernameAvailable(false);
+          setUsernameSuggestions(response.data.data.suggestions || []);
+        }
+      } catch (err) {
+        setUsernameAvailable(null);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [usernameValue]);
+
   const submit = handleSubmit(async (values) => {
+    if (!usernameAvailable || !otpVerified) return;
     try {
       setUsernameSuggestions([]);
-      await api.post("/auth/check-identity", { email: values.email, username: values.username, otp: values.otp });
+      await api.post("/auth/check-identity", { email: values.email, otp: values.otp });
       draft.patch(values);
       navigation.navigate("SignupProfile");
     } catch (err: any) {
-      if (err.response?.data?.code === "USERNAME_TAKEN") {
-        const suggestions = err.response.data.details?.suggestions;
-        if (suggestions && suggestions.length > 0) {
-          setUsernameSuggestions(suggestions);
-        }
-        setError("username", { message: getApiErrorMessage(err) });
-      } else if (err.response?.data?.code === "EMAIL_EXISTS") {
+      if (err.response?.data?.code === "EMAIL_EXISTS") {
         setError("email", { message: getApiErrorMessage(err) });
       } else {
         setError("email", { message: getApiErrorMessage(err) });
@@ -202,6 +227,11 @@ export function SignupAccountScreen({
                 field.onChange(val);
               }}
               error={fieldState.error?.message}
+              trailing={
+                checkingUsername ? <CXText variant="small" color={colors.textMuted}>Checking...</CXText> :
+                usernameAvailable === true ? <CXText variant="smallStrong" color={colors.success}>✓ Username available</CXText> :
+                usernameAvailable === false ? <CXText variant="smallStrong" color={colors.danger}>✕ Username unavailable</CXText> : null
+              }
             />
             {usernameSuggestions.length > 0 && (
               <View style={{ marginTop: -spacing.sm, marginBottom: spacing.md }}>
@@ -328,7 +358,7 @@ export function SignupAccountScreen({
           />
         )}
       />
-      <CXButton label="Continue" iconRight="arrow-forward" loading={isSubmitting} disabled={!otpVerified} onPress={submit} />
+      <CXButton label="Continue" iconRight="arrow-forward" loading={isSubmitting} disabled={!otpVerified || usernameAvailable !== true} onPress={submit} />
       <CXText variant="caption" color={colors.textMuted} align="center">
         By continuing, you agree to our{" "}
         <CXText variant="caption" color={colors.primary}>

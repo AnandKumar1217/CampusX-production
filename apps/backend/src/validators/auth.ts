@@ -33,6 +33,13 @@ export const checkIdentitySchema = z.object({
     otp: z.string().regex(/^[0-9]{6}$/).optional(),
   }),
 });
+export const checkUsernameSchema = z.object({
+  params,
+  query,
+  body: z.object({
+    username: z.string().min(3).max(30).regex(/^[a-z0-9_.]+$/, "Username can only contain lowercase letters, numbers, dots, and underscores"),
+  }),
+});
 export const loginSchema = z.object({
   params,
   query,

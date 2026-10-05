@@ -17,6 +17,8 @@ import { Trip, TripExpense } from "../models/Trip.js";
 import { Group, GroupMembership, GroupMessage, Poll } from "../models/Group.js";
 import { Message } from "../models/Chat.js";
 import { AppError } from "../utils/http.js";
+import { EmailOtp } from "../models/EmailOtp.js";
+import { OtpSendWindow } from "../models/OtpSendWindow.js";
 import { cloudinaryService } from "./cloudinary.js";
 
 export const deleteUserAccount = async (userId: string) => {
@@ -43,6 +45,10 @@ export const deleteUserAccount = async (userId: string) => {
     await CustomHoliday.deleteMany({ user: userId }, { session });
     await PushDevice.deleteMany({ user: userId }, { session });
     await RefreshToken.deleteMany({ user: userId }, { session });
+    
+    // Clean account-specific auth residue where safe
+    await EmailOtp.deleteMany({ email: user.email }, { session });
+    await OtpSendWindow.deleteMany({ email: user.email }, { session });
 
     // Notifications where user is recipient or actor
     await Notification.deleteMany({ $or: [{ user: userId }, { actor: userId }] }, { session });
@@ -132,3 +138,74 @@ export const deleteUserAccount = async (userId: string) => {
 
   return true;
 };
+
+export const cleanupDeletedUserData = async (userId: string) => {
+  let cloudinaryPublicIds: string[] = [];
+
+  // 1. HARD DELETE: Owned Public Content
+  // Collect image public IDs first
+  const events = await Event.find({ creator: userId });
+  events.forEach((e: any) => { if (e.imagePublicId) cloudinaryPublicIds.push(e.imagePublicId); });
+  await Event.deleteMany({ creator: userId });
+
+  const listings = await MarketplaceListing.find({ seller: userId });
+  listings.forEach((l: any) => { if (l.imagePublicIds) cloudinaryPublicIds.push(...l.imagePublicIds); });
+  await MarketplaceListing.deleteMany({ seller: userId });
+
+  const posts = await Post.find({ author: userId });
+  posts.forEach((p: any) => {
+    if (p.media && Array.isArray(p.media)) {
+      p.media.forEach((m: any) => { if (m.publicId) cloudinaryPublicIds.push(m.publicId); });
+    }
+  });
+  await Post.deleteMany({ author: userId });
+
+  // 2. HARD DELETE: Private Data that might be orphaned
+  await LocationSharing.deleteMany({ user: userId });
+  await AIConversation.deleteMany({ user: userId });
+  await TimetableEntry.deleteMany({ user: userId });
+  await TimetableSettings.deleteMany({ user: userId });
+  await ScheduleOverride.deleteMany({ user: userId });
+  await SpecialClass.deleteMany({ user: userId });
+  await CustomHoliday.deleteMany({ user: userId });
+  await PushDevice.deleteMany({ user: userId });
+  await RefreshToken.deleteMany({ user: userId });
+  
+  // Also clean up story, trip, etc
+  await Story.deleteMany({ author: userId });
+  await Trip.deleteMany({ createdBy: userId });
+  await TripExpense.deleteMany({ paidBy: userId });
+
+  // 3. REMOVE: Shared Relations
+  await SavedItem.deleteMany({ user: userId });
+  await Reaction.deleteMany({ user: userId });
+  await Friendship.deleteMany({ users: userId });
+  await FriendRequest.deleteMany({ $or: [{ requester: userId }, { recipient: userId }] });
+  await GroupMembership.deleteMany({ user: userId });
+  await Event.updateMany({ "attendees.user": userId }, { $pull: { attendees: { user: userId } } });
+  
+  // Notifications
+  await Notification.deleteMany({ $or: [{ user: userId }, { actor: userId }] });
+
+  // 4. TOMBSTONE: Messages & Comments
+  await Comment.updateMany(
+    { author: userId },
+    { $set: { text: "Comment unavailable", attachments: [] } }
+  );
+  await Message.updateMany(
+    { sender: userId },
+    { $set: { text: "Message unavailable", attachments: [] } }
+  );
+  await GroupMessage.updateMany(
+    { sender: userId },
+    { $set: { text: "Message unavailable", attachments: [] } }
+  );
+
+  // 5. ASYNC CLOUDINARY CLEANUP
+  Promise.allSettled(
+    cloudinaryPublicIds.map(id => cloudinaryService.deleteImage(id).catch(() => {}))
+  );
+
+  return true;
+};
+

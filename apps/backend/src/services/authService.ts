@@ -110,14 +110,13 @@ export async function checkIdentity(identityRaw: string, usernameRaw?: string, o
     const username = usernameRaw.trim().toLowerCase();
     if (await User.exists({ username })) {
       const suggestions: string[] = [];
-      let attempts = 0;
-      while (suggestions.length < 3 && attempts < 20) {
-        const randomNum = Math.floor(Math.random() * 999) + 1;
-        const suggestion = `${username}${randomNum}`;
+      let i = 1;
+      while (suggestions.length < 3 && i <= 100) {
+        const suggestion = `${username}${i}`;
         if (!(await User.exists({ username: suggestion })) && !suggestions.includes(suggestion)) {
           suggestions.push(suggestion);
         }
-        attempts++;
+        i++;
       }
       throw new AppError(409, "Username is already taken", "USERNAME_TAKEN", { suggestions });
     }
@@ -140,6 +139,29 @@ export async function checkIdentity(identityRaw: string, usernameRaw?: string, o
   }
 
   return { available: true };
+}
+
+export async function checkUsername(usernameRaw: string) {
+  const username = usernameRaw.trim().toLowerCase();
+  
+  if (!/^[a-z0-9_.]{3,30}$/.test(username)) {
+    throw new AppError(400, "Username must be 3-30 characters and can only contain lowercase letters, numbers, underscores, and dots.");
+  }
+
+  if (await User.exists({ username })) {
+    const suggestions: string[] = [];
+    let i = 1;
+    while (suggestions.length < 3 && i <= 100) {
+      const suggestion = `${username}${i}`;
+      if (!(await User.exists({ username: suggestion }))) {
+        suggestions.push(suggestion);
+      }
+      i++;
+    }
+    return { available: false, username, suggestions };
+  }
+  
+  return { available: true, username, suggestions: [] };
 }
 
 export async function generateUniqueQrToken(): Promise<string> {
@@ -259,8 +281,11 @@ export async function rotateRefreshToken(rawToken: string, meta: SessionMeta) {
       "REFRESH_TOKEN_REUSED",
     );
   const user = await User.findById(payload.sub);
-  if (!user)
+  if (!user) {
+    const { cleanupDeletedUserData } = await import("./deleteAccountService.js");
+    cleanupDeletedUserData(payload.sub).catch(err => console.error("Error in orphan cleanup:", err));
     throw new AppError(401, "Account no longer exists", "ACCOUNT_NOT_FOUND");
+  }
   const next = await issueSession(user, meta);
   stored.revokedAt = new Date();
   stored.replacedByHash = hashToken(next.refreshToken);

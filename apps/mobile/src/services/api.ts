@@ -122,6 +122,12 @@ api.interceptors.response.use(
       return Promise.reject(new CanceledError("Account changed"));
     }
 
+    if (error.response?.status === 401 && error.response?.data?.code === "ACCOUNT_NOT_FOUND") {
+      const { useAppStore } = require("../store/appStore");
+      await useAppStore.getState().clearSession();
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !originalRequest.url?.startsWith("/auth/")) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -200,7 +206,7 @@ export function getApiErrorMessage(error: any) {
     return "Incorrect email/username or password.";
   }
   if (status === 429 || code === "RATE_LIMITED") {
-    return "Too many login attempts. Please try again later.";
+    return error?.response?.data?.message || "Too many requests. Please try again later.";
   }
   if (status >= 500) {
     return "Couldn't sign in right now. Please try again.";
