@@ -46,7 +46,7 @@ export function HelpSupportScreen({ navigation }: any) {
                 Email Support
               </CXText>
               <CXText variant="small" color={colors.primaryLight}>
-                campusx.testotp@gmail.com
+                campusx.teamotp@gmail.com
               </CXText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.primary} />
@@ -100,3 +100,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
