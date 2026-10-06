@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import { claimLocationRefreshRequest } from "../utils/locationRefreshDedup";
 import { api } from "./api";
 
 export const BACKGROUND_LOCATION_TASK = "BACKGROUND_LOCATION_TASK";
@@ -52,27 +53,8 @@ TaskManager.defineTask(LOCATION_REFRESH_NOTIFICATION_TASK, async ({ data, error,
     const { requestId, requesterId } = notificationData;
     if (!requestId || !requesterId) return;
 
-    // 6. Request ID Deduplication
-    const DEDUP_KEY = "campusx.location.refresh.processed";
-    const processedRaw = await AsyncStorage.getItem(DEDUP_KEY);
-    let processedIds: Record<string, number> = {};
-    if (processedRaw) {
-      try { processedIds = JSON.parse(processedRaw); } catch (e) {}
-    }
-    
-    const now = Date.now();
-    if (processedIds[requestId] && now - processedIds[requestId] < 60000) {
-      return; // Already processed recently
-    }
-
-    // Clean up old entries
-    for (const key in processedIds) {
-      if (now - processedIds[key] > 300000) {
-        delete processedIds[key];
-      }
-    }
-    processedIds[requestId] = now;
-    await AsyncStorage.setItem(DEDUP_KEY, JSON.stringify(processedIds));
+    const canClaim = await claimLocationRefreshRequest(requestId);
+    if (!canClaim) return;
 
     // 1. Get Token
     let token = api.defaults.headers.common["Authorization"] as string | undefined;

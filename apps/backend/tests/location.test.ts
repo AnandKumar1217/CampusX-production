@@ -208,17 +208,17 @@ describe("Location Sharing API", () => {
     expect(res.status).toBe(429);
     expect(res.body.data.status).toBe("cooldown");
 
-    // But C can request B without cooldown (independent)
-    // First, make C and B friends
+    // Prove cross-target isolation: B requesting C is NOT cooldown
+    // First, make B and C friends
     const sortedBC = [userB._id.toString(), userC._id.toString()].sort();
     await Friendship.create({ users: sortedBC, createdBy: userB._id });
 
     const res2 = await request(app)
-      .post(`/api/location/friends/${userB._id}/refresh`)
-      .set("Authorization", `Bearer ${tokenC}`);
+      .post(`/api/location/friends/${userC._id}/refresh`)
+      .set("Authorization", `Bearer ${tokenB}`);
     
-    // Might be 200 (requested) or sharing_off depending on B's state, but not 429
-    expect(res2.status).toBe(200);
+    // B just requested A (got 429), but B requesting C should be allowed
+    expect(res2.status).not.toBe(429);
   });
 
   it("blocks location refresh request for non-friends", async () => {

@@ -6,6 +6,8 @@ import { useAppStore } from "../store/appStore";
 export function useRequestFriendLocation() {
   const [refreshingFriends, setRefreshingFriends] = useState<Record<string, boolean>>({});
   const timeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
+  const pendingRequestIds = useRef<Record<string, string>>({});
+  const isMounted = useRef(true);
   const setFriendLocation = useAppStore(state => state.setFriendLocation);
   const friendLocations = useAppStore(state => state.friendLocations);
 
@@ -13,7 +15,6 @@ export function useRequestFriendLocation() {
     if (Platform.OS === 'android') {
       ToastAndroid.show(msg, ToastAndroid.SHORT);
     } else {
-      // Fallback for iOS
       Alert.alert("", msg);
     }
   };
@@ -44,20 +45,24 @@ export function useRequestFriendLocation() {
         return;
       }
 
-      // D. If result.status === "requested"
+        // D. If result.status === "requested"
       if (status === "requested" || status === "cooldown") {
-        // preserve marker, show refreshing
-        // timeout after 10 seconds
+        if (requestId) {
+          pendingRequestIds.current[friendId] = requestId;
+        }
+
         if (timeoutRefs.current[friendId]) {
           clearTimeout(timeoutRefs.current[friendId]);
         }
 
         timeoutRefs.current[friendId] = setTimeout(() => {
+          if (!isMounted.current) return;
           setRefreshingFriends(prev => {
             const next = { ...prev };
             delete next[friendId];
             return next;
           });
+          delete pendingRequestIds.current[friendId];
           showToast("Couldn't refresh live location. Showing last shared location.");
         }, 10000);
       }
@@ -75,29 +80,40 @@ export function useRequestFriendLocation() {
   // E. Handle successful update from socket
   
   useEffect(() => {
-    const now = Date.now();
     let changed = false;
     const nextRefreshing = { ...refreshingFriends };
 
     for (const friendId in nextRefreshing) {
       if (nextRefreshing[friendId]) {
         const loc = friendLocations[friendId];
-        if (loc && (now - loc.updatedAt) < 5000) {
-          // Fresh update arrived
+        const pendingId = pendingRequestIds.current[friendId];
+        
+        if (loc && loc.requestId && loc.requestId === pendingId) {
           if (timeoutRefs.current[friendId]) {
             clearTimeout(timeoutRefs.current[friendId]);
             delete timeoutRefs.current[friendId];
           }
           delete nextRefreshing[friendId];
+          delete pendingRequestIds.current[friendId];
           changed = true;
           showToast("Live location updated!");
         }
       }
     }
     
-    if (changed) {
+    if (changed && isMounted.current) {
       setRefreshingFriends(nextRefreshing);
     }
   }, [friendLocations]);
-  return { requestFriendLocation, refreshingFriends, timeoutRefs };
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      for (const id in timeoutRefs.current) {
+        clearTimeout(timeoutRefs.current[id]);
+      }
+    };
+  }, []);
+
+  return { requestFriendLocation, refreshingFriends };
 }

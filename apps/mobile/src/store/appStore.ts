@@ -107,6 +107,7 @@ export type FriendLiveLocation = {
   heading?: number;
   speed?: number;
   source?: "foreground" | "background" | "manual" | "on_demand";
+  requestId?: string;
   updatedAt: number;
   status?: string;
   sharingEnabled?: boolean;
@@ -687,6 +688,7 @@ export const useAppStore = create<AppState>()(
         heading: payload.heading,
         speed: payload.speed,
         source: payload.source,
+        requestId: payload.requestId,
         updatedAt: payload.updatedAt ? new Date(payload.updatedAt).getTime() : Date.now(),
         sharingEnabled: payload.sharingEnabled ?? true,
       });

@@ -8,9 +8,15 @@ vi.hoisted(() => {
 vi.mock("expo-modules-core", () => ({}));
 vi.mock("expo-secure-store", () => ({}));
 vi.mock("@react-native-async-storage/async-storage", () => {
+  let store: Record<string, string> = {};
   const m = {
-    getItem: vi.fn().mockResolvedValue(JSON.stringify({ state: { locationSharingEnabled: true } })),
-    setItem: vi.fn(),
+    getItem: vi.fn().mockImplementation((key) => {
+      if (key === "campusx-storage") return JSON.stringify({ state: { locationSharingEnabled: true } });
+      return store[key] || null;
+    }),
+    setItem: vi.fn().mockImplementation((key, val) => {
+      store[key] = val;
+    }),
   };
   return {
     ...m,
@@ -23,6 +29,7 @@ import { api } from "../src/services/api";
 import * as TaskManager from "expo-task-manager";
 import { LOCATION_REFRESH_NOTIFICATION_TASK } from "../src/services/locationTask";
 import { useLiveLocationWatcher } from "../src/hooks/useLiveLocationWatcher";
+import * as Location from "expo-location";
 
 vi.mock("react-native", () => ({
   AppState: {
@@ -45,6 +52,7 @@ vi.mock("react", () => {
 vi.mock("../src/services/api", () => ({
   api: {
     post: vi.fn(),
+    get: vi.fn().mockResolvedValue({ data: { data: { enabled: true } } }),
     defaults: { headers: { common: { Authorization: "token" } } }
   }
 }));
@@ -119,29 +127,86 @@ describe("Location Source Contract", () => {
     expect(found).toBe(true);
   });
 
-  it("sends 'on_demand' source from notification task", async () => {
-    // Mock AsyncStorage for the task
-    const AsyncStorage = require("@react-native-async-storage/async-storage");
+  it("sends 'on_demand' source from notification task via Expo SDK 54 headless dataString", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { data: { enabled: true } } });
+    Location.getCurrentPositionAsync.mockClear();
 
     const taskCallback = (global as any).mockRegisteredTasks[LOCATION_REFRESH_NOTIFICATION_TASK];
     expect(taskCallback).toBeDefined();
     
     await taskCallback({
       data: {
-        notification: {
-          data: {
-            type: "LOCATION_REFRESH_REQUEST",
-            requestId: "req-1",
-            requesterId: "user-b"
-          }
-        }
+        dataString: JSON.stringify({
+          type: "LOCATION_REFRESH_REQUEST",
+          requestId: "req-sdk54",
+          requesterId: "user-b"
+        }),
+        notification: null
       },
       error: null
     });
 
+    expect(api.get).toHaveBeenCalledWith("/location/settings", expect.anything());
+    expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
+
     const apiCalls = vi.mocked(api.post).mock.calls;
     expect(apiCalls.length).toBeGreaterThan(0);
-    expect(apiCalls[0][1]).toHaveProperty("source", "on_demand");
-    expect(apiCalls[0][1]).toHaveProperty("requestId", "req-1");
+    const lastCall = apiCalls[apiCalls.length - 1];
+    expect(lastCall[0]).toBe("/location/position");
+    expect(lastCall[1]).toHaveProperty("source", "on_demand");
+    expect(lastCall[1]).toHaveProperty("requestId", "req-sdk54");
+  });
+
+  it("does not fetch GPS or post when location sharing is disabled", async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({ data: { data: { enabled: false } } });
+    Location.getCurrentPositionAsync.mockClear();
+    vi.mocked(api.post).mockClear();
+
+    const taskCallback = (global as any).mockRegisteredTasks[LOCATION_REFRESH_NOTIFICATION_TASK];
+    
+    await taskCallback({
+      data: {
+        dataString: JSON.stringify({
+          type: "LOCATION_REFRESH_REQUEST",
+          requestId: "req-off",
+          requesterId: "user-b"
+        }),
+        notification: null
+      },
+      error: null
+    });
+
+    expect(Location.getCurrentPositionAsync).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates identical requestId across socket and push notification", async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { data: { enabled: true } } });
+    Location.getCurrentPositionAsync.mockClear();
+    vi.mocked(api.post).mockClear();
+
+    useLiveLocationWatcher();
+    const handler = (global as any).__mockSocketHandlers["location:refresh_request"];
+    const taskCallback = (global as any).mockRegisteredTasks[LOCATION_REFRESH_NOTIFICATION_TASK];
+
+    // Deliver through socket first
+    await handler({ requestId: "shared-req-1", requesterId: "user-b" });
+    
+    // Deliver through push notification concurrently
+    await taskCallback({
+      data: {
+        dataString: JSON.stringify({
+          type: "LOCATION_REFRESH_REQUEST",
+          requestId: "shared-req-1",
+          requesterId: "user-b"
+        })
+      },
+      error: null
+    });
+
+    expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
+    
+    const apiCalls = vi.mocked(api.post).mock.calls.filter(c => c[0] === "/location/position");
+    expect(apiCalls.length).toBe(1);
   });
 });

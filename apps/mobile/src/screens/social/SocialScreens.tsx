@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ActivityIndicator,
@@ -287,6 +287,7 @@ export function UserProfileScreen({
   
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const hasRequestedLocation = useRef(false);
   const [friendState, setFriendState] = useState<"none" | "pending" | "friends">("none");
   const [stats, setStats] = useState({ eventsCount: 0, friendsCount: 0, groupsCount: 0 });
 
@@ -306,6 +307,10 @@ export function UserProfileScreen({
       const isFriend = useAppStore.getState().friends.some(f => f.id === u.id);
       if (isFriend) {
         setFriendState("friends");
+        if (!hasRequestedLocation.current) {
+          hasRequestedLocation.current = true;
+          requestFriendLocation(u.id);
+        }
       } else {
         const isSent = reqRes.data.data.sent.some(r => r.recipient._id === u.id || r.recipient.id === u.id);
         const isReceived = reqRes.data.data.received.some(r => r.requester._id === u.id || r.requester.id === u.id);
@@ -325,7 +330,6 @@ export function UserProfileScreen({
 
   useEffect(() => {
     fetchProfileData();
-    requestFriendLocation(route.params.userId);
     
     // Add real-time reactive socket listeners for this specific profile
     const socket = require("@/services/socket").getSocket();

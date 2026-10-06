@@ -292,23 +292,28 @@ locationRouter.post(
   "/friends/:friendId/refresh",
   locationRefreshRateLimiter,
   asyncHandler(async (request, response) => {
-    const friendId = request.params.friendId;
-    if (!Types.ObjectId.isValid(friendId)) {
+    const rawFriendId = request.params.friendId;
+
+    if (typeof rawFriendId !== "string" || !Types.ObjectId.isValid(rawFriendId)) {
       throw new AppError(400, "Invalid friend ID", "INVALID_REQUEST");
     }
+
+    const friendId = rawFriendId;
+    const friendObjectId = new Types.ObjectId(friendId);
+
     if (friendId === request.user!._id.toString()) {
       throw new AppError(400, "Cannot request own location", "INVALID_REQUEST");
     }
 
     const relation = await Friendship.findOne({
-      users: { $all: [request.user!._id, friendId] }
+      users: { $all: [request.user!._id, friendObjectId] }
     });
 
     if (!relation) {
       throw new AppError(403, "Not accepted friends", "FORBIDDEN");
     }
 
-    const targetSharing = await LocationSharing.findOne({ user: friendId });
+    const targetSharing = await LocationSharing.findOne({ user: friendObjectId });
     if (!targetSharing || !targetSharing.enabled) {
       return sendSuccess(response, {
         status: "sharing_off",
@@ -330,7 +335,7 @@ locationRouter.post(
     });
 
     // Background path: Silent Push
-    await pushService.sendSilentDataPush(friendId as any, {
+    await pushService.sendSilentDataPush(friendObjectId, {
       type: "LOCATION_REFRESH_REQUEST",
       requestId,
       requesterId: request.user!._id.toString()

@@ -621,7 +621,7 @@ export function DiscoverScreen() {
                   .map((item, index) => {
                     const liveLoc = friendLocations[item.id];
                     const freshness = liveLoc ? getLocationFreshness(liveLoc.updatedAt) : null;
-                    const isLive = freshness === "LIVE" || freshness === "RECENT";
+                    const isLive = freshness === "LIVE";
                     return (
                       <Pressable 
                         key={`friend-search-${item.id}`} 
@@ -631,7 +631,7 @@ export function DiscoverScreen() {
                             setRegion((prev: any) => ({ ...prev, latitude: liveLoc.lat, longitude: liveLoc.lon, latitudeDelta: 0.02, longitudeDelta: 0.02 }));
                             cameraRef.current?.easeTo({ center: [liveLoc.lon, liveLoc.lat], zoom: 15, duration: 600 });
                             setIsSearchFocused(false);
-                            api.post(`/location/friends/${item.id}/refresh`).catch(console.warn);
+                            requestFriendLocation(item.id);
                           }
                         }}
                       >
@@ -830,7 +830,7 @@ export function DiscoverScreen() {
                 
                 const freshness = getLocationFreshness(friend.updatedAt);
                 let freshnessStatus = formatTimeAgo(friend.updatedAt);
-                const isLive = freshness === "LIVE" || freshness === "RECENT";
+                const isLive = freshness === "LIVE";
                 const dotColor = freshness === "LIVE" ? colors.success : freshness === "RECENT" ? colors.warning : colors.textMuted;
                 
                 const liveLoc = friendLocations[friend.userId];

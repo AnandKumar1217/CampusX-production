@@ -12,7 +12,7 @@ import { colors, spacing } from "@/theme";
 
 export function HelpSupportScreen({ navigation }: any) {
   const handleEmailPress = () => {
-    Linking.openURL("mailto:campusx.testotp@gmail.com").catch(() => {
+    Linking.openURL("mailto:campusx.teamotp@gmail.com").catch(() => {
       // Fallback if email client can't be opened
     });
   };
