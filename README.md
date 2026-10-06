@@ -4,52 +4,47 @@
 
 # CampusX
 
-**A full-stack mobile campus ecosystem that connects students, communities, communication, discovery, utilities and AI in one application.**
+**A full-stack mobile campus ecosystem for student communities, communication, discovery, utilities, and AI assistance.**
 
-CampusX is a mobile-first campus platform designed to bring common student activities into one application. By integrating social networking, real-time communication, campus utilities, and on-demand location discovery, CampusX offers a unified experience tailored specifically for student life.
-
-## Overview
-CampusX eliminates the need for multiple fragmented apps by providing a seamless, all-in-one ecosystem. Whether you are checking your timetable, messaging a friend, discovering what's happening on campus, or finding where your friends are, CampusX brings it all together with a beautiful, fast, and reliable mobile experience.
+CampusX is a mobile-first platform that brings common campus activities into one application: social networking, messaging, groups, events, marketplace, timetable tools, campus discovery, on-demand friend location, notifications, mini-games, and CampusAI.
 
 ## Core Features
 
 ### Social & Community
-- **Campus Feed:** Stay updated with what's happening around you.
-- **Posts & Stories:** Share moments and thoughts with your campus.
-- **User Profiles:** Build your identity and discover others.
-- **Friends & Networking:** Send friend requests, accept suggestions, and manage your network.
-- **Saved Content:** Bookmark important posts and events.
-- **Groups / Clubs:** Connect with like-minded students and campus organizations.
+- Campus feed, posts, and stories
+- Student profiles, friends, requests, and suggestions
+- Saved content
+- Groups and clubs
 
 ### Communication
-- **One-to-One Chat:** Fast, reliable messaging.
-- **Real-Time Communication:** Powered by Socket.IO for instant delivery.
-- **Notification Center:** Keep track of your activities and alerts.
-- **Push Notifications:** Production-ready background notifications ensure you never miss a message.
+- One-to-one chat
+- Real-time Socket.IO updates
+- Notification center
+- Production Android push notifications
 
 ### Discover & Location
-- **Campus Map:** Navigate your campus effortlessly.
-- **Friend Location Display:** See where your friends are on demand.
-- **Cached Location:** View the last known shared location instantly.
-- **Location Sharing Toggle:** Privacy first—easily turn your location sharing ON or OFF.
-- **On-Demand Refresh:** Request fresh locations natively without draining battery.
-- **Silent Background Sync:** Utilizes FCM V1 for silent data pushes to update locations securely.
+- Campus map and friend location display
+- Cached last-shared location
+- Location Sharing ON / OFF
+- Explicit on-demand friend location refresh
+- Socket fast-path plus silent data push where Android allows background delivery
+- Cached fallback when the target device is unavailable
 
-*Note: CampusX intentionally avoids constant 60-second GPS polling to preserve battery life and prioritize user privacy. Continuous 24/7 live tracking and Ghost Mode are not features of this product.*
+CampusX intentionally avoids constant 60-second GPS polling. Continuous 24/7 tracking and Ghost Mode are not product features.
 
 ### Campus Utilities
-- **Events & Calendar:** Keep track of campus events.
-- **Marketplace:** Buy and sell items within your campus.
-- **Timetable:** Manage your daily classes.
-- **Weather:** Get real-time campus weather updates.
-- **Search:** Find people, posts, and groups easily.
-- **QR Sharing:** Share and scan profiles quickly.
+- Events and calendar
+- Marketplace
+- Timetable
+- Weather
+- Search
+- QR profile sharing/scanning
 
-### AI (CampusAI)
-CampusX integrates intelligent AI assistance tailored for student needs, providing helpful insights and dynamic content moderation while keeping interactions safe and responsive.
+### CampusAI
+CampusAI provides an in-app AI assistant through the backend AI provider abstraction. Provider credentials remain server-side.
 
 ### Entertainment
-- **Mini-Games:** Play quick games like Tic-Tac-Toe with friends directly within the app.
+CampusX includes local mini-games for lightweight in-app play.
 
 ## Architecture
 
@@ -63,115 +58,169 @@ CampusX Backend
 (Node.js + Express + TypeScript)
         |
         +---- MongoDB Atlas
-        |
         +---- Expo Push / FCM V1
-        |
-        +---- Cloud / Email / AI Integrations
+        +---- Media / Email / AI integrations
 ```
 
-- **Mobile:** Built with Expo SDK 54, React Native, TypeScript, React Navigation, Zustand, and TanStack Query.
-- **Backend:** Powered by Node.js, Express, and TypeScript.
-- **Database:** MongoDB Atlas for scalable, managed data storage.
-- **Realtime:** Socket.IO for chat and instant location syncing.
-- **Push:** Expo Push Notifications and FCM V1 for reliable Android production delivery.
-- **Hosting:** Backend deployed securely on Render.
+- **Mobile:** Expo SDK 54, React Native, TypeScript, React Navigation, Zustand, TanStack Query
+- **Backend:** Node.js, Express, TypeScript, Mongoose
+- **Database:** MongoDB Atlas
+- **Realtime:** Socket.IO
+- **Push:** Expo push tokens with FCM V1 delivery on Android
+- **Hosting:** Render
+
+## Repository Structure
+
+```text
+CampusX-production/
+├── apps/
+│   ├── mobile/
+│   │   ├── assets/
+│   │   ├── scripts/
+│   │   ├── src/
+│   │   ├── tests/
+│   │   ├── app.json
+│   │   ├── app.config.js
+│   │   └── package.json
+│   └── backend/
+│       ├── scripts/
+│       ├── src/
+│       ├── tests/
+│       └── package.json
+├── assets-reference/
+│   └── original/
+├── docs/
+├── package.json
+├── package-lock.json
+├── render.yaml
+└── README.md
+```
+
+`assets-reference/original/` contains canonical design references used for implementation and visual QA; they are not runtime screens.
 
 ## On-Demand Friend Location
-- Location Sharing has only ON/OFF states.
-- Last shared location is cached for immediate viewing.
-- A friend can request a fresh location intentionally by viewing a profile or the map.
-- If the target app is active, Socket.IO delivers the refresh request instantly.
-- If background delivery is supported, CampusX uses a silent data push to wake the device.
-- The target requests a single GPS fix for that specific request.
-- `requestId` deduplication prevents the same socket + push request from causing duplicate refreshes.
+
+- Location Sharing has only ON / OFF states.
+- The last shared friend location remains cached for immediate viewing.
+- Viewing a friend on the map/profile can request one fresh location.
+- Active target devices can receive the refresh request through Socket.IO.
+- Background devices can receive a silent data push where the OS permits delivery.
+- The target requests one GPS fix and posts it with `source: "on_demand"`.
+- `requestId` deduplication prevents the same socket + push request from intentionally causing duplicate refreshes.
 - If sharing is OFF, no new GPS refresh occurs.
-- If the refresh fails (offline or force-stopped), the old cached location remains visible.
-- Android battery restrictions and force-stops may prevent background delivery.
-- No constant 60-second foreground or background polling is used, maximizing battery efficiency.
+- If refresh fails, the previous cached location stays visible.
+- Android force-stop, Doze, and battery restrictions can delay or prevent background delivery.
 
 ## Push Notifications
-- Utilizes Expo push tokens and FCM V1 for Android.
-- Handles token registration, visible notifications, and deep-link routing on tap.
-- Robust device-token lifecycle management across logouts and logins.
-- Employs data-only notifications for appropriate background tasks like on-demand location fetching.
+
+CampusX uses Expo push tokens with FCM V1 for Android production delivery. The app supports token registration, visible notifications, notification-tap routing, logout/login token lifecycle handling, and silent data-only messages for the on-demand location workflow.
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 20+
 - npm
-- Android Studio / Android SDK (for native Android development)
-- MongoDB instance (Atlas or local)
-- Configured third-party services (Cloudinary, Brevo, AI Provider)
+- Android Studio / Android SDK for Android development
+- MongoDB instance
+- Required third-party service credentials for the features you enable
 
-### Installation
-Clone the repository and install dependencies from the root:
+### Install
+
 ```bash
 npm install
 ```
 
 ### Environment Setup
-**Backend:**
-Copy the example environment file and configure it:
+
+Backend:
+
 ```bash
 cp apps/backend/.env.example apps/backend/.env
 ```
-**Mobile:**
-Copy the example environment file and configure public variables:
+
+Mobile:
+
 ```bash
 cp apps/mobile/.env.example apps/mobile/.env
 ```
-*(Do NOT include real secret values in `.env.example` or commit `.env` to source control).*
+
+Never commit real `.env` files or private credentials.
 
 ## Environment Variables
-- **Backend:** Requires configuration for MongoDB connection strings, JWT secrets, email providers (Brevo), AI providers, Cloudinary, and production frontend/app URLs.
-- **Mobile:** Requires public endpoints like `EXPO_PUBLIC_API_URL` and `EXPO_PUBLIC_SOCKET_URL`. *Note: EXPO_PUBLIC values must never contain private server secrets.*
+
+Backend configuration covers categories such as MongoDB, JWT, email, AI providers, media storage, and other server integrations documented in `apps/backend/.env.example`.
+
+Mobile public configuration includes:
+
+- `EXPO_PUBLIC_API_URL`
+- `EXPO_PUBLIC_SOCKET_URL`
+
+`EXPO_PUBLIC_*` values are bundled into the client and must never contain private server secrets.
 
 ## Development Commands
-From the repository root, you can run:
-- `npm run backend` - Start the backend development server.
-- `npm run mobile` - Start the Expo mobile bundler.
-- `npm run mobile:android` - Run the mobile app on an Android emulator/device.
-- `npm run typecheck` - Run TypeScript validation across the workspace.
-- `npm run test` - Run tests across the workspace.
+
+```bash
+npm run backend
+npm run mobile
+npm run mobile:android
+npm run typecheck
+npm run test
+```
 
 ## Testing
-- **Mobile Unit/Contract Tests:** `npm run test --workspace @campusx/mobile`
-- **Backend Integration Tests (In-Memory):** `npm run test:integration:memory --workspace @campusx/backend`
-- **TypeScript Validation:** `npm run typecheck`
-- **Backend Production Build:** `npm run build --workspace @campusx/backend`
+
+```bash
+npm run typecheck
+npm run test --workspace @campusx/mobile
+npm run test:integration:memory --workspace @campusx/backend
+npm run build --workspace @campusx/backend
+```
+
+These commands cover TypeScript validation, mobile unit/contract tests, backend in-memory integration tests, and the backend production build.
 
 ## Production
 
-**Public Endpoints:**
-- **Backend URL:** https://campusx-production.onrender.com
-- **API URL:** https://campusx-production.onrender.com/api
-- **Health Check:** https://campusx-production.onrender.com/api/health
+- **Backend:** https://campusx-production.onrender.com
+- **API:** https://campusx-production.onrender.com/api
+- **Health:** https://campusx-production.onrender.com/api/health
 
-Private credentials are configured using Render deployment environment variables and are never committed to source control.
+Private deployment credentials are configured outside source control.
 
 ## Android Release
-- **Current Version:** CampusX v1.0.1
-- **Android Package:** `com.campusx.mobile`
-- **Version Code:** 2
 
-Production Android releases are signed using the permanent CampusX signing identity stored securely outside Git. *APK files are local release artifacts and are NOT committed to Git.*
+- **Current version:** CampusX v1.0.1
+- **Package:** `com.campusx.mobile`
+- **Version code:** `2`
+
+Production Android releases must use the permanent CampusX signing identity stored outside Git. APK/AAB binaries and signing material are not committed to this repository.
+
+See [docs/RELEASE.md](docs/RELEASE.md) for the release checklist.
 
 ## Security & Privacy
-- Sensitive secrets, database credentials, and signing identities are strictly excluded from source control.
-- Authentication relies on secure, HttpOnly-capable (or secure token) JWT flows.
-- Strict friendship boundaries control who can request or view friend locations.
-- Location sharing can be explicitly disabled at any time, returning only cached data.
-- Private signing credentials and service accounts remain external to Git.
+
+- Secrets and signing material are excluded from source control.
+- Database credentials remain backend-side.
+- Mobile authentication uses JWT-based sessions with tokens stored using `expo-secure-store`.
+- Accepted friendship is the access boundary for friend-location requests.
+- Location Sharing can be disabled at any time.
+- Sensitive service credentials remain in server/deployment environments.
 
 ## Documentation
-For more detailed information, please refer to our internal documentation index:
-- [Documentation Index](docs/README.md)
+
+Start with the [documentation index](docs/README.md).
+
+Key references:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development Guide](docs/DEVELOPMENT.md)
 - [Release Guide](docs/RELEASE.md)
+- [API Matrix](docs/API_MATRIX.md)
+- [Navigation Map](docs/NAVIGATION_MAP.md)
+- [Project Status](docs/PROJECT_STATUS.md)
+- [QA Report](docs/QA_REPORT.md)
 
 ## Current Status
+
 - **Current release:** CampusX v1.0.1
 - **Production backend:** Deployed
-- **Android APK:** Release build validated
+- **Android APK:** Release build metadata and signature validated
+- **Physical push/on-demand-location QA:** Pending final two-device verification unless completed separately
