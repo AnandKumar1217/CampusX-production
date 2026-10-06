@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 import * as Location from "expo-location";
 import { AppState, AppStateStatus } from "react-native";
-import { useAppStore } from "@/store/appStore";
-import { api } from "@/services/api";
-import { BACKGROUND_LOCATION_TASK } from "@/services/locationTask";
+import { useAppStore } from "../store/appStore";
+import { api } from "../services/api";
+import { BACKGROUND_LOCATION_TASK } from "../services/locationTask";
 import * as TaskManager from "expo-task-manager";
 
 export function useLiveLocationWatcher() {
@@ -23,13 +23,14 @@ export function useLiveLocationWatcher() {
 
       inFlight.current = true;
       try {
+        console.log(`[LiveLocation] Pushing position (reason: ${source})`);
         await api.post("/location/position", {
           latitude: loc.coords.latitude,
           longitude: loc.coords.longitude,
           accuracy: loc.coords.accuracy,
           heading: loc.coords.heading,
           speed: loc.coords.speed,
-          source,
+          source: "foreground",
         });
         useAppStore.getState().setLocationCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
         lastPush.current = Date.now();

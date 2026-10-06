@@ -44,5 +44,6 @@ export async function connectToTestDatabase(): Promise<void> {
     );
   }
 
+  mongoose.set('autoIndex', false);
   await mongoose.connect(uri);
 }
