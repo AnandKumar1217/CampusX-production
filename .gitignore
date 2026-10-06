@@ -39,3 +39,15 @@ temp_*
 scratch_*
 docs/reports/
 __SAFE_TO_DELETE__/
+
+crash_log*.txt
+logcat*.txt
+recent_logcat*.txt
+fsck.txt
+before-cleanup-files.txt
+
+autolinking.json
+apps/mobile/config.json
+apps/mobile/rn_config.json
+
+/android/
