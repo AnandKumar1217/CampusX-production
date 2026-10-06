@@ -16,6 +16,7 @@ import {
 
 import { CXEventCard, CXPostCard, CXStoryAvatar, CXUserRow } from "@/components/cards";
 import { useOpenChat } from "@/hooks/useOpenChat";
+import { useRequestFriendLocation } from "@/hooks/useRequestFriendLocation";
 import {
   CXAvatar,
   CXButton,
@@ -280,6 +281,7 @@ export function UserProfileScreen({
   route,
 }: StackProps<"UserProfile">) {
   const { openChat, isMessaging } = useOpenChat();
+  const { requestFriendLocation } = useRequestFriendLocation();
   const currentUser = useAppStore(state => state.user);
   const friends = useAppStore(state => state.friends);
   
@@ -323,7 +325,7 @@ export function UserProfileScreen({
 
   useEffect(() => {
     fetchProfileData();
-    api.post(`/location/friends/${route.params.userId}/refresh`).catch(console.warn);
+    requestFriendLocation(route.params.userId);
     
     // Add real-time reactive socket listeners for this specific profile
     const socket = require("@/services/socket").getSocket();

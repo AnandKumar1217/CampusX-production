@@ -11,6 +11,7 @@ import {
 
 import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useOpenChat } from "@/hooks/useOpenChat";
+import { useRequestFriendLocation } from "@/hooks/useRequestFriendLocation";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "@/store/appStore";
 import { api } from "@/services/api";
@@ -44,6 +45,7 @@ function formatTimeAgo(updatedAt: number) {
 export function DiscoverScreen() {
   const navigation = useRootNavigation();
   const { openChat, isMessaging } = useOpenChat();
+  const { requestFriendLocation, refreshingFriends } = useRequestFriendLocation();
   const [region, setRegion] = useState({
     latitude: 12.9676,
     longitude: 77.7154,
@@ -431,7 +433,7 @@ export function DiscoverScreen() {
               onPress={() => {
                 setSelectedFriend({ ...friend, friendObj, displayName, avatar });
                 cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
-                api.post(`/location/friends/${friend.userId}/refresh`).catch(console.warn);
+                requestFriendLocation(friend.userId);
               }}
               style={{ zIndex: isSelected ? 100 : 1 }}
             >
@@ -637,7 +639,13 @@ export function DiscoverScreen() {
                         <View style={styles.flex}>
                           <CXText variant="bodyStrong">{item.name}</CXText>
                           <CXText variant="caption" color={isLive ? colors.primary : colors.textMuted}>
-                            {freshness ? `${freshness} - ${formatTimeAgo(liveLoc?.updatedAt || 0)}` : "Location Hidden"}
+                            {liveLoc?.sharingEnabled === false 
+                              ? `Location off · Last shared ${formatTimeAgo(liveLoc?.updatedAt || 0)}`
+                              : refreshingFriends[item.id]
+                                ? "Refreshing..."
+                                : freshness 
+                                  ? isLive ? "LIVE · Just now" : `Last shared ${formatTimeAgo(liveLoc?.updatedAt || 0)}`
+                                  : "Location Hidden"}
                           </CXText>
                         </View>
                         {freshness && <Ionicons name="navigate-circle" size={24} color={isLive ? colors.primary : colors.textMuted} />}
@@ -824,6 +832,18 @@ export function DiscoverScreen() {
                 let freshnessStatus = formatTimeAgo(friend.updatedAt);
                 const isLive = freshness === "LIVE" || freshness === "RECENT";
                 const dotColor = freshness === "LIVE" ? colors.success : freshness === "RECENT" ? colors.warning : colors.textMuted;
+                
+                const liveLoc = friendLocations[friend.userId];
+                let labelText = "";
+                if (liveLoc?.sharingEnabled === false) {
+                  labelText = `Location off · Last shared ${formatTimeAgo(friend.updatedAt)}`;
+                } else if (refreshingFriends[friend.userId]) {
+                  labelText = "Refreshing...";
+                } else if (isLive) {
+                  labelText = "LIVE · Just now";
+                } else {
+                  labelText = `Last shared ${formatTimeAgo(friend.updatedAt)}`;
+                }
 
                 return (
                   <Pressable 
@@ -840,7 +860,7 @@ export function DiscoverScreen() {
                           longitude: friend.lon!,
                         }));
                         cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
-                        api.post(`/location/friends/${friend.userId}/refresh`).catch(console.warn);
+                        requestFriendLocation(friend.userId);
                       }
                     }}
                   >
@@ -856,7 +876,7 @@ export function DiscoverScreen() {
                     <View style={{ alignItems: "center", marginTop: spacing.xs }}>
                       <CXText variant="caption" numberOfLines={1} align="center">{displayName.split(" ")[0]}</CXText>
                       <CXText color={dotColor} align="center" numberOfLines={1} style={{ fontSize: 9 }}>
-                        {freshnessStatus}
+                        {labelText}
                       </CXText>
                     </View>
                   </Pressable>

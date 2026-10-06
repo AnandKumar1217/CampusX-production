@@ -23,7 +23,7 @@ const locationSharingSchema = new Schema(
     accuracy: { type: Number },
     heading: { type: Number },
     speed: { type: Number },
-    source: { type: String, enum: ["foreground", "background", "manual"] },
+    source: { type: String, enum: ["foreground", "background", "manual", "on_demand"] },
     positionUpdatedAt: Date,
     updatedAt: Date,
   },

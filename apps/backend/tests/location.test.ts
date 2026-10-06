@@ -153,14 +153,32 @@ describe("Location Sharing API", () => {
     expect(doc?.point?.coordinates[1]).toBe(12.5); // lat
   });
 
-  it("does not revive an old position when sharing is toggled off and on", async () => {
+  it("preserves coordinates when location is toggled off", async () => {
+    // 1. Create position
+    await request(app).post("/api/location/position")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ latitude: 12.5, longitude: 77.5, source: "on_demand" }).expect(200);
+    
+    const beforeOff = await LocationSharing.findOne({ user: userA._id });
+    
+    // 2. PATCH enabled: false
     await request(app).patch("/api/location/settings")
       .set("Authorization", `Bearer ${tokenA}`).send({ enabled: false }).expect(200);
-    await request(app).patch("/api/location/settings")
-      .set("Authorization", `Bearer ${tokenA}`).send({ enabled: true }).expect(200);
+
+    const afterOff = await LocationSharing.findOne({ user: userA._id });
+    
+    // 3 & 4. Verify coordinates and timestamp unchanged
+    expect(afterOff?.point?.coordinates).toEqual(beforeOff?.point?.coordinates);
+    expect(afterOff?.positionUpdatedAt?.getTime()).toEqual(beforeOff?.positionUpdatedAt?.getTime());
+    
+    // 5. GET /location/friends
     const res = await request(app).get("/api/location/friends")
       .set("Authorization", `Bearer ${tokenB}`).expect(200);
-    expect(res.body.data).toEqual([]);
+      
+    // 6 & 7. Verify cached location still exists and sharingEnabled is false
+    const friendA = res.body.data.find((f: any) => f.user.id === userA._id.toString());
+    expect(friendA).toBeDefined();
+    expect(friendA.sharingEnabled).toBe(false);
   });
   it("allows requesting location refresh for friends", async () => {
     // A enables sharing and has location
@@ -181,14 +199,43 @@ describe("Location Sharing API", () => {
     expect(res.body.data.lastKnown.longitude).toBe(77.1);
   });
 
+  it("blocks location refresh with pair-specific cooldown", async () => {
+    // B requests A again immediately -> cooldown
+    const res = await request(app)
+      .post(`/api/location/friends/${userA._id}/refresh`)
+      .set("Authorization", `Bearer ${tokenB}`);
+    
+    expect(res.status).toBe(429);
+    expect(res.body.data.status).toBe("cooldown");
+
+    // But C can request B without cooldown (independent)
+    // First, make C and B friends
+    const sortedBC = [userB._id.toString(), userC._id.toString()].sort();
+    await Friendship.create({ users: sortedBC, createdBy: userB._id });
+
+    const res2 = await request(app)
+      .post(`/api/location/friends/${userB._id}/refresh`)
+      .set("Authorization", `Bearer ${tokenC}`);
+    
+    // Might be 200 (requested) or sharing_off depending on B's state, but not 429
+    expect(res2.status).toBe(200);
+  });
+
   it("blocks location refresh request for non-friends", async () => {
     // C is not friends with A
     const res = await request(app)
       .post(`/api/location/friends/${userA._id}/refresh`)
-      .set("Authorization", `Bearer ${tokenC}`)
-      .set("X-Forwarded-For", "127.0.0.2");
+      .set("Authorization", `Bearer ${tokenC}`);
     
     expect(res.status).toBe(403);
+  });
+
+  it("returns 400 for invalid friendId", async () => {
+    const res = await request(app)
+      .post(`/api/location/friends/invalid123/refresh`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    
+    expect(res.status).toBe(400);
   });
   afterAll(async () => {
     const userIds = [userA, userB, userC]

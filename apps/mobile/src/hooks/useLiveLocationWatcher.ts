@@ -4,6 +4,7 @@ import { AppState, AppStateStatus } from "react-native";
 import { useAppStore } from "../store/appStore";
 import { api } from "../services/api";
 import { getSocket } from "../services/socket";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export function useLiveLocationWatcher() {
   const locationSharingEnabled = useAppStore((state) => state.locationSharingEnabled);
@@ -29,6 +30,28 @@ export function useLiveLocationWatcher() {
         // If backgrounded, the push notification task handles this
         return;
       }
+
+      // Request ID Deduplication
+      const DEDUP_KEY = "campusx.location.refresh.processed";
+      const processedRaw = await AsyncStorage.getItem(DEDUP_KEY);
+      let processedIds: Record<string, number> = {};
+      if (processedRaw) {
+        try { processedIds = JSON.parse(processedRaw); } catch (e) {}
+      }
+      
+      const now = Date.now();
+      if (processedIds[payload.requestId] && now - processedIds[payload.requestId] < 60000) {
+        return; // Already processed recently
+      }
+  
+      // Clean up old entries
+      for (const key in processedIds) {
+        if (now - processedIds[key] > 300000) {
+          delete processedIds[key];
+        }
+      }
+      processedIds[payload.requestId] = now;
+      await AsyncStorage.setItem(DEDUP_KEY, JSON.stringify(processedIds));
 
       if (inFlight.current) return;
       inFlight.current = true;

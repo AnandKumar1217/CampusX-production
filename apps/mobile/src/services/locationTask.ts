@@ -12,18 +12,11 @@ export const LOCATION_REFRESH_NOTIFICATION_TASK = "LOCATION_REFRESH_NOTIFICATION
 // Remove old location updates watcher if it exists
 TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK).then(isRegistered => {
   if (isRegistered) {
-    Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch(err => {
-      console.log("[LocationTask] Failed to stop old background location task", err);
-    });
+    Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK).catch(() => {});
   }
 }).catch(() => {});
 
-// Register the notification background task
-Notifications.registerTaskAsync(LOCATION_REFRESH_NOTIFICATION_TASK).catch((err) => {
-  console.log("[LocationTask] Failed to register background notification task", err);
-});
-
-
+// 3. Define the task BEFORE registering it
 TaskManager.defineTask(LOCATION_REFRESH_NOTIFICATION_TASK, async ({ data, error, executionInfo }) => {
   if (error) {
     console.error("[LocationTask] Background notification task error:", error);
@@ -32,81 +25,112 @@ TaskManager.defineTask(LOCATION_REFRESH_NOTIFICATION_TASK, async ({ data, error,
 
   try {
     if (!data) return;
-    const notificationData = (data as any)?.notification?.data;
-    if (!notificationData) return;
+    
+    // 4. Fix Expo SDK 54 Headless payload parsing
+    let notificationData: any = null;
+    const typedData = data as any;
+    if (typedData.dataString) {
+      try {
+        notificationData = JSON.parse(typedData.dataString);
+      } catch (e) {}
+    } else if (typedData.notification?.data) {
+      notificationData = typedData.notification.data;
+    } else if (typedData.data) { // fallback
+      notificationData = typedData.data;
+    }
+    
+    if (typeof notificationData === "string") {
+      try {
+        notificationData = JSON.parse(notificationData);
+      } catch (e) {}
+    }
 
-    if (notificationData.type === "LOCATION_REFRESH_REQUEST") {
-      const { requestId, requesterId } = notificationData;
-      if (!requestId || !requesterId) return;
-      console.log(`[LocationTask] Received location refresh request: ${requestId} from ${requesterId}`);
+    if (!notificationData || notificationData.type !== "LOCATION_REFRESH_REQUEST") {
+      return;
+    }
 
-      // 1. Get Token
-      let token = api.defaults.headers.common["Authorization"] as string | undefined;
-      if (!token) {
-        const ACCESS_TOKEN_KEY = "campusx.auth.access-token";
-        const storedToken = Platform.OS === "web"
-          ? await AsyncStorage.getItem(ACCESS_TOKEN_KEY)
-          : await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
-        if (storedToken) {
-          token = `Bearer ${storedToken}`;
-        }
+    const { requestId, requesterId } = notificationData;
+    if (!requestId || !requesterId) return;
+
+    // 6. Request ID Deduplication
+    const DEDUP_KEY = "campusx.location.refresh.processed";
+    const processedRaw = await AsyncStorage.getItem(DEDUP_KEY);
+    let processedIds: Record<string, number> = {};
+    if (processedRaw) {
+      try { processedIds = JSON.parse(processedRaw); } catch (e) {}
+    }
+    
+    const now = Date.now();
+    if (processedIds[requestId] && now - processedIds[requestId] < 60000) {
+      return; // Already processed recently
+    }
+
+    // Clean up old entries
+    for (const key in processedIds) {
+      if (now - processedIds[key] > 300000) {
+        delete processedIds[key];
       }
+    }
+    processedIds[requestId] = now;
+    await AsyncStorage.setItem(DEDUP_KEY, JSON.stringify(processedIds));
 
-      if (!token) {
-        console.log("[LocationTask] No token available, aborting");
+    // 1. Get Token
+    let token = api.defaults.headers.common["Authorization"] as string | undefined;
+    if (!token) {
+      const ACCESS_TOKEN_KEY = "campusx.auth.access-token";
+      const storedToken = Platform.OS === "web"
+        ? await AsyncStorage.getItem(ACCESS_TOKEN_KEY)
+        : await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+      if (storedToken) {
+        token = `Bearer ${storedToken}`;
+      }
+    }
+
+    if (!token) {
+      return;
+    }
+
+    // 5. Fetch actual settings from backend
+    try {
+      const settingsRes = await api.get("/location/settings", { headers: { Authorization: token } });
+      if (!settingsRes.data?.data?.enabled) {
         return;
       }
+    } catch (e) {
+      return;
+    }
 
-      // 2. Check local location sharing state
-      const STATE_KEY = "app-store";
-      const appStoreRaw = Platform.OS === "web"
-        ? await AsyncStorage.getItem(STATE_KEY)
-        : await AsyncStorage.getItem(STATE_KEY); // zustand persist uses AsyncStorage by default for react-native
-      
-      console.log("[LocationTask] appStoreRaw read:", appStoreRaw);
-      
-      let sharingEnabled = false;
-      if (appStoreRaw) {
-        try {
-          const parsed = JSON.parse(appStoreRaw);
-          sharingEnabled = !!parsed?.state?.locationSharingEnabled;
-        } catch (e) {}
-      } else {
-        // Fallback: assume we can't reliably determine, or use zustand memory if running
-        // If JS context was alive, we could just check useAppStore.getState().locationSharingEnabled
-        // but we are in a background task, so we read from storage.
-      }
-      
-      if (!sharingEnabled) {
-        console.log("[LocationTask] Location sharing is OFF locally, aborting refresh");
-        return;
-      }
+    // 3. Check Location Permissions
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== "granted") {
+      return;
+    }
 
-      // 3. Check Location Permissions
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("[LocationTask] Location foreground permission not granted, aborting refresh");
-        return;
-      }
-
-      // 4. Request location (exactly one fetch)
-      const currentLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      if (currentLoc) {
-        await api.post("/location/position", { 
-          latitude: currentLoc.coords.latitude, 
-          longitude: currentLoc.coords.longitude,
-          accuracy: currentLoc.coords.accuracy,
-          heading: currentLoc.coords.heading,
-          speed: currentLoc.coords.speed,
-          source: "on_demand",
-          requestId
-        }, {
-          headers: { Authorization: token }
-        });
-        console.log(`[LocationTask] Successfully pushed on-demand location for request ${requestId}`);
-      }
+    // 4. Request location (exactly one fetch)
+    const currentLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+    if (currentLoc) {
+      await api.post("/location/position", { 
+        latitude: currentLoc.coords.latitude, 
+        longitude: currentLoc.coords.longitude,
+        accuracy: currentLoc.coords.accuracy,
+        heading: currentLoc.coords.heading,
+        speed: currentLoc.coords.speed,
+        source: "on_demand",
+        requestId
+      }, {
+        headers: { Authorization: token }
+      });
     }
   } catch (err) {
     console.error("[LocationTask] Failed to process background notification task:", err);
   }
 });
+
+// Safely register the task only after defining
+TaskManager.isTaskRegisteredAsync(LOCATION_REFRESH_NOTIFICATION_TASK).then(isRegistered => {
+  if (!isRegistered) {
+    Notifications.registerTaskAsync(LOCATION_REFRESH_NOTIFICATION_TASK).catch((err) => {
+      console.log("[LocationTask] Failed to register background notification task", err);
+    });
+  }
+}).catch(() => {});

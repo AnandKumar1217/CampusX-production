@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { Types } from "mongoose";
 import { AIConversation, LocationSharing } from "../models/System.js";
 import { Notification, Friendship } from "../models/Social.js";
 import { Message } from "../models/Chat.js";
@@ -111,7 +112,6 @@ locationRouter.patch(
           updateFrequencyMinutes: input.batterySaver
             ? 30
             : input.updateFrequencyMinutes,
-          ...(input.enabled === false ? { positionUpdatedAt: null } : {}),
           ...(input.enabled === true ? { ghostMode: false } : {}),
         },
       },
@@ -123,9 +123,6 @@ locationRouter.patch(
       const io = request.app.get("io");
       io?.to(`user:${request.user!._id.toString()}`).emit("location:sharing_changed", { userId: request.user!._id.toString(), enabled: false });
       acceptedFriendIds.forEach((friendId) => {
-        io?.to(`user:${friendId.toString()}`).emit("location:friend_unavailable", {
-          userId: request.user!._id.toString(),
-        });
         io?.to(`user:${friendId.toString()}`).emit("location:sharing_changed", { userId: request.user!._id.toString(), enabled: false });
       });
     } else if (input.enabled === true) {
@@ -228,6 +225,7 @@ locationRouter.post(
       updatedAt: settings.positionUpdatedAt,
       sharingEnabled: true,
       requestId: request.body.requestId,
+      source: settings.source,
     };
 
     acceptedFriendIds.forEach((friendId) => {
@@ -245,7 +243,6 @@ locationRouter.get(
 
     const items = await LocationSharing.find({
       user: { $in: acceptedFriendIds },
-      ghostMode: { $ne: true },
       "point.coordinates.1": { $exists: true },
       positionUpdatedAt: { $ne: null },
     }).populate("user", "name username avatarUrl");
@@ -277,9 +274,17 @@ locationRouter.get(
 const locationRefreshRateLimiter = rateLimit({
   windowMs: 20 * 1000, // 20 seconds cooldown
   max: 1, // 1 request per 20 seconds
-  message: {
-    status: "cooldown",
-    retryAfterSeconds: 20
+  keyGenerator: (req) => {
+    return `${req.user!._id.toString()}:${req.params.friendId}`;
+  },
+  handler: (req, res) => {
+    res.status(429).json({
+      success: true,
+      data: {
+        status: "cooldown",
+        retryAfterSeconds: 20
+      }
+    });
   }
 });
 
@@ -288,6 +293,9 @@ locationRouter.post(
   locationRefreshRateLimiter,
   asyncHandler(async (request, response) => {
     const friendId = request.params.friendId;
+    if (!Types.ObjectId.isValid(friendId)) {
+      throw new AppError(400, "Invalid friend ID", "INVALID_REQUEST");
+    }
     if (friendId === request.user!._id.toString()) {
       throw new AppError(400, "Cannot request own location", "INVALID_REQUEST");
     }
@@ -301,7 +309,7 @@ locationRouter.post(
     }
 
     const targetSharing = await LocationSharing.findOne({ user: friendId });
-    if (!targetSharing || !targetSharing.enabled || targetSharing.ghostMode) {
+    if (!targetSharing || !targetSharing.enabled) {
       return sendSuccess(response, {
         status: "sharing_off",
         lastKnown: targetSharing?.positionUpdatedAt ? {

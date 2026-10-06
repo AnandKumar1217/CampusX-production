@@ -172,6 +172,7 @@ export const pushService = {
         to: d.expoPushToken,
         data: dataPayload,
         priority: "high" as const, // Best effort wake
+        ttl: 20, // Expire after 20 seconds
       }));
       const tokenForIndex = devices.map((d) => d.expoPushToken);
 
