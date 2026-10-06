@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "test:integration:memory": "node run_tests_with_mongo.mjs"
   },
   "dependencies": {
     "axios": "^1.12.2",
@@ -40,6 +41,7 @@
     "@types/node": "^24.5.2",
     "@types/supertest": "^6.0.3",
     "eslint": "^9.36.0",
+    "mongodb-memory-server": "^11.3.0",
     "socket.io-client": "^4.8.3",
     "supertest": "^7.1.4",
     "tsx": "^4.20.5",
