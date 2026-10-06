@@ -8,12 +8,54 @@ import * as TaskManager from "expo-task-manager";
 
 export function useLiveLocationWatcher() {
   const locationSharingEnabled = useAppStore((state) => state.locationSharingEnabled);
+  const user = useAppStore((state) => state.user);
   const watcherSubscription = useRef<Location.LocationSubscription | null>(null);
   const appState = useRef(AppState.currentState);
+  const inFlight = useRef(false);
+  const lastPush = useRef(0);
+  const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    async function pushLocation(loc: Location.LocationObject, source: string) {
+      if (inFlight.current) return;
+      const now = Date.now();
+      if (now - lastPush.current < 5000) return; // Prevent spamming within 5s
+
+      inFlight.current = true;
+      try {
+        await api.post("/location/position", {
+          latitude: loc.coords.latitude,
+          longitude: loc.coords.longitude,
+          accuracy: loc.coords.accuracy,
+          heading: loc.coords.heading,
+          speed: loc.coords.speed,
+          source,
+        });
+        useAppStore.getState().setLocationCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
+        lastPush.current = Date.now();
+      } catch (err) {
+        console.error("[LiveLocation] Failed to push position:", err);
+      } finally {
+        inFlight.current = false;
+      }
+    }
+
+    async function performHeartbeat(source: string) {
+      if (appState.current !== "active" || !locationSharingEnabled || !user) return;
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== "granted") return;
+        const currentLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (currentLoc) {
+          await pushLocation(currentLoc, source);
+        }
+      } catch (e) {
+        console.log("[LiveLocation] Heartbeat failed:", e);
+      }
+    }
+
     async function setupLocationTracking() {
-      if (!locationSharingEnabled) {
+      if (!locationSharingEnabled || !user) {
         stopAllTracking();
         return;
       }
@@ -25,26 +67,26 @@ export function useLiveLocationWatcher() {
           return;
         }
         
-        // Always try to fetch and push initial position on setup
-        try {
-          const initial = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          if (initial) await pushLocation(initial, "foreground");
-        } catch (e) {
-          // Fallback to last known if current position fails
-          const lastKnown = await Location.getLastKnownPositionAsync();
-          if (lastKnown) await pushLocation(lastKnown, "foreground");
-        }
+        // Immediate foreground fetch
+        performHeartbeat("foreground_init");
 
-        // Start Foreground watcher if not started
+        // Start Foreground watcher for movement
         if (!watcherSubscription.current) {
           watcherSubscription.current = await Location.watchPositionAsync(
             {
-              accuracy: Location.Accuracy.Balanced, // Avoid High to save battery
+              accuracy: Location.Accuracy.Balanced,
               timeInterval: 60000,
               distanceInterval: 10,
             },
-            (loc) => pushLocation(loc, "foreground")
+            (loc) => pushLocation(loc, "movement")
           );
+        }
+
+        // Start true 60s heartbeat
+        if (!heartbeatInterval.current) {
+          heartbeatInterval.current = setInterval(() => {
+            performHeartbeat("heartbeat");
+          }, 60000);
         }
 
         // Setup background tracking if permission granted
@@ -78,6 +120,10 @@ export function useLiveLocationWatcher() {
         watcherSubscription.current.remove();
         watcherSubscription.current = null;
       }
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
       try {
         const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK);
         if (isRegistered) {
@@ -87,27 +133,11 @@ export function useLiveLocationWatcher() {
       } catch (err) {}
     }
 
-    async function pushLocation(loc: Location.LocationObject, source: string) {
-      try {
-        await api.post("/location/position", {
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-          accuracy: loc.coords.accuracy,
-          heading: loc.coords.heading,
-          speed: loc.coords.speed,
-          source,
-        });
-        useAppStore.getState().setLocationCoords({ lat: loc.coords.latitude, lon: loc.coords.longitude });
-      } catch (err) {
-        console.error("[LiveLocation] Failed to push position:", err);
-      }
-    }
-
     // Initialize or stop tracking based on sharing state
     setupLocationTracking();
 
     let friendSyncInterval: ReturnType<typeof setInterval>;
-    if (locationSharingEnabled) {
+    if (locationSharingEnabled && user) {
       // Sync friend locations every 60 seconds when location sharing is active
       friendSyncInterval = setInterval(() => {
         useAppStore.getState().fetchInitialFriendLocations().catch(() => {});
@@ -116,8 +146,9 @@ export function useLiveLocationWatcher() {
 
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === "active") {
-        if (locationSharingEnabled) {
-          setupLocationTracking(); // ensures fresh fetch on foreground
+        if (locationSharingEnabled && user) {
+          // Immediately perform one fresh current-position push
+          performHeartbeat("foreground_resume");
           useAppStore.getState().fetchInitialFriendLocations().catch(() => {});
         }
       }
@@ -127,11 +158,15 @@ export function useLiveLocationWatcher() {
     return () => {
       if (friendSyncInterval) clearInterval(friendSyncInterval);
       subscription.remove();
-      // We don't stop background tracking here, just foreground
+      // We don't stop background tracking here, just foreground watchers
       if (watcherSubscription.current) {
         watcherSubscription.current.remove();
         watcherSubscription.current = null;
       }
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
     };
-  }, [locationSharingEnabled]);
+  }, [locationSharingEnabled, user]);
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "CampusX",
     "slug": "campusx",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "campusx",
     "newArchEnabled": true,
@@ -25,7 +25,7 @@
     },
     "android": {
       "package": "com.campusx.mobile",
-      "versionCode": 1,
+      "versionCode": 2,
       "icon": "./assets/branding/campusx-logo-new-transparent.png",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

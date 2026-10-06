@@ -37,7 +37,10 @@ export function LocationSettingsScreen({ navigation }: Props) {
 
     setLocationSharingEnabled(value);
     try {
-      await api.patch("/location/settings", { enabled: value });
+      await api.patch("/location/settings", { 
+        enabled: value,
+        ...(value ? { updateFrequencyMinutes: 1 } : {})
+      });
     } catch (error) {
       setLocationSharingEnabled(!value);
       console.error("Failed to update location sharing", error);

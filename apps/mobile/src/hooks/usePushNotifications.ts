@@ -123,7 +123,7 @@ export function usePushNotifications() {
           handleNotification(data);
         } else if (typeof data?.url === "string") {
           import("react-native").then(({ Linking }) => {
-            Linking.openURL(data.url).catch(err => console.log("Failed to open notification url", err));
+            Linking.openURL(data.url as string).catch(err => console.log("Failed to open notification url", err));
           });
         }
       }

@@ -29,6 +29,15 @@ function maskToken(token: string): string {
   return `ExponentPushToken[${inner.slice(0, 3)}...${inner.slice(-3)}]`;
 }
 
+/** Sanitize full text to prevent logging complete tokens. */
+function sanitizeLogs(text: string): string {
+  if (!text) return "";
+  return text.replace(/(ExponentPushToken|ExpoPushToken)\[([^\]]+)\]/g, (match, prefix, inner) => {
+    if (inner.length < 6) return `${prefix}[***]`;
+    return `${prefix}[${inner.slice(0, 3)}...${inner.slice(-3)}]`;
+  });
+}
+
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const EXPO_CHUNK_SIZE = 100; // Expo recommends ≤100 per request
 
@@ -53,7 +62,7 @@ async function sendBatch(
   if (!response.ok) {
     const errorText = await response.text().catch(() => "(unreadable)");
     console.error(
-      `[push] Expo API HTTP error ${response.status}: ${errorText.slice(0, 200)}`
+      `[push] Expo API HTTP error ${response.status}: ${sanitizeLogs(errorText).slice(0, 200)}`
     );
     return;
   }
@@ -61,7 +70,7 @@ async function sendBatch(
   const result: { data?: ExpoTicket[] } = await response.json();
 
   if (!result.data) {
-    console.error("[push] Expo API returned no data:", JSON.stringify(result).slice(0, 200));
+    console.error("[push] Expo API returned no data:", sanitizeLogs(JSON.stringify(result)).slice(0, 200));
     return;
   }
 

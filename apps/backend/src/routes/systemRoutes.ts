@@ -244,6 +244,10 @@ locationRouter.get(
       enabled: true,
       ghostMode: { $ne: true },
       "point.coordinates.1": { $exists: true },
+      positionUpdatedAt: {
+        $ne: null,
+        $gte: new Date(Date.now() - LIVE_LOCATION_MAX_AGE_MS),
+      },
     }).populate("user", "name username avatarUrl");
 
     const formatted = items.map((item) => {

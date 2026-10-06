@@ -26,7 +26,7 @@ const categories = [
 function getLocationFreshness(updatedAt: number) {
   const diffMin = (Date.now() - updatedAt) / 60000;
   if (diffMin <= 2) return "LIVE";
-  if (diffMin <= 15) return "RECENT";
+  if (diffMin <= 5) return "RECENT";
   return "STALE";
 }
 
