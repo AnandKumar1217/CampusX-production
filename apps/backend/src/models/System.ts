@@ -15,7 +15,7 @@ const locationSharingSchema = new Schema(
     friendsOnly: { type: Boolean, default: true },
     groupsAllowed: { type: Boolean, default: false },
     highAccuracy: { type: Boolean, default: false },
-    updateFrequencyMinutes: { type: Number, default: 15 },
+    updateFrequencyMinutes: { type: Number, default: 1 },
     point: {
       type: { type: String, enum: ["Point"], default: "Point" },
       coordinates: { type: [Number], default: [0, 0] },

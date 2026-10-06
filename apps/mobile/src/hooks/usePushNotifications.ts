@@ -22,29 +22,18 @@ Notifications.setNotificationHandler({
 
 export function usePushNotifications() {
   const responseListener = useRef<any>(null);
-  // Track last registered token to avoid redundant backend calls
-  const lastRegisteredToken = useRef<string | null>(null);
+  // Track last registered identity to avoid redundant backend calls
+  const lastRegisteredIdentity = useRef<{ token: string; userId: string } | null>(null);
 
   /**
    * Obtain the Expo push token and register it with our backend.
-   *
-   * DEVELOPMENT: intentionally skipped — __DEV__ is true in Metro dev client
-   * and the production Firebase client (com.campusx.mobile) is not loaded.
-   *
-   * PRODUCTION: runs on every call; the backend upsert is idempotent so
-   * calling this more than once is safe.
    */
-  const registerForPushNotificationsAsync = useCallback(async (): Promise<string | undefined> => {
-    // INTENTIONAL: skip push registration in development builds.
-    // The development app (com.campusx.mobile.dev) does not include a
-    // Firebase client matching the production projectId, so token generation
-    // would fail. Do NOT remove this guard.
+  const registerForPushNotificationsAsync = useCallback(async (isForeground: boolean = false): Promise<string | undefined> => {
     if (__DEV__) {
       console.log("[push] Development mode: skipping push registration (intentional).");
       return undefined;
     }
 
-    // Push notifications require a real physical device (not a simulator)
     if (!Device.isDevice) {
       console.log("[push] Not a physical device — push notifications unavailable.");
       return undefined;
@@ -59,13 +48,17 @@ export function usePushNotifications() {
       });
     }
 
-    // Request permission if not already granted
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
+
     if (existingStatus !== "granted") {
+      if (isForeground) {
+        return undefined; // Never request permission merely because app foregrounded
+      }
       const { status } = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
+
     if (finalStatus !== "granted") {
       console.log("[push] Notification permission denied — cannot register.");
       return undefined;
@@ -84,19 +77,16 @@ export function usePushNotifications() {
       const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
       return tokenData.data;
     } catch (e: any) {
-      // Log the error (excluding the full token if present in error text)
       console.error("[push] Error getting Expo push token:", e?.message ?? e);
       return undefined;
     }
   }, []);
 
-  /**
-   * Register a token with the CampusX backend.
-   * Skips the network call if the same token is already registered this session.
-   */
-  const registerToken = useCallback(async (token: string): Promise<void> => {
-    if (lastRegisteredToken.current === token) {
-      // Already registered this token this session — backend upsert not needed
+  const registerToken = useCallback(async (token: string, userId: string): Promise<void> => {
+    if (
+      lastRegisteredIdentity.current?.token === token &&
+      lastRegisteredIdentity.current?.userId === userId
+    ) {
       return;
     }
     try {
@@ -106,18 +96,14 @@ export function usePushNotifications() {
         platform: Platform.OS,
       });
       await AsyncStorage.setItem(PUSH_TOKEN_KEY, token);
-      lastRegisteredToken.current = token;
+      lastRegisteredIdentity.current = { token, userId };
     } catch (e) {
       console.warn("[push] Failed to register push token with backend:", e);
     }
   }, []);
 
-  /**
-   * Unregister token from backend on logout.
-   * Clears the session-level dedup ref so the next login re-registers.
-   */
   const unregisterToken = useCallback(async (token: string): Promise<void> => {
-    lastRegisteredToken.current = null;
+    lastRegisteredIdentity.current = null;
     try {
       await api.post("/push/unregister", { token });
     } catch (e) {
@@ -125,13 +111,20 @@ export function usePushNotifications() {
     }
   }, []);
 
-  // Wire up notification-tap deep link routing
+  const clearDedupState = useCallback(() => {
+    lastRegisteredIdentity.current = null;
+  }, []);
+
   useEffect(() => {
     responseListener.current = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const data = response.notification.request.content.data;
         if (data?.route) {
           handleNotification(data);
+        } else if (typeof data?.url === "string") {
+          import("react-native").then(({ Linking }) => {
+            Linking.openURL(data.url).catch(err => console.log("Failed to open notification url", err));
+          });
         }
       }
     );
@@ -147,5 +140,6 @@ export function usePushNotifications() {
     registerForPushNotificationsAsync,
     registerToken,
     unregisterToken,
+    clearDedupState,
   };
 }

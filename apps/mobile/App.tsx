@@ -27,7 +27,13 @@ function onAppStateChange(status: AppStateStatus) {
 export default function App() {
   const accessToken = useAppStore(state => state.accessToken);
   const userId = useAppStore(state => state.user?.id);
-  const { registerForPushNotificationsAsync, registerToken } = usePushNotifications();
+  const { registerForPushNotificationsAsync, registerToken, clearDedupState } = usePushNotifications();
+
+  useEffect(() => {
+    if (!userId) {
+      clearDedupState();
+    }
+  }, [userId, clearDedupState]);
 
   /**
    * Attempt push registration once we have a logged-in user.
@@ -35,23 +41,23 @@ export default function App() {
    * multiple times — it will only POST to the backend when the token
    * changes or a new session starts.
    */
-  const tryRegisterPush = useCallback(async (currentAccessToken: string | null, currentUserId: string | undefined) => {
+  const tryRegisterPush = useCallback(async (currentAccessToken: string | null, currentUserId: string | undefined, isForeground: boolean = false) => {
     if (!currentAccessToken || !currentUserId) return;
-    const token = await registerForPushNotificationsAsync();
+    const token = await registerForPushNotificationsAsync(isForeground);
     // Guard: make sure this session is still valid before registering
     if (
       token &&
       useAppStore.getState().accessToken === currentAccessToken &&
       useAppStore.getState().user?.id === currentUserId
     ) {
-      await registerToken(token);
+      await registerToken(token, currentUserId);
     }
   }, [registerForPushNotificationsAsync, registerToken]);
 
   // Register on login / user change
   useEffect(() => {
     let cancelled = false;
-    tryRegisterPush(accessToken, userId).catch((err) => {
+    tryRegisterPush(accessToken, userId, false).catch((err) => {
       if (!cancelled) console.log("[push] Init error:", err);
     });
     return () => { cancelled = true; };
@@ -73,7 +79,8 @@ export default function App() {
       if (lastState !== "active" && nextStatus === "active") {
         tryRegisterPush(
           useAppStore.getState().accessToken,
-          useAppStore.getState().user?.id
+          useAppStore.getState().user?.id,
+          true
         ).catch((err) => console.log("[push] Foreground reconcile error:", err));
       }
       lastState = nextStatus;

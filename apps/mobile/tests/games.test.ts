@@ -209,6 +209,17 @@ describe("CheckersEngine", () => {
     expect(board[7][0]).toBe(1);
     expect(engine.getCurrentPlayer()).toBe(1);
   });
+
+  it("detects win when opponent has no pieces", () => {
+    const engine = new CheckersEngine();
+    // Hack internal board for test
+    const b = Array(8).fill(0).map(() => Array(8).fill(0));
+    b[0][0] = 1; // Only P1 has a piece
+    (engine as any).board = b;
+    (engine as any).currentPlayer = 2;
+    (engine as any).checkWin();
+    expect(engine.getWinner()).toBe(1);
+  });
 });
 
 describe("ChessEngine", () => {
@@ -217,6 +228,16 @@ describe("ChessEngine", () => {
     expect(engine.getCurrentPlayer()).toBe("w");
     expect(engine.getWinner()).toBe(null);
     expect(engine.isCheck()).toBe(false);
+  });
+
+  it("detects checkmate", () => {
+    const engine = new ChessEngine();
+    // Fool's mate
+    engine.playMove({from: "f2", to: "f3"});
+    engine.playMove({from: "e7", to: "e5"});
+    engine.playMove({from: "g2", to: "g4"});
+    engine.playMove({from: "d8", to: "h4"});
+    expect(engine.getWinner()).toBe("b");
   });
 });
 
@@ -230,6 +251,15 @@ describe("ReversiEngine", () => {
     expect(board[4][4]).toBe(2);
     expect(engine.getCurrentPlayer()).toBe(1);
   });
+
+  it("detects win when board is full", () => {
+    const engine = new ReversiEngine();
+    const b = Array(8).fill(0).map(() => Array(8).fill(1));
+    b[0][0] = 2; // P1 has 63, P2 has 1
+    (engine as any).board = b;
+    (engine as any).checkWin();
+    expect(engine.getWinner()).toBe(1);
+  });
 });
 
 describe("MancalaEngine", () => {
@@ -241,6 +271,18 @@ describe("MancalaEngine", () => {
     expect(board[13]).toBe(0);
     expect(engine.getCurrentPlayer()).toBe(1);
   });
+
+  it("detects game over when one side is empty", () => {
+    const engine = new MancalaEngine();
+    const b = Array(14).fill(0);
+    b[6] = 20; // P1 store
+    b[13] = 10; // P2 store
+    // P1 pits empty, P2 pits have some
+    b[7] = 2;
+    (engine as any).board = b;
+    (engine as any).checkWin();
+    expect(engine.getWinner()).toBe(1); // P1 20 vs P2 12
+  });
 });
 
 describe("DotsAndBoxesEngine", () => {
@@ -249,6 +291,18 @@ describe("DotsAndBoxesEngine", () => {
     expect(engine.getHLines().length).toBe(5);
     expect(engine.getVLines().length).toBe(4);
     expect(engine.getCurrentPlayer()).toBe(1);
+  });
+
+  it("detects win when all boxes are claimed", () => {
+    const engine = new DotsAndBoxesEngine(2, 2);
+    const boxes = [
+      [1, 1],
+      [2, 1]
+    ];
+    (engine as any).boxes = boxes;
+    (engine as any).unclaimedBoxes = 0; // trigger game over
+    (engine as any).checkWin();
+    expect(engine.getWinner()).toBe(1); // P1 has 3, P2 has 1
   });
 });
 

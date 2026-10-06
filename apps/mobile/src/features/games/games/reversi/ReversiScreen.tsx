@@ -71,11 +71,11 @@ export function ReversiScreen({ navigation, route }: Props) {
     setMatchScore(newScore);
     setWinner(gameWinner);
   setTimeout(() => {
-    handleRematch();
+    handleRematch(newScore);
   }, 2000);
   };
 
-  const handleRematch = () => {
+  const handleRematch = (finalScore: { p1: number, p2: number }) => {
     if (round < matchLength) {
       setRound(r => r + 1);
       engineRef.current = new ReversiEngine();
@@ -85,14 +85,14 @@ export function ReversiScreen({ navigation, route }: Props) {
       setBoardScore({ p1: 2, p2: 2 });
       setWinner(null);
     } else {
-      finishMatch();
+      finishMatch(finalScore);
     }
   };
 
-  const finishMatch = async () => {
+  const finishMatch = async (finalScore: { p1: number, p2: number }) => {
     let status = "DRAW";
-    if (matchScore.p1 > matchScore.p2) status = isAI ? "WON" : "P1_WIN";
-    if (matchScore.p2 > matchScore.p1) status = isAI ? "LOST" : "P2_WIN";
+    if (finalScore.p1 > finalScore.p2) status = isAI ? "WON" : "P1_WIN";
+    if (finalScore.p2 > finalScore.p1) status = isAI ? "LOST" : "P2_WIN";
     
     if (isAI) {
       await GameStorage.updateStats("reversi", {
@@ -106,7 +106,7 @@ export function ReversiScreen({ navigation, route }: Props) {
     navigation.replace("GameResult" as any, {
       gameId: "reversi",
       status,
-      scoreText: `${matchScore.p1} - ${matchScore.p2}`,
+      scoreText: `${finalScore.p1} - ${finalScore.p2}`,
       ...route.params as any
     });
   };

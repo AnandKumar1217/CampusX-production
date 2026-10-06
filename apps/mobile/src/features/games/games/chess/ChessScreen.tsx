@@ -102,11 +102,11 @@ export function ChessScreen({ navigation, route }: Props) {
     setScore(newScore);
     setWinner(gameWinner);
   setTimeout(() => {
-    handleRematch();
+    handleRematch(newScore);
   }, 2000);
   };
 
-  const handleRematch = () => {
+  const handleRematch = (finalScore: { p1: number, p2: number }) => {
     if (round < matchLength) {
       setRound(r => r + 1);
       engineRef.current = new ChessEngine();
@@ -114,14 +114,14 @@ export function ChessScreen({ navigation, route }: Props) {
       setCurrentPlayer("w");
       setWinner(null);
     } else {
-      finishMatch();
+      finishMatch(finalScore);
     }
   };
 
-  const finishMatch = async () => {
+  const finishMatch = async (finalScore: { p1: number, p2: number }) => {
     let status = "DRAW";
-    if (score.p1 > score.p2) status = isAI ? "WON" : "P1_WIN";
-    if (score.p2 > score.p1) status = isAI ? "LOST" : "P2_WIN";
+    if (finalScore.p1 > finalScore.p2) status = isAI ? "WON" : "P1_WIN";
+    if (finalScore.p2 > finalScore.p1) status = isAI ? "LOST" : "P2_WIN";
     
     if (isAI) {
       await GameStorage.updateStats("chess", {
@@ -135,7 +135,7 @@ export function ChessScreen({ navigation, route }: Props) {
     navigation.replace("GameResult" as any, {
       gameId: "chess",
       status,
-      scoreText: `${score.p1} - ${score.p2}`,
+      scoreText: `${finalScore.p1} - ${finalScore.p2}`,
       ...route.params as any
     });
   };

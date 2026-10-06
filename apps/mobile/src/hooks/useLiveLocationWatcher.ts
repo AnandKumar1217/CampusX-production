@@ -40,7 +40,7 @@ export function useLiveLocationWatcher() {
           watcherSubscription.current = await Location.watchPositionAsync(
             {
               accuracy: Location.Accuracy.Balanced, // Avoid High to save battery
-              timeInterval: 30000,
+              timeInterval: 60000,
               distanceInterval: 10,
             },
             (loc) => pushLocation(loc, "foreground")
@@ -55,9 +55,9 @@ export function useLiveLocationWatcher() {
             await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
               accuracy: Location.Accuracy.Balanced,
               timeInterval: 60000,
-              distanceInterval: 30,
+              distanceInterval: 0,
               showsBackgroundLocationIndicator: true,
-              deferredUpdatesDistance: 30,
+              deferredUpdatesDistance: 0,
               deferredUpdatesInterval: 60000,
               foregroundService: {
                 notificationTitle: "CampusX Location",
@@ -106,16 +106,26 @@ export function useLiveLocationWatcher() {
     // Initialize or stop tracking based on sharing state
     setupLocationTracking();
 
+    let friendSyncInterval: ReturnType<typeof setInterval>;
+    if (locationSharingEnabled) {
+      // Sync friend locations every 60 seconds when location sharing is active
+      friendSyncInterval = setInterval(() => {
+        useAppStore.getState().fetchInitialFriendLocations().catch(() => {});
+      }, 60000);
+    }
+
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === "active") {
         if (locationSharingEnabled) {
           setupLocationTracking(); // ensures fresh fetch on foreground
+          useAppStore.getState().fetchInitialFriendLocations().catch(() => {});
         }
       }
       appState.current = nextAppState;
     });
 
     return () => {
+      if (friendSyncInterval) clearInterval(friendSyncInterval);
       subscription.remove();
       // We don't stop background tracking here, just foreground
       if (watcherSubscription.current) {
