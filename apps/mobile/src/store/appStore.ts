@@ -106,9 +106,10 @@ export type FriendLiveLocation = {
   accuracy?: number;
   heading?: number;
   speed?: number;
-  source?: "foreground" | "background" | "manual";
+  source?: "foreground" | "background" | "manual" | "on_demand";
   updatedAt: number;
   status?: string;
+  sharingEnabled?: boolean;
 };
 
 type AppState = {
@@ -625,6 +626,7 @@ export const useAppStore = create<AppState>()(
                   source: loc.source,
                   updatedAt,
                   status: loc.status,
+                  sharingEnabled: loc.sharingEnabled ?? true,
                 };
               }
             }
@@ -686,7 +688,19 @@ export const useAppStore = create<AppState>()(
         speed: payload.speed,
         source: payload.source,
         updatedAt: payload.updatedAt ? new Date(payload.updatedAt).getTime() : Date.now(),
+        sharingEnabled: payload.sharingEnabled ?? true,
       });
+    });
+
+    socket.on("location:sharing_changed", (payload: any) => {
+      if (!payload.userId) return;
+      const existing = get().friendLocations[payload.userId];
+      if (existing) {
+        get().setFriendLocation(payload.userId, {
+          ...existing,
+          sharingEnabled: !!payload.enabled,
+        });
+      }
     });
 
     socket.on("location:friend_unavailable", (payload: any) => {

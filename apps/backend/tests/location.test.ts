@@ -80,12 +80,12 @@ describe("Location Sharing API", () => {
     expect(resA.body.data.length).toBe(0); // Incoming
   });
 
-  it("does not show location when sharing is disabled", async () => {
+  it("shows last known location when sharing is disabled", async () => {
     await LocationSharing.updateOne({ user: userA._id }, { enabled: false });
     const res = await request(app)
       .get("/api/location/friends")
       .set("Authorization", `Bearer ${tokenB}`);
-    expect(res.body.data.length).toBe(0);
+    expect(res.body.data.length).toBe(1);
 
     // Turn back on
     await LocationSharing.updateOne({ user: userA._id }, { enabled: true });
@@ -100,7 +100,7 @@ describe("Location Sharing API", () => {
     expect(res.body.data.length).toBe(0);
   });
 
-  it("includes locations updated within 10 minutes", async () => {
+  it("includes locations regardless of age since they are cached", async () => {
     // Re-friend A and B
     const sortedAB = [userA._id.toString(), userB._id.toString()].sort();
     await Friendship.create({ users: sortedAB, createdBy: userA._id });
@@ -122,27 +122,15 @@ describe("Location Sharing API", () => {
     );
     res = await request(app).get("/api/location/friends").set("Authorization", `Bearer ${tokenB}`);
     expect(res.body.data.length).toBe(1);
-  });
 
-  it("excludes stale locations (> 10 minutes)", async () => {
-    // 10m01s ago -> should exclude
+    // 10m01s ago -> should still return
     await LocationSharing.updateOne(
       { user: userA._id },
       { $set: { positionUpdatedAt: new Date(Date.now() - (10 * 60 * 1000) - 1000) } },
       { timestamps: false }
     );
-
-    const res = await request(app)
-      .get("/api/location/friends")
-      .set("Authorization", `Bearer ${tokenB}`);
-    expect(res.body.data.length).toBe(0); // Stale
-
-    // Restore freshness
-    await LocationSharing.updateOne(
-      { user: userA._id },
-      { $set: { positionUpdatedAt: new Date() } },
-      { timestamps: false }
-    );
+    res = await request(app).get("/api/location/friends").set("Authorization", `Bearer ${tokenB}`);
+    expect(res.body.data.length).toBe(1);
   });
 
   it("rejects invalid coordinate writes", async () => {
@@ -157,7 +145,7 @@ describe("Location Sharing API", () => {
     const res = await request(app)
       .post("/api/location/position")
       .set("Authorization", `Bearer ${tokenA}`)
-      .send({ latitude: 12.5, longitude: 77.5 });
+      .send({ latitude: 12.5, longitude: 77.5, source: "foreground" });
     expect(res.status).toBe(200);
 
     const doc = await LocationSharing.findOne({ user: userA._id });
@@ -174,7 +162,34 @@ describe("Location Sharing API", () => {
       .set("Authorization", `Bearer ${tokenB}`).expect(200);
     expect(res.body.data).toEqual([]);
   });
+  it("allows requesting location refresh for friends", async () => {
+    // A enables sharing and has location
+    await LocationSharing.updateOne(
+      { user: userA._id },
+      { $set: { enabled: true, point: { type: "Point", coordinates: [77.1, 12.1] }, positionUpdatedAt: new Date(), ghostMode: false } },
+      { timestamps: false }
+    );
+    
+    // B requests A's location
+    const res = await request(app)
+      .post(`/api/location/friends/${userA._id}/refresh`)
+      .set("Authorization", `Bearer ${tokenB}`);
+    
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe("requested");
+    expect(res.body.data.requestId).toBeDefined();
+    expect(res.body.data.lastKnown.longitude).toBe(77.1);
+  });
 
+  it("blocks location refresh request for non-friends", async () => {
+    // C is not friends with A
+    const res = await request(app)
+      .post(`/api/location/friends/${userA._id}/refresh`)
+      .set("Authorization", `Bearer ${tokenC}`)
+      .set("X-Forwarded-For", "127.0.0.2");
+    
+    expect(res.status).toBe(403);
+  });
   afterAll(async () => {
     const userIds = [userA, userB, userC]
       .filter(Boolean)

@@ -7,11 +7,21 @@ vi.hoisted(() => {
 
 vi.mock("expo-modules-core", () => ({}));
 vi.mock("expo-secure-store", () => ({}));
-vi.mock("@react-native-async-storage/async-storage", () => ({}));
+vi.mock("@react-native-async-storage/async-storage", () => {
+  const m = {
+    getItem: vi.fn().mockResolvedValue(JSON.stringify({ state: { locationSharingEnabled: true } })),
+    setItem: vi.fn(),
+  };
+  return {
+    ...m,
+    default: m,
+  };
+});
+vi.mock("expo-notifications", () => ({ registerTaskAsync: vi.fn().mockResolvedValue(true) }));
 
 import { api } from "../src/services/api";
 import * as TaskManager from "expo-task-manager";
-import { BACKGROUND_LOCATION_TASK } from "../src/services/locationTask";
+import { LOCATION_REFRESH_NOTIFICATION_TASK } from "../src/services/locationTask";
 import { useLiveLocationWatcher } from "../src/hooks/useLiveLocationWatcher";
 
 vi.mock("react-native", () => ({
@@ -37,6 +47,16 @@ vi.mock("../src/services/api", () => ({
     post: vi.fn(),
     defaults: { headers: { common: { Authorization: "token" } } }
   }
+}));
+
+vi.mock("../src/services/socket", () => ({
+  getSocket: () => ({
+    on: (event: string, handler: any) => {
+      (global as any).__mockSocketHandlers = (global as any).__mockSocketHandlers || {};
+      (global as any).__mockSocketHandlers[event] = handler;
+    },
+    off: vi.fn()
+  })
 }));
 
 vi.mock("expo-task-manager", () => ({
@@ -76,34 +96,52 @@ describe("Location Source Contract", () => {
     vi.clearAllMocks();
   });
 
-  it("sends 'foreground' source from useLiveLocationWatcher", async () => {
+  it("sends 'on_demand' source from useLiveLocationWatcher when receiving socket event", async () => {
     useLiveLocationWatcher();
     
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Simulate socket event
+    const handler = (global as any).__mockSocketHandlers["location:refresh_request"];
+    expect(handler).toBeDefined();
+    
+    await handler({ requestId: "123", requesterId: "456" });
 
     expect(api.post).toHaveBeenCalled();
     const calls = vi.mocked(api.post).mock.calls;
     
+    let found = false;
     calls.forEach(call => {
-      expect(call[0]).toBe("/location/position");
-      expect(call[1]).toHaveProperty("source", "foreground");
-      expect(call[1].source).not.toMatch(/^(foreground_init|heartbeat|movement|foreground_resume)$/);
+      if (call[0] === "/location/position") {
+        expect(call[1]).toHaveProperty("source", "on_demand");
+        expect(call[1]).toHaveProperty("requestId", "123");
+        found = true;
+      }
     });
+    expect(found).toBe(true);
   });
 
-  it("sends 'background' source from background task", async () => {
-    const taskCallback = (global as any).mockRegisteredTasks[BACKGROUND_LOCATION_TASK];
+  it("sends 'on_demand' source from notification task", async () => {
+    // Mock AsyncStorage for the task
+    const AsyncStorage = require("@react-native-async-storage/async-storage");
+
+    const taskCallback = (global as any).mockRegisteredTasks[LOCATION_REFRESH_NOTIFICATION_TASK];
     expect(taskCallback).toBeDefined();
     
     await taskCallback({
       data: {
-        locations: [{ coords: { latitude: 10, longitude: 20 } }]
+        notification: {
+          data: {
+            type: "LOCATION_REFRESH_REQUEST",
+            requestId: "req-1",
+            requesterId: "user-b"
+          }
+        }
       },
       error: null
     });
 
     const apiCalls = vi.mocked(api.post).mock.calls;
     expect(apiCalls.length).toBeGreaterThan(0);
-    expect(apiCalls[0][1]).toHaveProperty("source", "background");
+    expect(apiCalls[0][1]).toHaveProperty("source", "on_demand");
+    expect(apiCalls[0][1]).toHaveProperty("requestId", "req-1");
   });
 });

@@ -4,6 +4,8 @@ import { AIConversation, LocationSharing } from "../models/System.js";
 import { Notification, Friendship } from "../models/Social.js";
 import { Message } from "../models/Chat.js";
 import { aiProviderRouter } from "../services/ai/aiProviderRouter.js";
+import { pushService } from "../services/pushService.js";
+import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import { AppError, asyncHandler, sendSuccess } from "../utils/http.js";
 import { pagination } from "../utils/pagination.js";
@@ -186,7 +188,8 @@ locationRouter.post(
         accuracy: z.number().optional(),
         heading: z.number().optional(),
         speed: z.number().optional(),
-        source: z.enum(["foreground", "background", "manual"]).optional(),
+        source: z.enum(["foreground", "background", "manual", "on_demand"]).optional(),
+        requestId: z.string().optional(),
       })
       .parse(request.body);
     const settings = await LocationSharing.findOne({
@@ -222,8 +225,9 @@ locationRouter.post(
       accuracy: settings.accuracy,
       heading: settings.heading,
       speed: settings.speed,
-      source: settings.source,
       updatedAt: settings.positionUpdatedAt,
+      sharingEnabled: true,
+      requestId: request.body.requestId,
     };
 
     acceptedFriendIds.forEach((friendId) => {
@@ -241,13 +245,9 @@ locationRouter.get(
 
     const items = await LocationSharing.find({
       user: { $in: acceptedFriendIds },
-      enabled: true,
       ghostMode: { $ne: true },
       "point.coordinates.1": { $exists: true },
-      positionUpdatedAt: {
-        $ne: null,
-        $gte: new Date(Date.now() - LIVE_LOCATION_MAX_AGE_MS),
-      },
+      positionUpdatedAt: { $ne: null },
     }).populate("user", "name username avatarUrl");
 
     const formatted = items.map((item) => {
@@ -267,9 +267,76 @@ locationRouter.get(
         source: item.source,
         updatedAt: item.positionUpdatedAt,
         status: "active",
+        sharingEnabled: item.enabled,
       };
     });
     return sendSuccess(response, formatted);
+  }),
+);
+
+const locationRefreshRateLimiter = rateLimit({
+  windowMs: 20 * 1000, // 20 seconds cooldown
+  max: 1, // 1 request per 20 seconds
+  message: {
+    status: "cooldown",
+    retryAfterSeconds: 20
+  }
+});
+
+locationRouter.post(
+  "/friends/:friendId/refresh",
+  locationRefreshRateLimiter,
+  asyncHandler(async (request, response) => {
+    const friendId = request.params.friendId;
+    if (friendId === request.user!._id.toString()) {
+      throw new AppError(400, "Cannot request own location", "INVALID_REQUEST");
+    }
+
+    const relation = await Friendship.findOne({
+      users: { $all: [request.user!._id, friendId] }
+    });
+
+    if (!relation) {
+      throw new AppError(403, "Not accepted friends", "FORBIDDEN");
+    }
+
+    const targetSharing = await LocationSharing.findOne({ user: friendId });
+    if (!targetSharing || !targetSharing.enabled || targetSharing.ghostMode) {
+      return sendSuccess(response, {
+        status: "sharing_off",
+        lastKnown: targetSharing?.positionUpdatedAt ? {
+          latitude: targetSharing.point?.coordinates?.[1],
+          longitude: targetSharing.point?.coordinates?.[0],
+          updatedAt: targetSharing.positionUpdatedAt
+        } : null
+      });
+    }
+
+    const requestId = crypto.randomUUID();
+    const io = request.app.get("io");
+
+    // Fast path: Socket
+    io?.to(`user:${friendId}`).emit("location:refresh_request", {
+      requestId,
+      requesterId: request.user!._id.toString()
+    });
+
+    // Background path: Silent Push
+    await pushService.sendSilentDataPush(friendId as any, {
+      type: "LOCATION_REFRESH_REQUEST",
+      requestId,
+      requesterId: request.user!._id.toString()
+    });
+
+    return sendSuccess(response, {
+      status: "requested",
+      requestId,
+      lastKnown: targetSharing.positionUpdatedAt ? {
+        latitude: targetSharing.point?.coordinates?.[1],
+        longitude: targetSharing.point?.coordinates?.[0],
+        updatedAt: targetSharing.positionUpdatedAt
+      } : null
+    });
   }),
 );
 

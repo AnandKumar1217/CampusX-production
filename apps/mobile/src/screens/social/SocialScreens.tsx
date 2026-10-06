@@ -323,6 +323,7 @@ export function UserProfileScreen({
 
   useEffect(() => {
     fetchProfileData();
+    api.post(`/location/friends/${route.params.userId}/refresh`).catch(console.warn);
     
     // Add real-time reactive socket listeners for this specific profile
     const socket = require("@/services/socket").getSocket();

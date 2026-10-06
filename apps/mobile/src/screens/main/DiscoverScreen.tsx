@@ -13,6 +13,7 @@ import { useRootNavigation } from "@/hooks/useRootNavigation";
 import { useOpenChat } from "@/hooks/useOpenChat";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAppStore } from "@/store/appStore";
+import { api } from "@/services/api";
 import { colors, radius, spacing } from "@/theme";
 
 const categories = [
@@ -430,6 +431,7 @@ export function DiscoverScreen() {
               onPress={() => {
                 setSelectedFriend({ ...friend, friendObj, displayName, avatar });
                 cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
+                api.post(`/location/friends/${friend.userId}/refresh`).catch(console.warn);
               }}
               style={{ zIndex: isSelected ? 100 : 1 }}
             >
@@ -627,6 +629,7 @@ export function DiscoverScreen() {
                             setRegion((prev: any) => ({ ...prev, latitude: liveLoc.lat, longitude: liveLoc.lon, latitudeDelta: 0.02, longitudeDelta: 0.02 }));
                             cameraRef.current?.easeTo({ center: [liveLoc.lon, liveLoc.lat], zoom: 15, duration: 600 });
                             setIsSearchFocused(false);
+                            api.post(`/location/friends/${item.id}/refresh`).catch(console.warn);
                           }
                         }}
                       >
@@ -837,6 +840,7 @@ export function DiscoverScreen() {
                           longitude: friend.lon!,
                         }));
                         cameraRef.current?.easeTo({ center: [friend.lon!, friend.lat!], zoom: 16, duration: 600 });
+                        api.post(`/location/friends/${friend.userId}/refresh`).catch(console.warn);
                       }
                     }}
                   >

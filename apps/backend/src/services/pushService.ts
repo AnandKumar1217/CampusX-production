@@ -148,4 +148,40 @@ export const pushService = {
       console.error("[push] Failed to send push notification:", error);
     }
   },
+
+  /**
+   * Send a silent data-only push notification to one or multiple users.
+   */
+  async sendSilentDataPush(
+    userIds: Types.ObjectId | Types.ObjectId[],
+    dataPayload: object
+  ) {
+    try {
+      const users = Array.isArray(userIds) ? userIds : [userIds];
+      if (users.length === 0) return;
+
+      const devices = await PushDevice.find({
+        user: { $in: users },
+        active: true,
+      }).lean();
+
+      if (devices.length === 0) return;
+
+      // Build silent message: NO title, NO body, NO sound
+      const messages: ExpoPushMessage[] = devices.map((d) => ({
+        to: d.expoPushToken,
+        data: dataPayload,
+        priority: "high" as const, // Best effort wake
+      }));
+      const tokenForIndex = devices.map((d) => d.expoPushToken);
+
+      for (let i = 0; i < messages.length; i += EXPO_CHUNK_SIZE) {
+        const batchMessages = messages.slice(i, i + EXPO_CHUNK_SIZE);
+        const batchTokens = tokenForIndex.slice(i, i + EXPO_CHUNK_SIZE);
+        await sendBatch(batchMessages, batchTokens);
+      }
+    } catch (error) {
+      console.error("[push] Failed to send silent push notification:", error);
+    }
+  },
 };
